@@ -1,0 +1,43 @@
+export interface NavChild {
+  label: string
+  path: string
+}
+
+export interface NavItem {
+  key: string
+  label: string
+  icon: string
+  path?: string
+  children?: NavChild[]
+}
+
+export const navigation: NavItem[] = [
+  {
+    key: 'park',
+    label: 'Khu vui chơi',
+    icon: '🎢',
+    children: [
+      { label: 'Danh sách khu vui chơi', path: '/khu-vui-choi/danh-sach' },
+      { label: 'Mã khu vui chơi', path: '/khu-vui-choi/ma-kvc' },
+      { label: 'Số dư khu vui chơi hàng ngày', path: '/khu-vui-choi/so-du' },
+      { label: 'Danh sách nạp tiền KVC theo ngày', path: '/khu-vui-choi/nap-tien' },
+      { label: 'Chi tiết giá vốn vé bán', path: '/khu-vui-choi/gia-von-ve-ban' },
+      { label: 'Đối soát Khu vui chơi', path: '/khu-vui-choi/doi-soat' },
+      { label: 'KVC hoàn tiền', path: '/khu-vui-choi/kvc-hoan-tien' },
+    ],
+  },
+  { key: 'agency', label: 'Đại lý', icon: '🤝', path: '/dang-phat-trien/dai-ly' },
+  { key: 'retail', label: 'Khách lẻ', icon: '👤', path: '/dang-phat-trien/khach-le' },
+  { key: 'vin', label: 'Đối soát Vin', icon: '⚖️', path: '/dang-phat-trien/doi-soat-vin' },
+  { key: 'ota', label: 'Các đại lý OTA', icon: '🌐', path: '/dang-phat-trien/ota' },
+  {
+    key: 'refund',
+    label: 'Hoàn tiền',
+    icon: '🔄',
+    children: [
+      { label: 'Quy trình hoàn tiền', path: '/hoan-tien/quy-trinh' },
+      { label: 'Trạng thái hoàn tiền cho khách hàng', path: '/hoan-tien/trang-thai-khach-hang' },
+    ],
+  },
+  { key: 'process', label: 'Quy trình đối soát', icon: '📋', path: '/dang-phat-trien/quy-trinh-doi-soat' },
+]
