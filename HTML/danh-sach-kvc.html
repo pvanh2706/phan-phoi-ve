@@ -1,0 +1,481 @@
+﻿<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem('ppv-theme')||'dark';document.documentElement.setAttribute('data-theme',t==='system'?(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Danh sách khu vui chơi - ezCloud PPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background-color:#05091a;background-image:radial-gradient(ellipse 70% 55% at 10% 50%,#0a2a5a 0%,transparent 55%),radial-gradient(ellipse 55% 50% at 90% 20%,#2a0e50 0%,transparent 50%),radial-gradient(ellipse 50% 55% at 60% 85%,#0d3060 0%,transparent 50%),radial-gradient(ellipse 45% 40% at 50% 5%,#3a1060 0%,transparent 45%);background-attachment:fixed;color:#eee0d3;min-height:100vh}
+[data-theme="light"] body{background-color:#f0eeff;background-image:radial-gradient(ellipse 65% 55% at 8% 8%,rgba(180,130,255,0.72) 0%,transparent 60%),radial-gradient(ellipse 50% 45% at 90% 18%,rgba(100,168,255,0.62) 0%,transparent 55%),radial-gradient(ellipse 60% 50% at 12% 92%,rgba(255,205,70,0.68) 0%,transparent 55%),radial-gradient(ellipse 55% 45% at 90% 88%,rgba(60,205,175,0.65) 0%,transparent 50%),radial-gradient(ellipse 50% 45% at 50% 48%,rgba(255,255,255,0.82) 0%,transparent 65%);color:#111827}
+.app-shell{display:flex;height:100vh;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0}
+.page-content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:none}
+.page-content::-webkit-scrollbar{display:none}
+
+/* Sidebar */
+.sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;background:rgba(0,0,0,0.60);backdrop-filter:blur(12px);border-right:1px solid rgba(255,255,255,0.10);transition:width 0.3s ease;overflow:hidden}
+.sidebar.collapsed{width:64px}
+[data-theme="light"] .sidebar{background:rgba(255,255,255,0.65);border-right-color:rgba(0,0,0,0.08)}
+.sidebar-brand{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.sidebar.collapsed .sidebar-brand{padding:16px;justify-content:center}
+.brand-logo{width:32px;height:32px;background:rgba(255,255,255,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+[data-theme="light"] .brand-logo{background:rgba(0,0,0,0.10);color:#111827}
+.brand-text{overflow:hidden}
+.brand-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap}
+.brand-role{font-size:11px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .brand-name{color:#111827}
+.sidebar.collapsed .brand-text{display:none}
+.sidebar-nav{flex:1;padding:8px 10px;overflow-y:auto;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.sidebar.collapsed .sidebar-nav{padding:8px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;white-space:nowrap;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#e5e7eb}
+.nav-item.active{background:rgba(99,102,241,0.20);color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-item{color:#374151}
+[data-theme="light"] .nav-item:hover{background:rgba(0,0,0,0.06);color:#111827}
+[data-theme="light"] .nav-item.active{background:rgba(99,102,241,0.12);color:#4338ca}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-arrow{display:none}
+.nav-icon{font-size:15px;line-height:1;flex-shrink:0}
+.nav-label{flex:1}
+.nav-arrow{display:flex;align-items:center;color:#6b7280;transition:transform 0.2s}
+.nav-item.open .nav-arrow{transform:rotate(180deg)}
+.nav-sub{margin-left:28px;margin-top:1px;margin-bottom:2px;overflow:hidden;max-height:0;transition:max-height 0.25s ease}
+.nav-sub.open{max-height:200px}
+.sidebar.collapsed .nav-sub{display:none}
+.nav-sub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;color:#6b7280;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;margin-bottom:1px;white-space:nowrap}
+.nav-sub-item:hover{background:rgba(255,255,255,0.05);color:#d1d5db}
+.nav-sub-item.active{color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-sub-item.active{color:#4338ca}
+.nav-sub-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.5;flex-shrink:0}
+.sidebar-user{border-top:1px solid rgba(255,255,255,0.07);padding:10px}
+[data-theme="light"] .sidebar-user{border-top-color:rgba(0,0,0,0.08)}
+.user-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
+[data-theme="light"] .user-card{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.08)}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.avatar{width:34px;height:34px;background:linear-gradient(135deg,#4b5563,#374151);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;position:relative;flex-shrink:0}
+.avatar-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid #1f2937;border-radius:50%}
+.user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.user-email{font-size:10px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .user-name{color:#111827}
+.user-actions{display:flex;gap:6px}
+.user-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;border-radius:8px;font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;transition:background 0.15s,color 0.15s;text-decoration:none}
+.user-btn:hover{background:rgba(255,255,255,0.06);color:#fff}
+.user-btn.logout:hover{background:rgba(239,68,68,0.10);color:#f87171}
+[data-theme="light"] .user-btn{color:#6b7280}
+
+/* Header */
+.header{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(0,0,0,0.50);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.10)}
+[data-theme="light"] .header{background:rgba(255,255,255,0.60);border-bottom-color:rgba(0,0,0,0.08)}
+.header-left,.header-right{display:flex;align-items:center;gap:12px}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:none;border:none;color:#9ca3af;cursor:pointer;transition:background 0.15s,color 0.15s}
+.icon-btn:hover{background:rgba(255,255,255,0.07);color:#fff}
+[data-theme="light"] .icon-btn{color:#6b7280}
+.page-title{font-size:14px;font-weight:500;color:#d1d5db}
+[data-theme="light"] .page-title{color:#111827}
+.search-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:6px 12px;font-size:12px;color:#d1d5db;outline:none;width:176px;font-family:inherit}
+.search-input::placeholder{color:#4b5563}
+[data-theme="light"] .search-input{background:rgba(255,255,255,0.80);border-color:rgba(0,0,0,0.15);color:#111827}
+.notif-btn{position:relative}
+.notif-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;background:#ef4444;border-radius:50%}
+
+/* Page */
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.page-header p{font-size:13px;color:#6b7280}
+[data-theme="light"] .page-header h1{color:#111827}
+
+/* Tabs */
+.tabs-bar{display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:12px;padding:5px;margin-bottom:20px;width:fit-content}
+[data-theme="light"] .tabs-bar{background:rgba(0,0,0,0.05)}
+.tab-btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:500;color:#6b7280;cursor:pointer;background:none;border:none;font-family:inherit;transition:all 0.15s;white-space:nowrap}
+.tab-btn:hover{background:rgba(255,255,255,0.06);color:#d1d5db}
+.tab-btn.active{background:rgba(99,102,241,0.20);color:#a5b4fc;font-weight:600}
+[data-theme="light"] .tab-btn:hover{background:rgba(0,0,0,0.06)}
+[data-theme="light"] .tab-btn.active{color:#4338ca}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* Card & Table */
+.card{background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px}
+[data-theme="light"] .card{background:rgba(255,255,255,0.60);border-color:rgba(0,0,0,0.08)}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tb-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;min-width:200px}
+.tb-input::placeholder{color:#4b5563}
+[data-theme="light"] .tb-input{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.tb-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;cursor:pointer}
+.tb-select option{background:#1a1f3a}
+[data-theme="light"] .tb-select{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.tb-btn{margin-left:auto;background:#6366f1;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;white-space:nowrap;transition:background 0.15s;font-family:inherit}
+.tb-btn:hover{background:#4f52d8}
+.table-wrap{overflow-x:auto;scrollbar-width:none}
+.table-wrap::-webkit-scrollbar{display:none}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.08);white-space:nowrap}
+td{padding:12px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d1d5db;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+[data-theme="light"] th{color:#374151;border-bottom-color:rgba(0,0,0,0.10)}
+[data-theme="light"] td{color:#111827;border-bottom-color:rgba(0,0,0,0.06)}
+[data-theme="light"] tr:hover td{background:rgba(0,0,0,0.03)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+.badge-red{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
+.badge-gray{background:rgba(107,114,128,0.20);color:#9ca3af;border:1px solid rgba(107,114,128,0.25)}
+.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+[data-theme="light"] .badge-green{background:rgba(22,163,74,0.12);color:#16a34a;border-color:rgba(22,163,74,0.30)}
+[data-theme="light"] .badge-red{background:rgba(220,38,38,0.10);color:#dc2626;border-color:rgba(220,38,38,0.25)}
+[data-theme="light"] .badge-gray{background:rgba(107,114,128,0.12);color:#374151;border-color:rgba(107,114,128,0.25)}
+[data-theme="light"] .badge-amber{background:rgba(180,83,9,0.10);color:#b45309;border-color:rgba(180,83,9,0.25)}
+.act-btn{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:14px;transition:background 0.15s}
+.act-btn:hover{background:rgba(255,255,255,0.08)}
+[data-theme="light"] .act-btn:hover{background:rgba(0,0,0,0.06)}
+.amount{font-weight:600;font-variant-numeric:tabular-nums}
+.amount-red{color:#f87171}
+.amount-green{color:#4ade80}
+[data-theme="light"] .amount-red{color:#dc2626}
+[data-theme="light"] .amount-green{color:#16a34a}
+
+[data-theme="light"] .tab-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.10);color:#6b7280}
+[data-theme="light"] .tb-date{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827;color-scheme:light}
+[data-theme="light"] td strong{color:#111827 !important}
+[data-theme="light"] .theme-toggle{background:rgba(0,0,0,0.07);border-color:rgba(0,0,0,0.15);color:#374151}
+.theme-toggle{position:fixed;bottom:24px;right:24px;padding:8px 16px;border-radius:20px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;cursor:pointer;backdrop-filter:blur(8px);font-family:inherit;transition:background 0.2s;z-index:500}
+.theme-toggle:hover{background:rgba(255,255,255,0.18)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">ez</div>
+      <div class="brand-text"><div class="brand-name">ezCloud PPV</div><div class="brand-role">admin</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item has-children open" onclick="toggleMenu('park')"><span class="nav-icon">🎢</span><span class="nav-label">Khu vui chơi</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub open" id="sub-park">
+        <a href="danh-sach-kvc.html" class="nav-sub-item active"><span class="nav-sub-dot"></span>Danh sách khu vui chơi</a>
+        <a href="ma-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Mã khu vui chơi</a>
+        <a href="so-du-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Số dư khu vui chơi hàng ngày</a>
+        <a href="nap-tien-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Danh sách nạp tiền KVC theo ngày</a>
+        <a href="chi-tiet-gia-von-ve-ban.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Chi tiết giá vốn vé bán</a>
+        <a href="doi-soat-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Đối soát Khu vui chơi</a>
+        <a href="kvc-hoan-tien.html" class="nav-sub-item"><span class="nav-sub-dot"></span>KVC hoàn tiền</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">🤝</span><span class="nav-label">Đại lý</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Khách lẻ</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Đối soát Vin</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span class="nav-label">Các đại lý OTA</span></a>
+      <div class="nav-item has-children" onclick="toggleMenu('hoantien')"><span class="nav-icon">🔄</span><span class="nav-label">Hoàn tiền</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub" id="sub-hoantien">
+        <a href="hoan-tien-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Quy trình hoàn tiền</a>
+        <a href="trang-thai-hoan-tien-kh.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Trạng thái hoàn tiền cho khách hàng</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Quy trình đối soát</span></a>    </nav>
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="user-info">
+          <div class="avatar">AT<span class="avatar-dot"></span></div>
+          <div style="min-width:0"><div class="user-name">Anh Thảo</div><div class="user-email">admin@ezcloud.vn</div></div>
+        </div>
+        <div class="user-actions">
+          <a href="system.html" class="user-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg> Cài đặt</a>
+          <button class="user-btn logout"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" onclick="toggleSidebar()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h16"/></svg></button>
+        <span class="page-title">Khu vui chơi / Danh sách khu vui chơi</span>
+      </div>
+      <div class="header-right">
+        <input type="search" class="search-input" placeholder="Tìm kiếm..." />
+        <button class="icon-btn notif-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1>Danh sách khu vui chơi</h1>
+        <p>Quản lý thông tin và trạng thái các khu vui chơi</p>
+      </div>
+
+      <!-- 2 Tabs -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('nap-tien', this)">Số dư KVC nạp tiền</button>
+        <button class="tab-btn" onclick="switchTab('cong-no', this)">Số dư KVC công nợ</button>
+      </div>
+
+      <!-- Tab 1: Công nợ -->
+      <div class="tab-panel" id="cong-no">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm khu vui chơi..." oninput="filterTable('tbl-cong-no', this.value)" />
+            <select class="tb-select" onchange="filterTableByStatus('tbl-cong-no', this.value)">
+              <option value="">Tất cả trạng thái</option>
+              <option value="Hoạt động">Hoạt động</option>
+              <option value="Tạm dừng">Tạm dừng</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table id="tbl-cong-no">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Tên khu vui chơi</th>
+                  <th>Mã KVC</th>
+                  <th>Địa điểm</th>
+                  <th>Công nợ hiện tại</th>
+                  <th>Hạn mức công nợ</th>
+                  <th>Ngày đến hạn</th>
+                  <th>Trạng thái</th>
+                                  </tr>
+              </thead>
+              <tbody>
+                <tr data-name="TLTY" data-status="Hoạt động">
+                  <td style="color:#6b7280">01</td>
+                  <td><strong style="color:#fff">TLTY</strong></td>
+                  <td style="color:#6b7280">KVC-001</td>
+                  <td>—</td>
+                  <td><span class="amount amount-red">125,000,000 đ</span></td>
+                  <td>200,000,000 đ</td>
+                  <td>30/06/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Sơn Tiên" data-status="Hoạt động">
+                  <td style="color:#6b7280">02</td>
+                  <td><strong style="color:#fff">Sơn Tiên</strong></td>
+                  <td style="color:#6b7280">KVC-002</td>
+                  <td>Đồng Nai</td>
+                  <td><span class="amount amount-red">89,500,000 đ</span></td>
+                  <td>150,000,000 đ</td>
+                  <td>15/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Lumiere" data-status="Hoạt động">
+                  <td style="color:#6b7280">03</td>
+                  <td><strong style="color:#fff">Lumiere</strong></td>
+                  <td style="color:#6b7280">KVC-003</td>
+                  <td>—</td>
+                  <td><span class="amount amount-red">210,000,000 đ</span></td>
+                  <td>250,000,000 đ</td>
+                  <td>05/07/2026</td>
+                  <td><span class="badge badge-amber">⚠ Gần hạn</span></td>
+                </tr>
+                <tr data-name="Mikazuki" data-status="Hoạt động">
+                  <td style="color:#6b7280">04</td>
+                  <td><strong style="color:#fff">Mikazuki</strong></td>
+                  <td style="color:#6b7280">KVC-004</td>
+                  <td>Đà Nẵng</td>
+                  <td><span class="amount amount-red">67,000,000 đ</span></td>
+                  <td>100,000,000 đ</td>
+                  <td>20/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Mekong" data-status="Hoạt động">
+                  <td style="color:#6b7280">05</td>
+                  <td><strong style="color:#fff">Mekong</strong></td>
+                  <td style="color:#6b7280">KVC-005</td>
+                  <td>—</td>
+                  <td><span class="amount amount-red">45,000,000 đ</span></td>
+                  <td>120,000,000 đ</td>
+                  <td>10/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Tà Cú" data-status="Hoạt động">
+                  <td style="color:#6b7280">06</td>
+                  <td><strong style="color:#fff">Tà Cú</strong></td>
+                  <td style="color:#6b7280">KVC-006</td>
+                  <td>Bình Thuận</td>
+                  <td><span class="amount amount-red">32,500,000 đ</span></td>
+                  <td>80,000,000 đ</td>
+                  <td>25/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Hồ Tràm" data-status="Hoạt động">
+                  <td style="color:#6b7280">07</td>
+                  <td><strong style="color:#fff">Hồ Tràm</strong></td>
+                  <td style="color:#6b7280">KVC-007</td>
+                  <td>Bà Rịa - Vũng Tàu</td>
+                  <td><span class="amount amount-red">98,000,000 đ</span></td>
+                  <td>150,000,000 đ</td>
+                  <td>01/07/2026</td>
+                  <td><span class="badge badge-amber">⚠ Gần hạn</span></td>
+                </tr>
+                <tr data-name="Nova" data-status="Hoạt động">
+                  <td style="color:#6b7280">08</td>
+                  <td><strong style="color:#fff">Nova</strong></td>
+                  <td style="color:#6b7280">KVC-008</td>
+                  <td>—</td>
+                  <td><span class="amount amount-red">55,000,000 đ</span></td>
+                  <td>100,000,000 đ</td>
+                  <td>18/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Công viên nước Hồ Tây" data-status="Hoạt động">
+                  <td style="color:#6b7280">09</td>
+                  <td><strong style="color:#fff">Công viên nước Hồ Tây</strong></td>
+                  <td style="color:#6b7280">KVC-009</td>
+                  <td>Hà Nội</td>
+                  <td><span class="amount amount-red">41,000,000 đ</span></td>
+                  <td>90,000,000 đ</td>
+                  <td>12/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Sealinks" data-status="Hoạt động">
+                  <td style="color:#6b7280">10</td>
+                  <td><strong style="color:#fff">Sealinks</strong></td>
+                  <td style="color:#6b7280">KVC-010</td>
+                  <td>Phan Thiết, Bình Thuận</td>
+                  <td><span class="amount amount-red">73,000,000 đ</span></td>
+                  <td>130,000,000 đ</td>
+                  <td>08/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Sightseeing HN" data-status="Hoạt động">
+                  <td style="color:#6b7280">11</td>
+                  <td><strong style="color:#fff">Sightseeing HN</strong></td>
+                  <td style="color:#6b7280">KVC-011</td>
+                  <td>Hà Nội</td>
+                  <td><span class="amount amount-red">28,000,000 đ</span></td>
+                  <td>60,000,000 đ</td>
+                  <td>22/07/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Nạp tiền -->
+      <div class="tab-panel active" id="nap-tien">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm khu vui chơi..." oninput="filterTable('tbl-nap-tien', this.value)" />
+            <select class="tb-select" onchange="filterTableByStatus('tbl-nap-tien', this.value)">
+              <option value="">Tất cả trạng thái</option>
+              <option value="Hoạt động">Hoạt động</option>
+              <option value="Tạm dừng">Tạm dừng</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table id="tbl-nap-tien">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Tên khu vui chơi</th>
+                  <th>Mã KVC</th>
+                  <th>Địa điểm</th>
+                  <th>Số dư hiện tại</th>
+                  <th>Tổng đã nạp</th>
+                  <th>Nạp gần nhất</th>
+                  <th>Trạng thái</th>
+                                  </tr>
+              </thead>
+              <tbody>
+                <tr data-name="Bản Mòng" data-status="Hoạt động">
+                  <td style="color:#6b7280">01</td>
+                  <td><strong style="color:#fff">Bản Mòng</strong></td>
+                  <td style="color:#6b7280">KVC-001</td>
+                  <td>Sơn La</td>
+                  <td><span class="amount amount-green">75,000,000 đ</span></td>
+                  <td>500,000,000 đ</td>
+                  <td>20/06/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Sun Group" data-status="Hoạt động">
+                  <td style="color:#6b7280">02</td>
+                  <td><strong style="color:#fff">Sun Group</strong></td>
+                  <td style="color:#6b7280">KVC-002</td>
+                  <td>Đà Nẵng</td>
+                  <td><span class="amount amount-green">120,500,000 đ</span></td>
+                  <td>800,000,000 đ</td>
+                  <td>18/06/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Đồi Rồng" data-status="Hoạt động">
+                  <td style="color:#6b7280">03</td>
+                  <td><strong style="color:#fff">Đồi Rồng</strong></td>
+                  <td style="color:#6b7280">KVC-003</td>
+                  <td>Hải Phòng</td>
+                  <td><span class="amount amount-red">8,200,000 đ</span></td>
+                  <td>350,000,000 đ</td>
+                  <td>10/06/2026</td>
+                  <td><span class="badge badge-amber">⚠ Sắp hết</span></td>
+                </tr>
+                <tr data-name="Delight" data-status="Hoạt động">
+                  <td style="color:#6b7280">04</td>
+                  <td><strong style="color:#fff">Delight</strong></td>
+                  <td style="color:#6b7280">KVC-004</td>
+                  <td>Hà Nội</td>
+                  <td><span class="amount amount-green">54,000,000 đ</span></td>
+                  <td>200,000,000 đ</td>
+                  <td>25/06/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+                <tr data-name="Samten Hills Dalat" data-status="Hoạt động">
+                  <td style="color:#6b7280">05</td>
+                  <td><strong style="color:#fff">Samten Hills Dalat</strong></td>
+                  <td style="color:#6b7280">KVC-005</td>
+                  <td>Đà Lạt, Lâm Đồng</td>
+                  <td><span class="amount amount-green">44,800,000 đ</span></td>
+                  <td>420,000,000 đ</td>
+                  <td>22/06/2026</td>
+                  <td><span class="badge badge-green">● Hoạt động</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌓 Đổi theme</button>
+
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed')}
+function toggleMenu(key){const sub=document.getElementById('sub-'+key);const btn=sub.previousElementSibling;sub.classList.toggle('open');btn.classList.toggle('open')}
+
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function filterTable(tableId, keyword){
+  const rows=document.querySelectorAll('#'+tableId+' tbody tr');
+  const kw=keyword.toLowerCase();
+  rows.forEach(r=>{
+    const name=(r.dataset.name||'').toLowerCase();
+    r.style.display=name.includes(kw)?'':'none';
+  });
+}
+
+function filterTableByStatus(tableId, status){
+  const rows=document.querySelectorAll('#'+tableId+' tbody tr');
+  rows.forEach(r=>{
+    r.style.display=(!status||r.dataset.status===status)?'':'none';
+  });
+}
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem('ppv-theme')||'dark';document.documentElement.setAttribute('data-theme',t==='system'?(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KVC hoàn tiền - ezCloud PPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background-color:#05091a;background-image:radial-gradient(ellipse 70% 55% at 10% 50%,#0a2a5a 0%,transparent 55%),radial-gradient(ellipse 55% 50% at 90% 20%,#2a0e50 0%,transparent 50%),radial-gradient(ellipse 50% 55% at 60% 85%,#0d3060 0%,transparent 50%),radial-gradient(ellipse 45% 40% at 50% 5%,#3a1060 0%,transparent 45%);background-attachment:fixed;color:#eee0d3;min-height:100vh}
+[data-theme="light"] body{background-color:#f0eeff;background-image:radial-gradient(ellipse 65% 55% at 8% 8%,rgba(180,130,255,0.72) 0%,transparent 60%),radial-gradient(ellipse 50% 45% at 90% 18%,rgba(100,168,255,0.62) 0%,transparent 55%),radial-gradient(ellipse 60% 50% at 12% 92%,rgba(255,205,70,0.68) 0%,transparent 55%),radial-gradient(ellipse 55% 45% at 90% 88%,rgba(60,205,175,0.65) 0%,transparent 50%),radial-gradient(ellipse 50% 45% at 50% 48%,rgba(255,255,255,0.82) 0%,transparent 65%);color:#111827}
+.app-shell{display:flex;height:100vh;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0}
+.page-content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:none}
+.page-content::-webkit-scrollbar{display:none}
+.sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;background:rgba(0,0,0,0.60);backdrop-filter:blur(12px);border-right:1px solid rgba(255,255,255,0.10);transition:width 0.3s ease;overflow:hidden}
+.sidebar.collapsed{width:64px}
+[data-theme="light"] .sidebar{background:rgba(255,255,255,0.65);border-right-color:rgba(0,0,0,0.08)}
+.sidebar-brand{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.sidebar.collapsed .sidebar-brand{padding:16px;justify-content:center}
+.brand-logo{width:32px;height:32px;background:rgba(255,255,255,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+[data-theme="light"] .brand-logo{background:rgba(0,0,0,0.10);color:#111827}
+.brand-text{overflow:hidden}
+.brand-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap}
+.brand-role{font-size:11px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .brand-name{color:#111827}
+.sidebar.collapsed .brand-text{display:none}
+.sidebar-nav{flex:1;padding:8px 10px;overflow-y:auto;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.sidebar.collapsed .sidebar-nav{padding:8px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;white-space:nowrap;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#e5e7eb}
+.nav-item.active{background:rgba(99,102,241,0.20);color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-item{color:#374151}
+[data-theme="light"] .nav-item:hover{background:rgba(0,0,0,0.06);color:#111827}
+[data-theme="light"] .nav-item.active{background:rgba(99,102,241,0.12);color:#4338ca}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-arrow{display:none}
+.nav-icon{font-size:15px;line-height:1;flex-shrink:0}
+.nav-label{flex:1}
+.nav-arrow{display:flex;align-items:center;color:#6b7280;transition:transform 0.2s}
+.nav-item.open .nav-arrow{transform:rotate(180deg)}
+.nav-sub{margin-left:28px;margin-top:1px;margin-bottom:2px;overflow:hidden;max-height:0;transition:max-height 0.25s ease}
+.nav-sub.open{max-height:500px}
+.sidebar.collapsed .nav-sub{display:none}
+.nav-sub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;color:#6b7280;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;margin-bottom:1px;white-space:nowrap}
+.nav-sub-item:hover{background:rgba(255,255,255,0.05);color:#d1d5db}
+.nav-sub-item.active{color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-sub-item.active{color:#4338ca}
+.nav-sub-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.5;flex-shrink:0}
+.sidebar-user{border-top:1px solid rgba(255,255,255,0.07);padding:10px}
+[data-theme="light"] .sidebar-user{border-top-color:rgba(0,0,0,0.08)}
+.user-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
+[data-theme="light"] .user-card{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.08)}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.avatar{width:34px;height:34px;background:linear-gradient(135deg,#4b5563,#374151);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;position:relative;flex-shrink:0}
+.avatar-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid #1f2937;border-radius:50%}
+.user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.user-email{font-size:10px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .user-name{color:#111827}
+.user-actions{display:flex;gap:6px}
+.user-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;border-radius:8px;font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;transition:background 0.15s,color 0.15s;text-decoration:none}
+.user-btn:hover{background:rgba(255,255,255,0.06);color:#fff}
+.user-btn.logout:hover{background:rgba(239,68,68,0.10);color:#f87171}
+[data-theme="light"] .user-btn{color:#6b7280}
+.header{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(0,0,0,0.50);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.10)}
+[data-theme="light"] .header{background:rgba(255,255,255,0.60);border-bottom-color:rgba(0,0,0,0.08)}
+.header-left,.header-right{display:flex;align-items:center;gap:12px}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:none;border:none;color:#9ca3af;cursor:pointer;transition:background 0.15s,color 0.15s}
+.icon-btn:hover{background:rgba(255,255,255,0.07);color:#fff}
+[data-theme="light"] .icon-btn{color:#6b7280}
+.page-title{font-size:14px;font-weight:500;color:#d1d5db}
+[data-theme="light"] .page-title{color:#111827}
+.search-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:6px 12px;font-size:12px;color:#d1d5db;outline:none;width:176px;font-family:inherit}
+.search-input::placeholder{color:#4b5563}
+[data-theme="light"] .search-input{background:rgba(255,255,255,0.80);border-color:rgba(0,0,0,0.15);color:#111827}
+.notif-btn{position:relative}
+.notif-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;background:#ef4444;border-radius:50%}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.page-header p{font-size:13px;color:#6b7280}
+[data-theme="light"] .page-header h1{color:#111827}
+.card{background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px}
+[data-theme="light"] .card{background:rgba(255,255,255,0.60);border-color:rgba(0,0,0,0.08)}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tb-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;min-width:200px}
+.tb-input::placeholder{color:#4b5563}
+[data-theme="light"] .tb-input{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.tb-date{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;cursor:pointer;color-scheme:dark}
+[data-theme="light"] .tb-date{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827;color-scheme:light}
+.tb-label{font-size:12px;color:#6b7280;white-space:nowrap}
+.tb-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;cursor:pointer}
+.tb-select option{background:#1a1f3a}
+[data-theme="light"] .tb-select{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.table-wrap{overflow-x:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.10) transparent}
+.table-wrap::-webkit-scrollbar{height:4px}
+.table-wrap::-webkit-scrollbar-track{background:transparent}
+.table-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.08);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d1d5db;vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+[data-theme="light"] th{color:#374151;border-bottom-color:rgba(0,0,0,0.10)}
+[data-theme="light"] td{color:#111827;border-bottom-color:rgba(0,0,0,0.06)}
+[data-theme="light"] tr:hover td{background:rgba(0,0,0,0.03)}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+.badge-red{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
+.badge-indigo{background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.badge-sky{background:rgba(14,165,233,0.15);color:#38bdf8;border:1px solid rgba(14,165,233,0.25)}
+.badge-gray{background:rgba(107,114,128,0.20);color:#9ca3af;border:1px solid rgba(107,114,128,0.25)}
+[data-theme="light"] .badge-green{background:rgba(22,163,74,0.12);color:#16a34a;border-color:rgba(22,163,74,0.30)}
+[data-theme="light"] .badge-amber{background:rgba(180,83,9,0.10);color:#b45309;border-color:rgba(180,83,9,0.25)}
+[data-theme="light"] .badge-red{background:rgba(220,38,38,0.10);color:#dc2626;border-color:rgba(220,38,38,0.25)}
+[data-theme="light"] .badge-indigo{background:rgba(99,102,241,0.10);color:#4338ca;border-color:rgba(99,102,241,0.25)}
+[data-theme="light"] .badge-sky{background:rgba(2,132,199,0.10);color:#0369a1;border-color:rgba(2,132,199,0.25)}
+[data-theme="light"] .badge-gray{background:rgba(107,114,128,0.10);color:#374151;border-color:rgba(107,114,128,0.20)}
+.mono{font-family:'Courier New',monospace;font-size:12px;color:#9ca3af}
+[data-theme="light"] .mono{color:#374151}
+.amount{font-weight:600;font-variant-numeric:tabular-nums}
+.amount-red{color:#f87171}
+.amount-green{color:#4ade80}
+[data-theme="light"] .amount-red{color:#dc2626}
+[data-theme="light"] .amount-green{color:#16a34a}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);flex-wrap:wrap;gap:10px}
+[data-theme="light"] .pagination{border-top-color:rgba(0,0,0,0.08)}
+.pagination-info{font-size:12px;color:#6b7280}
+.pagination-btns{display:flex;align-items:center;gap:6px}
+.pg-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);color:#9ca3af;font-size:13px;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.pg-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.pg-btn.active{background:rgba(99,102,241,0.30);border-color:#6366f1;color:#a5b4fc;font-weight:700}
+.pg-btn:disabled{opacity:0.3;cursor:not-allowed}
+[data-theme="light"] .pg-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.12);color:#374151}
+[data-theme="light"] .pg-btn:hover{background:rgba(0,0,0,0.08);color:#111827}
+[data-theme="light"] .pg-btn.active{background:rgba(99,102,241,0.15);border-color:#6366f1;color:#4338ca}
+[data-theme="light"] td strong{color:#111827 !important}
+[data-theme="light"] .theme-toggle{background:rgba(0,0,0,0.07);border-color:rgba(0,0,0,0.15);color:#374151}
+.theme-toggle{position:fixed;bottom:24px;right:24px;padding:8px 16px;border-radius:20px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;cursor:pointer;backdrop-filter:blur(8px);font-family:inherit;transition:background 0.2s;z-index:500}
+.theme-toggle:hover{background:rgba(255,255,255,0.18)}
+.tabs-bar{display:flex;gap:4px;margin-bottom:16px}
+.tab-btn{padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.tab-btn:hover{background:rgba(255,255,255,0.10);color:#fff}
+.tab-btn.active{background:rgba(99,102,241,0.25);border-color:#6366f1;color:#a5b4fc;font-weight:600}
+.tab-panel{display:none}.tab-panel.active{display:block}
+[data-theme="light"] .tab-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.10);color:#6b7280}
+[data-theme="light"] .tab-btn.active{background:rgba(99,102,241,0.12);border-color:#6366f1;color:#4338ca}
+.reason-cell{font-size:12px;color:#9ca3af;max-width:200px;white-space:normal;line-height:1.4}
+[data-theme="light"] .reason-cell{color:#6b7280}
+/* Add button */
+.add-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,rgba(99,102,241,0.25),rgba(79,70,229,0.20));border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:inherit;margin-left:auto}
+.add-btn:hover{background:linear-gradient(135deg,rgba(99,102,241,0.40),rgba(79,70,229,0.35));border-color:#6366f1;color:#c7d2fe}
+[data-theme="light"] .add-btn{background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#4338ca}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:linear-gradient(135deg,#1a1f3a,#12172e);border:1px solid rgba(255,255,255,0.12);border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.60)}
+[data-theme="light"] .modal{background:#fff;border-color:rgba(0,0,0,0.12);box-shadow:0 24px 64px rgba(0,0,0,0.20)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0}
+.modal-title{font-size:16px;font-weight:700;color:#fff}
+[data-theme="light"] .modal-title{color:#111827}
+.modal-close{background:none;border:none;color:#6b7280;font-size:18px;cursor:pointer;line-height:1;padding:4px}
+.modal-close:hover{color:#fff}
+[data-theme="light"] .modal-close:hover{color:#111827}
+.modal-body{padding:20px 24px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:0 24px 20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:12px;font-weight:500;color:#9ca3af}
+[data-theme="light"] .form-label{color:#374151}
+.form-input,.form-select,.form-textarea{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;width:100%;transition:border-color 0.15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#6366f1}
+.form-select option{background:#1a1f3a}
+.form-textarea{resize:vertical;min-height:72px}
+[data-theme="light"] .form-input,[data-theme="light"] .form-select,[data-theme="light"] .form-textarea{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.15);color:#111827}
+[data-theme="light"] .form-select option{background:#fff}
+.btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all 0.15s}
+.btn-cancel{background:rgba(255,255,255,0.07);color:#9ca3af;border:1px solid rgba(255,255,255,0.12)}
+.btn-cancel:hover{background:rgba(255,255,255,0.12);color:#fff}
+.btn-save{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.30)}
+.btn-save:hover{background:linear-gradient(135deg,#818cf8,#6366f1)}
+[data-theme="light"] .btn-cancel{background:rgba(0,0,0,0.05);color:#374151;border-color:rgba(0,0,0,0.12)}
+
+/* ── Kanban ── */
+.kanban-wrap{overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.10) transparent}
+.kanban-wrap::-webkit-scrollbar{height:6px}
+.kanban-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px}
+.kanban-board{display:flex;gap:16px;min-width:max-content;padding:4px 2px 12px}
+.kb-col{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.kb-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}
+.kb-header-gray{background:rgba(107,114,128,0.18);color:#9ca3af;border:1px solid rgba(107,114,128,0.20)}
+.kb-header-sky{background:rgba(14,165,233,0.15);color:#38bdf8;border:1px solid rgba(14,165,233,0.22)}
+.kb-header-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.22)}
+.kb-header-indigo{background:rgba(99,102,241,0.18);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.kb-header-green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.22)}
+.kb-header-red{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.22)}
+[data-theme="light"] .kb-header-gray{background:rgba(107,114,128,0.10);color:#374151;border-color:rgba(107,114,128,0.18)}
+[data-theme="light"] .kb-header-sky{background:rgba(2,132,199,0.10);color:#0369a1;border-color:rgba(2,132,199,0.20)}
+[data-theme="light"] .kb-header-amber{background:rgba(180,83,9,0.10);color:#b45309;border-color:rgba(180,83,9,0.20)}
+[data-theme="light"] .kb-header-indigo{background:rgba(99,102,241,0.10);color:#4338ca;border-color:rgba(99,102,241,0.20)}
+[data-theme="light"] .kb-header-green{background:rgba(22,163,74,0.10);color:#16a34a;border-color:rgba(22,163,74,0.20)}
+[data-theme="light"] .kb-header-red{background:rgba(220,38,38,0.10);color:#dc2626;border-color:rgba(220,38,38,0.20)}
+.kb-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,0.12);font-size:11px;font-weight:700;padding:0 5px}
+[data-theme="light"] .kb-count{background:rgba(0,0,0,0.08)}
+.kb-cards{display:flex;flex-direction:column;gap:8px;min-height:60px}
+.kb-card{background:linear-gradient(135deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;cursor:pointer;transition:border-color 0.15s,transform 0.15s}
+.kb-card:hover{border-color:rgba(99,102,241,0.40);transform:translateY(-1px)}
+[data-theme="light"] .kb-card{background:rgba(255,255,255,0.85);border-color:rgba(0,0,0,0.08)}
+[data-theme="light"] .kb-card:hover{border-color:rgba(99,102,241,0.35)}
+.kb-card-id{font-size:11px;font-weight:600;color:#818cf8;margin-bottom:6px;font-family:'Courier New',monospace}
+[data-theme="light"] .kb-card-id{color:#4338ca}
+.kb-card-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px}
+[data-theme="light"] .kb-card-name{color:#111827}
+.kb-card-sub{font-size:11px;color:#6b7280;margin-bottom:8px}
+.kb-card-footer{display:flex;align-items:center;justify-content:space-between}
+.kb-card-amount{font-size:12px;font-weight:700;color:#f87171}
+[data-theme="light"] .kb-card-amount{color:#dc2626}
+.kb-card-date{font-size:11px;color:#4b5563}
+.kb-empty{text-align:center;padding:20px 10px;font-size:12px;color:#374151;opacity:0.5}
+.kb-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-bottom:6px;letter-spacing:0.03em}
+.kb-tag-teal{background:rgba(20,184,166,0.18);color:#2dd4bf;border:1px solid rgba(20,184,166,0.28)}
+.kb-tag-indigo{background:rgba(99,102,241,0.18);color:#a5b4fc;border:1px solid rgba(99,102,241,0.28)}
+.kb-tag-rose{background:rgba(244,63,94,0.18);color:#fb7185;border:1px solid rgba(244,63,94,0.28)}
+[data-theme="light"] .kb-tag-teal{background:rgba(20,184,166,0.12);color:#0d9488;border-color:rgba(20,184,166,0.25)}
+[data-theme="light"] .kb-tag-indigo{background:rgba(99,102,241,0.10);color:#4338ca;border-color:rgba(99,102,241,0.22)}
+[data-theme="light"] .kb-tag-rose{background:rgba(244,63,94,0.10);color:#e11d48;border-color:rgba(244,63,94,0.22)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">ez</div>
+      <div class="brand-text"><div class="brand-name">ezCloud PPV</div><div class="brand-role">admin</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item has-children" onclick="toggleMenu('park')"><span class="nav-icon">🎢</span><span class="nav-label">Khu vui chơi</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub" id="sub-park">
+        <a href="danh-sach-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Danh sách khu vui chơi</a>
+        <a href="ma-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Mã khu vui chơi</a>
+        <a href="so-du-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Số dư khu vui chơi hàng ngày</a>
+        <a href="nap-tien-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Danh sách nạp tiền KVC theo ngày</a>
+        <a href="chi-tiet-gia-von-ve-ban.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Chi tiết giá vốn vé bán</a>
+        <a href="doi-soat-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Đối soát Khu vui chơi</a>
+        <a href="kvc-hoan-tien.html" class="nav-sub-item"><span class="nav-sub-dot"></span>KVC hoàn tiền</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">🤝</span><span class="nav-label">Đại lý</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Khách lẻ</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Đối soát Vin</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span class="nav-label">Các đại lý OTA</span></a>
+      <div class="nav-item has-children open" onclick="toggleMenu('hoantien')"><span class="nav-icon">🔄</span><span class="nav-label">Hoàn tiền</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub open" id="sub-hoantien">
+        <a href="hoan-tien-kvc.html" class="nav-sub-item active"><span class="nav-sub-dot"></span>Quy trình hoàn tiền</a>
+        <a href="trang-thai-hoan-tien-kh.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Trạng thái hoàn tiền cho khách hàng</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Quy trình đối soát</span></a>    </nav>
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="user-info">
+          <div class="avatar">AT<span class="avatar-dot"></span></div>
+          <div style="min-width:0"><div class="user-name">Anh Thảo</div><div class="user-email">admin@ezcloud.vn</div></div>
+        </div>
+        <div class="user-actions">
+          <a href="system.html" class="user-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg> Cài đặt</a>
+          <button class="user-btn logout"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" onclick="toggleSidebar()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h16"/></svg></button>
+        <span class="page-title">Khu vui chơi / KVC hoàn tiền</span>
+      </div>
+      <div class="header-right">
+        <input type="search" class="search-input" placeholder="Tìm kiếm..." />
+        <button class="icon-btn notif-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1>KVC hoàn tiền</h1>
+        <p>Danh sách các giao dịch hoàn tiền cho khu vui chơi</p>
+      </div>
+
+      <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('quytrinh',this)">Quy trình hoàn tiền</button>
+        <button class="tab-btn" onclick="switchTab('nap',this)">KVC nạp tiền</button>
+        <button class="tab-btn" onclick="switchTab('cn',this)">KVC công nợ</button>
+      </div>
+
+      <!-- Tab Kanban: Quy trình hoàn tiền -->
+      <div class="tab-panel active" id="tab-quytrinh">
+        <div class="card">
+          <div class="kanban-wrap">
+            <div class="kanban-board">
+
+              <!-- Yêu cầu hoàn tiền -->
+              <div class="kb-col">
+                <div class="kb-header kb-header-gray">Yêu cầu hoàn tiền <span class="kb-count">2</span></div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Sealinks</div>
+                    <div class="kb-card-sub">Mã: DV20260429007<br>Yêu cầu ngày 29/04/2026</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">500.000 ₫</span>
+                      <span class="kb-card-date">29/04/2026</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Mekong</div>
+                    <div class="kb-card-sub">Mã: DV20250917012<br>Yêu cầu ngày 17/09/2025</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">360.000 ₫</span>
+                      <span class="kb-card-date">17/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chờ duyệt nội bộ -->
+              <div class="kb-col">
+                <div class="kb-header kb-header-sky">Chờ duyệt nội bộ <span class="kb-count">2</span></div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Vin Nam Hội An</div>
+                    <div class="kb-card-sub">Mã: DV20250917003<br>Lỗi hệ thống trùng đặt vé</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">750.000 ₫</span>
+                      <span class="kb-card-date">17/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Hồ Tràm</div>
+                    <div class="kb-card-sub">Mã: DV20250917013<br>Yêu cầu quá hạn chính sách</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">350.000 ₫</span>
+                      <span class="kb-card-date">17/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Đang xử lý hoàn -->
+              <div class="kb-col">
+                <div class="kb-header kb-header-amber">Đang xử lý hoàn <span class="kb-count">3</span></div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Vin Cửa Hội</div>
+                    <div class="kb-card-sub">Mã: DV20260428006<br>KVC đóng cửa đột xuất do bảo trì</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">1.600.000 ₫</span>
+                      <span class="kb-card-date">28/04/2026</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Nova Phan Thiết</div>
+                    <div class="kb-card-sub">Mã: DV20250918014<br>KVC đóng cửa do sự cố kỹ thuật</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">1.500.000 ₫</span>
+                      <span class="kb-card-date">18/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Công viên nước Hồ Tây</div>
+                    <div class="kb-card-sub">Mã: DV20250920015<br>Trùng đặt vé, hủy 1 giao dịch</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">460.000 ₫</span>
+                      <span class="kb-card-date">20/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chờ xác nhận hoàn -->
+              <div class="kb-col">
+                <div class="kb-header kb-header-indigo">Chờ xác nhận hoàn <span class="kb-count">2</span></div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Vin Phú Quốc</div>
+                    <div class="kb-card-sub">Mã: DV20250918004<br>Khách không đến, yêu cầu hoàn toàn bộ</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">1.200.000 ₫</span>
+                      <span class="kb-card-date">18/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Mikazuki</div>
+                    <div class="kb-card-sub">Mã: DV20250916011<br>Lỗi hệ thống xuất vé sai loại</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">2.250.000 ₫</span>
+                      <span class="kb-card-date">16/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hoàn tất -->
+              <div class="kb-col">
+                <div class="kb-header kb-header-green">Hoàn tất <span class="kb-count">4</span></div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Bản Mòng</div>
+                    <div class="kb-card-sub">Mã: DV20250916001<br>Hoàn tất ngày 16/09/2025</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">360.000 ₫</span>
+                      <span class="kb-card-date">16/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Bản Mòng</div>
+                    <div class="kb-card-sub">Mã: DV20250916002<br>Hoàn tất ngày 16/09/2025</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">120.000 ₫</span>
+                      <span class="kb-card-date">16/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Sơn Tiên</div>
+                    <div class="kb-card-sub">Mã: DV20250916010<br>Hoàn tất ngày 16/09/2025</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">280.000 ₫</span>
+                      <span class="kb-card-date">16/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Mikazuki</div>
+                    <div class="kb-card-sub">Mã: DV20250916011<br>Hoàn tất ngày 16/09/2025</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">2.250.000 ₫</span>
+                      <span class="kb-card-date">16/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Từ chối -->
+              <div class="kb-col">
+                <div class="kb-header kb-header-red">Từ chối <span class="kb-count">2</span></div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-name">Thủy Cung Lotte</div>
+                    <div class="kb-card-sub">Mã: DV20250920005<br>Yêu cầu sau ngày sử dụng</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount" style="color:#f87171">400.000 ₫</span>
+                      <span class="kb-card-date">20/09/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-name">Hồ Tràm</div>
+                    <div class="kb-card-sub">Mã: DV20250917013<br>Yêu cầu sau 30 ngày, quá hạn</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount" style="color:#f87171">350.000 ₫</span>
+                      <span class="kb-card-date">17/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 1: KVC nạp tiền -->
+      <div class="tab-panel" id="tab-nap">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm mã đặt vé, mã KVC, tên KVC..." oninput="applyFilter('nap')" id="search-nap" />
+            <span class="tb-label">Từ ngày</span>
+            <input type="date" class="tb-date" id="from-nap" onchange="applyFilter('nap')" />
+            <span class="tb-label">Đến ngày</span>
+            <input type="date" class="tb-date" id="to-nap" onchange="applyFilter('nap')" />
+            <select class="tb-select" id="filter-tt-nap" onchange="applyFilter('nap')">
+              <option value="">Tất cả trạng thái</option>
+              <option value="hoantat">Hoàn tất</option>
+              <option value="dangxuly">Đang xử lý</option>
+              <option value="tuchoi">Từ chối</option>
+            </select>
+            <button class="add-btn" onclick="openAdd('nap')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>Thêm hoàn tiền</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã đặt vé</th>
+                  <th>Ngày hoàn</th>
+                  <th>Mã KVC</th>
+                  <th>Tên KVC</th>
+                  <th>Mã loại vé</th>
+                  <th>Tên loại vé</th>
+                  <th>SL vé</th>
+                  <th style="text-align:right">Số tiền hoàn KVC (VNĐ)</th>
+                  <th>Lý do hoàn</th>
+                  <th>Trạng thái KVC</th>
+                  <th style="text-align:right">Số tiền hoàn cho KH (VNĐ)</th>
+                  <th>Tình trạng hoàn tiền cho KH</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-nap">
+                <tr data-date="2025-09-16" data-search="dv20250916001 11681 bản mòng ve nguoi lon" data-tt="hoantat">
+                  <td class="mono">DV20250916001</td><td class="mono">16/09/2025</td><td>11681</td>
+                  <td><strong style="color:#fff">Bản Mòng</strong></td>
+                  <td class="mono">VNL001</td><td>Vé người lớn</td><td style="text-align:center">2</td>
+                  <td class="amount amount-red" style="text-align:right">360.000</td>
+                  <td class="reason-cell">Khách hủy trước ngày sử dụng</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-green" style="text-align:right">360.000</td>
+                  <td><span class="badge badge-green">Đã hoàn</span></td>
+                </tr>
+                <tr data-date="2025-09-16" data-search="dv20250916002 11681 bản mòng ve tre em" data-tt="hoantat">
+                  <td class="mono">DV20250916002</td><td class="mono">16/09/2025</td><td>11681</td>
+                  <td><strong style="color:#fff">Bản Mòng</strong></td>
+                  <td class="mono">VTE001</td><td>Vé trẻ em</td><td style="text-align:center">1</td>
+                  <td class="amount amount-red" style="text-align:right">120.000</td>
+                  <td class="reason-cell">Khách hủy trước ngày sử dụng</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-green" style="text-align:right">120.000</td>
+                  <td><span class="badge badge-green">Đã hoàn</span></td>
+                </tr>
+                <tr data-date="2025-09-17" data-search="dv20250917003 11682 vin nam hoi an ve nguoi lon" data-tt="dangxuly">
+                  <td class="mono">DV20250917003</td><td class="mono">17/09/2025</td><td>11682</td>
+                  <td><strong style="color:#fff">Vin Nam Hội An</strong></td>
+                  <td class="mono">VNL002</td><td>Vé người lớn</td><td style="text-align:center">3</td>
+                  <td class="amount amount-red" style="text-align:right">750.000</td>
+                  <td class="reason-cell">Lỗi hệ thống trùng đặt vé</td>
+                  <td><span class="badge badge-amber">Đang xử lý</span></td>
+                  <td class="amount amount-red" style="text-align:right">—</td>
+                  <td><span class="badge badge-amber">Chờ xác nhận</span></td>
+                </tr>
+                <tr data-date="2025-09-18" data-search="dv20250918004 11683 vin phu quoc ve gia dinh" data-tt="hoantat">
+                  <td class="mono">DV20250918004</td><td class="mono">18/09/2025</td><td>11683</td>
+                  <td><strong style="color:#fff">Vin Phú Quốc</strong></td>
+                  <td class="mono">VGD001</td><td>Vé gia đình</td><td style="text-align:center">1</td>
+                  <td class="amount amount-red" style="text-align:right">1.200.000</td>
+                  <td class="reason-cell">Khách không đến, yêu cầu hoàn toàn bộ</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-green" style="text-align:right">1.200.000</td>
+                  <td><span class="badge badge-green">Đã hoàn</span></td>
+                </tr>
+                <tr data-date="2025-09-20" data-search="dv20250920005 11684 thuy cung lotte ve nguoi lon" data-tt="tuchoi">
+                  <td class="mono">DV20250920005</td><td class="mono">20/09/2025</td><td>11684</td>
+                  <td><strong style="color:#fff">Thủy Cung Lotte</strong></td>
+                  <td class="mono">VNL001</td><td>Vé người lớn</td><td style="text-align:center">2</td>
+                  <td class="amount amount-red" style="text-align:right">400.000</td>
+                  <td class="reason-cell">Yêu cầu sau ngày sử dụng, không đủ điều kiện</td>
+                  <td><span class="badge badge-red">Từ chối</span></td>
+                  <td style="text-align:right;color:#4b5563">—</td>
+                  <td><span class="badge badge-red">Không hoàn</span></td>
+                </tr>
+                <tr data-date="2026-04-28" data-search="dv20260428006 11685 vin cua hoi ve nguoi lon" data-tt="hoantat">
+                  <td class="mono">DV20260428006</td><td class="mono">28/04/2026</td><td>11685</td>
+                  <td><strong style="color:#fff">Vin Cửa Hội</strong></td>
+                  <td class="mono">VNL001</td><td>Vé người lớn</td><td style="text-align:center">4</td>
+                  <td class="amount amount-red" style="text-align:right">1.600.000</td>
+                  <td class="reason-cell">KVC đóng cửa đột xuất do bảo trì</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-amber" style="text-align:right">1.600.000</td>
+                  <td><span class="badge badge-sky">Đang chuyển</span></td>
+                </tr>
+                <tr data-date="2026-04-29" data-search="dv20260429007 11686 sealinks ve nguoi lon" data-tt="dangxuly">
+                  <td class="mono">DV20260429007</td><td class="mono">29/04/2026</td><td>11686</td>
+                  <td><strong style="color:#fff">Sealinks</strong></td>
+                  <td class="mono">VNL003</td><td>Vé người lớn</td><td style="text-align:center">2</td>
+                  <td class="amount amount-red" style="text-align:right">500.000</td>
+                  <td class="reason-cell">Khách hủy do thời tiết xấu</td>
+                  <td><span class="badge badge-amber">Đang xử lý</span></td>
+                  <td class="amount amount-red" style="text-align:right">—</td>
+                  <td><span class="badge badge-gray">Chưa xử lý</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-nap" class="pagination"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: KVC công nợ -->
+      <div class="tab-panel" id="tab-cn">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm mã đặt vé, mã KVC, tên KVC..." oninput="applyFilter('cn')" id="search-cn" />
+            <span class="tb-label">Từ ngày</span>
+            <input type="date" class="tb-date" id="from-cn" onchange="applyFilter('cn')" />
+            <span class="tb-label">Đến ngày</span>
+            <input type="date" class="tb-date" id="to-cn" onchange="applyFilter('cn')" />
+            <select class="tb-select" id="filter-tt-cn" onchange="applyFilter('cn')">
+              <option value="">Tất cả trạng thái</option>
+              <option value="hoantat">Hoàn tất</option>
+              <option value="dangxuly">Đang xử lý</option>
+              <option value="tuchoi">Từ chối</option>
+            </select>
+            <button class="add-btn" onclick="openAdd('cn')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>Thêm hoàn tiền</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã đặt vé</th>
+                  <th>Ngày hoàn</th>
+                  <th>Mã KVC</th>
+                  <th>Tên KVC</th>
+                  <th>Mã loại vé</th>
+                  <th>Tên loại vé</th>
+                  <th>SL vé</th>
+                  <th style="text-align:right">Số tiền hoàn KVC (VNĐ)</th>
+                  <th>Lý do hoàn</th>
+                  <th>Trạng thái KVC</th>
+                  <th style="text-align:right">Số tiền hoàn cho KH (VNĐ)</th>
+                  <th>Tình trạng hoàn tiền cho KH</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-cn">
+                <tr data-date="2025-09-16" data-search="dv20250916010 21001 son tien ve nguoi lon" data-tt="hoantat">
+                  <td class="mono">DV20250916010</td><td class="mono">16/09/2025</td><td>21001</td>
+                  <td><strong style="color:#fff">Sơn Tiên</strong></td>
+                  <td class="mono">ST001</td><td>Vé người lớn</td><td style="text-align:center">2</td>
+                  <td class="amount amount-red" style="text-align:right">280.000</td>
+                  <td class="reason-cell">Khách hủy trước ngày sử dụng</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-green" style="text-align:right">280.000</td>
+                  <td><span class="badge badge-green">Đã hoàn</span></td>
+                </tr>
+                <tr data-date="2025-09-16" data-search="dv20250916011 21002 mikazuki ve nguoi lon" data-tt="hoantat">
+                  <td class="mono">DV20250916011</td><td class="mono">16/09/2025</td><td>21002</td>
+                  <td><strong style="color:#fff">Mikazuki</strong></td>
+                  <td class="mono">MK001</td><td>Vé người lớn</td><td style="text-align:center">5</td>
+                  <td class="amount amount-red" style="text-align:right">2.250.000</td>
+                  <td class="reason-cell">Lỗi hệ thống xuất vé sai loại</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-green" style="text-align:right">2.250.000</td>
+                  <td><span class="badge badge-green">Đã hoàn</span></td>
+                </tr>
+                <tr data-date="2025-09-17" data-search="dv20250917012 21003 mekong ve tre em" data-tt="dangxuly">
+                  <td class="mono">DV20250917012</td><td class="mono">17/09/2025</td><td>21003</td>
+                  <td><strong style="color:#fff">Mekong</strong></td>
+                  <td class="mono">ME002</td><td>Vé trẻ em</td><td style="text-align:center">3</td>
+                  <td class="amount amount-red" style="text-align:right">360.000</td>
+                  <td class="reason-cell">Khách khiếu nại chất lượng dịch vụ</td>
+                  <td><span class="badge badge-amber">Đang xử lý</span></td>
+                  <td class="amount amount-red" style="text-align:right">—</td>
+                  <td><span class="badge badge-amber">Chờ xác nhận</span></td>
+                </tr>
+                <tr data-date="2025-09-17" data-search="dv20250917013 21004 ho tram ve nguoi lon" data-tt="tuchoi">
+                  <td class="mono">DV20250917013</td><td class="mono">17/09/2025</td><td>21004</td>
+                  <td><strong style="color:#fff">Hồ Tràm</strong></td>
+                  <td class="mono">HT001</td><td>Vé người lớn</td><td style="text-align:center">1</td>
+                  <td class="amount amount-red" style="text-align:right">350.000</td>
+                  <td class="reason-cell">Yêu cầu sau 30 ngày, quá hạn chính sách</td>
+                  <td><span class="badge badge-red">Từ chối</span></td>
+                  <td style="text-align:right;color:#4b5563">—</td>
+                  <td><span class="badge badge-red">Không hoàn</span></td>
+                </tr>
+                <tr data-date="2025-09-18" data-search="dv20250918014 21005 nova phan thiet ve gia dinh" data-tt="hoantat">
+                  <td class="mono">DV20250918014</td><td class="mono">18/09/2025</td><td>21005</td>
+                  <td><strong style="color:#fff">Nova Phan Thiết</strong></td>
+                  <td class="mono">NV001</td><td>Vé gia đình</td><td style="text-align:center">1</td>
+                  <td class="amount amount-red" style="text-align:right">1.500.000</td>
+                  <td class="reason-cell">KVC đóng cửa do sự cố kỹ thuật</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-amber" style="text-align:right">1.500.000</td>
+                  <td><span class="badge badge-sky">Đang chuyển</span></td>
+                </tr>
+                <tr data-date="2025-09-20" data-search="dv20250920015 21006 cong vien nuoc ho tay ve nguoi lon" data-tt="hoantat">
+                  <td class="mono">DV20250920015</td><td class="mono">20/09/2025</td><td>21006</td>
+                  <td><strong style="color:#fff">Công viên nước Hồ Tây</strong></td>
+                  <td class="mono">CVNT001</td><td>Vé người lớn</td><td style="text-align:center">2</td>
+                  <td class="amount amount-red" style="text-align:right">460.000</td>
+                  <td class="reason-cell">Trùng đặt vé, hủy 1 giao dịch</td>
+                  <td><span class="badge badge-green">Hoàn tất</span></td>
+                  <td class="amount amount-green" style="text-align:right">460.000</td>
+                  <td><span class="badge badge-green">Đã hoàn</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-cn" class="pagination"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌓 Giao diện</button>
+
+<!-- Modal thêm hoàn tiền -->
+<div class="modal-overlay" id="add-modal" onclick="if(event.target===this)closeAdd()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="add-modal-title">Thêm hoàn tiền</span>
+      <button class="modal-close" onclick="closeAdd()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Mã đặt vé</label>
+          <input class="form-input" id="af-madv" placeholder="DV20260001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ngày hoàn</label>
+          <input class="form-input" type="date" id="af-ngay">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mã KVC</label>
+          <input class="form-input" id="af-makvc" placeholder="11681">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên KVC</label>
+          <input class="form-input" id="af-tenkvc" placeholder="Tên khu vui chơi">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mã loại vé</label>
+          <input class="form-input" id="af-malov" placeholder="VNL001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên loại vé</label>
+          <input class="form-input" id="af-tenlov" placeholder="Vé người lớn">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số lượng vé</label>
+          <input class="form-input" type="number" id="af-sl" placeholder="1" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số tiền hoàn KVC (VNĐ)</label>
+          <input class="form-input" type="number" id="af-tienhoankvc" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số tiền hoàn cho KH (VNĐ)</label>
+          <input class="form-input" type="number" id="af-tienhoankhach" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Trạng thái KVC</label>
+          <select class="form-select" id="af-tt">
+            <option value="dangxuly">Đang xử lý</option>
+            <option value="hoantat">Hoàn tất</option>
+            <option value="tuchoi">Từ chối</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tình trạng hoàn cho KH</label>
+          <select class="form-select" id="af-ttkh">
+            <option value="chuaxuly">Chưa xử lý</option>
+            <option value="choixacnhan">Chờ xác nhận</option>
+            <option value="dangchuyen">Đang chuyển</option>
+            <option value="dahoantien">Đã hoàn</option>
+            <option value="khonghoan">Không hoàn</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Lý do hoàn</label>
+          <textarea class="form-textarea" id="af-lydo" placeholder="Nhập lý do hoàn tiền..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeAdd()">Hủy</button>
+      <button class="btn btn-save" onclick="saveAdd()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed')}
+function toggleMenu(key){const sub=document.getElementById('sub-'+key);const btn=sub.previousElementSibling;sub.classList.toggle('open');btn.classList.toggle('open')}
+
+function switchTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+const PAGE_SIZE = 100;
+const state = { nap: 1, cn: 1 };
+
+function applyFilter(tab){
+  state[tab] = 1;
+  const kw   = document.getElementById('search-'+tab).value.toLowerCase();
+  const from = document.getElementById('from-'+tab).value;
+  const to   = document.getElementById('to-'+tab).value;
+  const tt   = document.getElementById('filter-tt-'+tab).value;
+  const tbody = document.getElementById('tbody-'+tab);
+  let vis = 0;
+  tbody.querySelectorAll('tr').forEach(row=>{
+    const s = (row.dataset.search||'').toLowerCase();
+    const d = row.dataset.date || '';
+    const t = row.dataset.tt || '';
+    const show = (!kw||s.includes(kw))&&(!from||d>=from)&&(!to||d<=to)&&(!tt||t===tt);
+    row.style.display = show ? '' : 'none';
+    if(show) vis++;
+  });
+  renderPagination(tab, vis);
+}
+
+function renderPagination(tab, total){
+  const pages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  const cur   = Math.min(state[tab], pages);
+  state[tab]  = cur;
+  const pgDiv = document.getElementById('pg-'+tab);
+  const start = (cur-1)*PAGE_SIZE+1;
+  const end   = Math.min(cur*PAGE_SIZE, total);
+  let btns = pages>1
+    ? `<button class="pg-btn" onclick="goPage('${tab}',${cur-1})" ${cur===1?'disabled':''}>‹</button>`
+      + Array.from({length:pages},(_,i)=>i+1).map(p=>
+          pages<=7||p===1||p===pages||Math.abs(p-cur)<=1
+            ? `<button class="pg-btn${p===cur?' active':''}" onclick="goPage('${tab}',${p})">${p}</button>`
+            : Math.abs(p-cur)===2 ? `<span style="color:#6b7280;padding:0 2px">…</span>` : ''
+        ).join('')
+      + `<button class="pg-btn" onclick="goPage('${tab}',${cur+1})" ${cur===pages?'disabled':''}>›</button>`
+    : `<button class="pg-btn active">1</button>`;
+  pgDiv.innerHTML=`<span class="pagination-info">${total===0?'Không có dữ liệu':`Hiển thị ${start}–${end} / ${total} dòng`}</span><div class="pagination-btns">${btns}</div>`;
+}
+
+function goPage(tab, p){ state[tab]=p; applyFilter(tab); }
+
+/* ── Modal thêm ── */
+let addTab = 'nap';
+
+function openAdd(tab){
+  addTab = tab;
+  document.getElementById('add-modal-title').textContent = tab==='nap' ? 'Thêm hoàn tiền – KVC nạp tiền' : 'Thêm hoàn tiền – KVC công nợ';
+  ['madv','ngay','makvc','tenkvc','malov','tenlov','sl','tienhoankvc','tienhoankhach','lydo'].forEach(id=>document.getElementById('af-'+id).value='');
+  document.getElementById('af-tt').value='dangxuly';
+  document.getElementById('af-ttkh').value='chuaxuly';
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function closeAdd(){ document.getElementById('add-modal').classList.remove('open'); }
+
+function fmt(n){ return n ? parseInt(n).toLocaleString('vi-VN') : '—'; }
+
+const ttBadge = v => ({
+  hoantat:'<span class="badge badge-green">Hoàn tất</span>',
+  dangxuly:'<span class="badge badge-amber">Đang xử lý</span>',
+  tuchoi:'<span class="badge badge-red">Từ chối</span>'
+}[v]||'');
+
+const ttkhBadge = v => ({
+  chuaxuly:'<span class="badge badge-gray">Chưa xử lý</span>',
+  choixacnhan:'<span class="badge badge-amber">Chờ xác nhận</span>',
+  dangchuyen:'<span class="badge badge-sky">Đang chuyển</span>',
+  dahoantien:'<span class="badge badge-green">Đã hoàn</span>',
+  khonghoan:'<span class="badge badge-red">Không hoàn</span>'
+}[v]||'');
+
+function saveAdd(){
+  const madv       = document.getElementById('af-madv').value.trim();
+  const ngay       = document.getElementById('af-ngay').value;
+  const makvc      = document.getElementById('af-makvc').value.trim();
+  const tenkvc     = document.getElementById('af-tenkvc').value.trim();
+  const malov      = document.getElementById('af-malov').value.trim();
+  const tenlov     = document.getElementById('af-tenlov').value.trim();
+  const sl         = document.getElementById('af-sl').value||'0';
+  const tienhoankvc= document.getElementById('af-tienhoankvc').value||'0';
+  const tienhoankhach=document.getElementById('af-tienhoankhach').value||'0';
+  const tt         = document.getElementById('af-tt').value;
+  const ttkh       = document.getElementById('af-ttkh').value;
+  const lydo       = document.getElementById('af-lydo').value.trim();
+  if(!madv||!tenkvc){alert('Vui lòng nhập Mã đặt vé và Tên KVC.');return;}
+
+  const ngayFmt = ngay ? ngay.split('-').reverse().join('/') : '';
+  const tbody = document.getElementById('tbody-'+addTab);
+  const tr = document.createElement('tr');
+  tr.dataset.date   = ngay;
+  tr.dataset.search = `${madv} ${makvc} ${tenkvc} ${tenlov}`.toLowerCase();
+  tr.dataset.tt     = tt;
+  const khHasAmount = ttkh==='dahoantien'||ttkh==='dangchuyen';
+  tr.innerHTML = `
+    <td class="mono">${madv}</td>
+    <td class="mono">${ngayFmt}</td>
+    <td>${makvc}</td>
+    <td><strong style="color:#fff">${tenkvc}</strong></td>
+    <td class="mono">${malov}</td>
+    <td>${tenlov}</td>
+    <td style="text-align:center">${sl}</td>
+    <td class="amount amount-red" style="text-align:right">${fmt(tienhoankvc)}</td>
+    <td class="reason-cell">${lydo}</td>
+    <td>${ttBadge(tt)}</td>
+    <td class="${khHasAmount?'amount amount-green':''}" style="text-align:right">${fmt(tienhoankhach)}</td>
+    <td>${ttkhBadge(ttkh)}</td>`;
+  tbody.appendChild(tr);
+  closeAdd();
+  applyFilter(addTab);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{ applyFilter('nap'); applyFilter('cn'); });
+</script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+﻿<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem('ppv-theme')||'dark';document.documentElement.setAttribute('data-theme',t==='system'?(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mã khu vui chơi - ezCloud PPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background-color:#05091a;background-image:radial-gradient(ellipse 70% 55% at 10% 50%,#0a2a5a 0%,transparent 55%),radial-gradient(ellipse 55% 50% at 90% 20%,#2a0e50 0%,transparent 50%),radial-gradient(ellipse 50% 55% at 60% 85%,#0d3060 0%,transparent 50%),radial-gradient(ellipse 45% 40% at 50% 5%,#3a1060 0%,transparent 45%);background-attachment:fixed;color:#eee0d3;min-height:100vh}
+[data-theme="light"] body{background-color:#f0eeff;background-image:radial-gradient(ellipse 65% 55% at 8% 8%,rgba(180,130,255,0.72) 0%,transparent 60%),radial-gradient(ellipse 50% 45% at 90% 18%,rgba(100,168,255,0.62) 0%,transparent 55%),radial-gradient(ellipse 60% 50% at 12% 92%,rgba(255,205,70,0.68) 0%,transparent 55%),radial-gradient(ellipse 55% 45% at 90% 88%,rgba(60,205,175,0.65) 0%,transparent 50%),radial-gradient(ellipse 50% 45% at 50% 48%,rgba(255,255,255,0.82) 0%,transparent 65%);color:#111827}
+.app-shell{display:flex;height:100vh;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0}
+.page-content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:none}
+.page-content::-webkit-scrollbar{display:none}
+.sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;background:rgba(0,0,0,0.60);backdrop-filter:blur(12px);border-right:1px solid rgba(255,255,255,0.10);transition:width 0.3s ease;overflow:hidden}
+.sidebar.collapsed{width:64px}
+[data-theme="light"] .sidebar{background:rgba(255,255,255,0.65);border-right-color:rgba(0,0,0,0.08)}
+.sidebar-brand{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.sidebar.collapsed .sidebar-brand{padding:16px;justify-content:center}
+.brand-logo{width:32px;height:32px;background:rgba(255,255,255,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+[data-theme="light"] .brand-logo{background:rgba(0,0,0,0.10);color:#111827}
+.brand-text{overflow:hidden}
+.brand-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap}
+.brand-role{font-size:11px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .brand-name{color:#111827}
+.sidebar.collapsed .brand-text{display:none}
+.sidebar-nav{flex:1;padding:8px 10px;overflow-y:auto;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.sidebar.collapsed .sidebar-nav{padding:8px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;white-space:nowrap;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#e5e7eb}
+.nav-item.active{background:rgba(99,102,241,0.20);color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-item{color:#374151}
+[data-theme="light"] .nav-item:hover{background:rgba(0,0,0,0.06);color:#111827}
+[data-theme="light"] .nav-item.active{background:rgba(99,102,241,0.12);color:#4338ca}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-arrow{display:none}
+.nav-icon{font-size:15px;line-height:1;flex-shrink:0}
+.nav-label{flex:1}
+.nav-arrow{display:flex;align-items:center;color:#6b7280;transition:transform 0.2s}
+.nav-item.open .nav-arrow{transform:rotate(180deg)}
+.nav-sub{margin-left:28px;margin-top:1px;margin-bottom:2px;overflow:hidden;max-height:0;transition:max-height 0.25s ease}
+.nav-sub.open{max-height:500px}
+.sidebar.collapsed .nav-sub{display:none}
+.nav-sub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;color:#6b7280;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;margin-bottom:1px;white-space:nowrap}
+.nav-sub-item:hover{background:rgba(255,255,255,0.05);color:#d1d5db}
+.nav-sub-item.active{color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-sub-item.active{color:#4338ca}
+.nav-sub-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.5;flex-shrink:0}
+.sidebar-user{border-top:1px solid rgba(255,255,255,0.07);padding:10px}
+[data-theme="light"] .sidebar-user{border-top-color:rgba(0,0,0,0.08)}
+.user-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
+[data-theme="light"] .user-card{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.08)}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.avatar{width:34px;height:34px;background:linear-gradient(135deg,#4b5563,#374151);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;position:relative;flex-shrink:0}
+.avatar-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid #1f2937;border-radius:50%}
+.user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.user-email{font-size:10px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .user-name{color:#111827}
+.user-actions{display:flex;gap:6px}
+.user-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;border-radius:8px;font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;transition:background 0.15s,color 0.15s;text-decoration:none}
+.user-btn:hover{background:rgba(255,255,255,0.06);color:#fff}
+.user-btn.logout:hover{background:rgba(239,68,68,0.10);color:#f87171}
+[data-theme="light"] .user-btn{color:#6b7280}
+.header{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(0,0,0,0.50);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.10)}
+[data-theme="light"] .header{background:rgba(255,255,255,0.60);border-bottom-color:rgba(0,0,0,0.08)}
+.header-left,.header-right{display:flex;align-items:center;gap:12px}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:none;border:none;color:#9ca3af;cursor:pointer;transition:background 0.15s,color 0.15s}
+.icon-btn:hover{background:rgba(255,255,255,0.07);color:#fff}
+[data-theme="light"] .icon-btn{color:#6b7280}
+.page-title{font-size:14px;font-weight:500;color:#d1d5db}
+[data-theme="light"] .page-title{color:#111827}
+.search-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:6px 12px;font-size:12px;color:#d1d5db;outline:none;width:176px;font-family:inherit}
+.search-input::placeholder{color:#4b5563}
+[data-theme="light"] .search-input{background:rgba(255,255,255,0.80);border-color:rgba(0,0,0,0.15);color:#111827}
+.notif-btn{position:relative}
+.notif-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;background:#ef4444;border-radius:50%}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.page-header p{font-size:13px;color:#6b7280}
+[data-theme="light"] .page-header h1{color:#111827}
+.card{background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px}
+[data-theme="light"] .card{background:rgba(255,255,255,0.60);border-color:rgba(0,0,0,0.08)}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tb-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;min-width:200px}
+.tb-input::placeholder{color:#4b5563}
+[data-theme="light"] .tb-input{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.tb-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;cursor:pointer}
+.tb-select option{background:#1a1f3a}
+[data-theme="light"] .tb-select{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.table-wrap{overflow-x:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.10) transparent}
+.table-wrap::-webkit-scrollbar{height:6px}
+.table-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.10);border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.08);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d1d5db;vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+[data-theme="light"] th{color:#374151;border-bottom-color:rgba(0,0,0,0.10)}
+[data-theme="light"] td{color:#111827;border-bottom-color:rgba(0,0,0,0.06)}
+[data-theme="light"] tr:hover td{background:rgba(0,0,0,0.03)}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-teal{background:rgba(20,184,166,0.15);color:#5eead4;border:1px solid rgba(20,184,166,0.25)}
+.badge-indigo{background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.badge-green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+.badge-red{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
+.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+[data-theme="light"] .badge-teal{background:rgba(13,148,136,0.10);color:#0f766e;border-color:rgba(13,148,136,0.25)}
+[data-theme="light"] .badge-indigo{background:rgba(79,70,229,0.10);color:#4338ca;border-color:rgba(79,70,229,0.25)}
+[data-theme="light"] .badge-green{background:rgba(22,163,74,0.12);color:#16a34a;border-color:rgba(22,163,74,0.30)}
+[data-theme="light"] .badge-red{background:rgba(220,38,38,0.10);color:#dc2626;border-color:rgba(220,38,38,0.25)}
+.mono{font-family:'Courier New',monospace;font-size:12px;color:#9ca3af}
+[data-theme="light"] .mono{color:#374151}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);flex-wrap:wrap;gap:10px}
+[data-theme="light"] .pagination{border-top-color:rgba(0,0,0,0.08)}
+.pagination-info{font-size:12px;color:#6b7280}
+.pagination-btns{display:flex;align-items:center;gap:6px}
+.pg-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);color:#9ca3af;font-size:13px;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.pg-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.pg-btn.active{background:rgba(99,102,241,0.30);border-color:#6366f1;color:#a5b4fc;font-weight:700}
+.pg-btn:disabled{opacity:0.3;cursor:not-allowed}
+[data-theme="light"] .pg-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.12);color:#374151}
+[data-theme="light"] .pg-btn:hover{background:rgba(0,0,0,0.08);color:#111827}
+[data-theme="light"] .pg-btn.active{background:rgba(99,102,241,0.15);border-color:#6366f1;color:#4338ca}
+[data-theme="light"] .tb-date{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827;color-scheme:light}
+[data-theme="light"] td strong{color:#111827 !important}
+[data-theme="light"] .theme-toggle{background:rgba(0,0,0,0.07);border-color:rgba(0,0,0,0.15);color:#374151}
+.theme-toggle{position:fixed;bottom:24px;right:24px;padding:8px 16px;border-radius:20px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;cursor:pointer;backdrop-filter:blur(8px);font-family:inherit;transition:background 0.2s;z-index:500}
+.theme-toggle:hover{background:rgba(255,255,255,0.18)}
+.tabs-bar{display:flex;gap:4px;margin-bottom:16px}
+.tab-btn{padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.tab-btn:hover{background:rgba(255,255,255,0.10);color:#fff}
+.tab-btn.active{background:rgba(99,102,241,0.25);border-color:#6366f1;color:#a5b4fc;font-weight:600}
+.tab-panel{display:none}.tab-panel.active{display:block}
+[data-theme="light"] .tab-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.10);color:#6b7280}
+[data-theme="light"] .tab-btn.active{background:rgba(99,102,241,0.12);border-color:#6366f1;color:#4338ca}
+.edit-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);color:#a5b4fc;cursor:pointer;transition:all 0.15s}
+.edit-btn:hover{background:rgba(99,102,241,0.25);border-color:#6366f1;color:#c7d2fe}
+[data-theme="light"] .edit-btn{background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25);color:#4338ca}
+.delete-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.22);color:#f87171;cursor:pointer;transition:all 0.15s;margin-left:4px}
+.delete-btn:hover{background:rgba(239,68,68,0.22);border-color:#ef4444;color:#fca5a5}
+[data-theme="light"] .delete-btn{background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.22);color:#dc2626}
+.add-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,rgba(99,102,241,0.25),rgba(79,70,229,0.20));border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:inherit;margin-left:auto}
+.add-btn:hover{background:linear-gradient(135deg,rgba(99,102,241,0.40),rgba(79,70,229,0.35));border-color:#6366f1;color:#c7d2fe}
+[data-theme="light"] .add-btn{background:rgba(99,102,241,0.10);border-color:rgba(99,102,241,0.30);color:#4338ca}
+.confirm-modal{width:380px}
+.confirm-body{font-size:14px;color:#d1d5db;line-height:1.6;margin-bottom:4px}
+.confirm-name{font-weight:700;color:#fff;margin-top:6px}
+[data-theme="light"] .confirm-body{color:#374151}
+[data-theme="light"] .confirm-name{color:#111827}
+.btn-delete{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,0.30)}
+.btn-delete:hover{background:linear-gradient(135deg,#f87171,#ef4444);box-shadow:0 4px 16px rgba(239,68,68,0.45)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.60);backdrop-filter:blur(6px);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:linear-gradient(135deg,rgba(20,25,60,0.98) 0%,rgba(10,15,40,0.98) 100%);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:28px;width:520px;max-width:calc(100vw - 32px);max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.6);transform:translateY(12px);transition:transform 0.2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+[data-theme="light"] .modal{background:rgba(255,255,255,0.97);border-color:rgba(0,0,0,0.10);box-shadow:0 24px 64px rgba(0,0,0,0.15)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.modal-title{font-size:16px;font-weight:700;color:#fff}
+[data-theme="light"] .modal-title{color:#111827}
+.modal-close{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);border:none;color:#9ca3af;cursor:pointer;font-size:18px;transition:background 0.15s,color 0.15s}
+.modal-close:hover{background:rgba(239,68,68,0.15);color:#f87171}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em}
+.form-input,.form-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:9px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;transition:border-color 0.15s,background 0.15s;width:100%}
+.form-input:focus,.form-select:focus{border-color:#6366f1;background:rgba(99,102,241,0.08)}
+.form-input[readonly]{opacity:0.55;cursor:not-allowed}
+.form-select option{background:#1a1f3a}
+[data-theme="light"] .form-input,[data-theme="light"] .form-select{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.14);color:#111827}
+[data-theme="light"] .form-input:focus,[data-theme="light"] .form-select:focus{border-color:#6366f1;background:rgba(99,102,241,0.06)}
+[data-theme="light"] .form-select option{background:#fff}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.07)}
+[data-theme="light"] .modal-footer{border-top-color:rgba(0,0,0,0.08)}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;border:none}
+.btn-cancel{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);color:#9ca3af}
+.btn-cancel:hover{background:rgba(255,255,255,0.12);color:#fff}
+.btn-save{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,0.35)}
+.btn-save:hover{background:linear-gradient(135deg,#818cf8,#6366f1);box-shadow:0 4px 16px rgba(99,102,241,0.5)}
+[data-theme="light"] .btn-cancel{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:#374151}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">ez</div>
+      <div class="brand-text"><div class="brand-name">ezCloud PPV</div><div class="brand-role">admin</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item has-children open" onclick="toggleMenu('park')"><span class="nav-icon">🎢</span><span class="nav-label">Khu vui chơi</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub open" id="sub-park">
+        <a href="danh-sach-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Danh sách khu vui chơi</a>
+        <a href="ma-kvc.html" class="nav-sub-item active"><span class="nav-sub-dot"></span>Mã khu vui chơi</a>
+        <a href="so-du-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Số dư khu vui chơi hàng ngày</a>
+        <a href="nap-tien-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Danh sách nạp tiền KVC theo ngày</a>
+        <a href="chi-tiet-gia-von-ve-ban.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Chi tiết giá vốn vé bán</a>
+        <a href="doi-soat-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Đối soát Khu vui chơi</a>
+        <a href="kvc-hoan-tien.html" class="nav-sub-item"><span class="nav-sub-dot"></span>KVC hoàn tiền</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">🤝</span><span class="nav-label">Đại lý</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Khách lẻ</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Đối soát Vin</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span class="nav-label">Các đại lý OTA</span></a>
+      <div class="nav-item has-children" onclick="toggleMenu('hoantien')"><span class="nav-icon">🔄</span><span class="nav-label">Hoàn tiền</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub" id="sub-hoantien">
+        <a href="hoan-tien-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Quy trình hoàn tiền</a>
+        <a href="trang-thai-hoan-tien-kh.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Trạng thái hoàn tiền cho khách hàng</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Quy trình đối soát</span></a>    </nav>
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="user-info">
+          <div class="avatar">AT<span class="avatar-dot"></span></div>
+          <div style="min-width:0"><div class="user-name">Anh Thảo</div><div class="user-email">admin@ezcloud.vn</div></div>
+        </div>
+        <div class="user-actions">
+          <a href="system.html" class="user-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg> Cài đặt</a>
+          <button class="user-btn logout"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" onclick="toggleSidebar()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h16"/></svg></button>
+        <span class="page-title">Khu vui chơi / Mã khu vui chơi</span>
+      </div>
+      <div class="header-right">
+        <input type="search" class="search-input" placeholder="Tìm kiếm..." />
+        <button class="icon-btn notif-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1>Mã khu vui chơi</h1>
+        <p>Quản lý mã định danh và danh mục các khu vui chơi</p>
+      </div>
+
+      <!-- 3 Tabs -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('ma',this)">Mã KVC</button>
+        <button class="tab-btn" onclick="switchTab('nap',this)">Danh mục KVC con nạp trước</button>
+        <button class="tab-btn" onclick="switchTab('cn',this)">Danh mục KVC con công nợ</button>
+      </div>
+
+      <!-- Tab 1: Mã KVC -->
+      <div class="tab-panel active" id="tab-ma">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm mã hoặc tên KVC..." oninput="applyFilter('ma')" id="search-ma" />
+            <select class="tb-select" id="filter-loai-ma" onchange="applyFilter('ma')">
+              <option value="">Tất cả loại</option>
+              <option value="nap">Nạp trước</option>
+              <option value="cn">Công nợ</option>
+            </select>
+            <select class="tb-select" id="filter-tt-ma" onchange="applyFilter('ma')">
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="inactive">Ngừng hoạt động</option>
+            </select>
+            <button class="add-btn" onclick="openAdd('ma')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>Thêm KVC</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã KVC</th>
+                  <th>Tên khu vui chơi</th>
+                  <th>Loại</th>
+                  <th>Mã định danh tìm kiếm</th>
+                  <th>Mã ngân hàng / TK</th>
+                  <th>Trạng thái</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-ma">
+                <tr data-search="bản mòng nạp trước" data-loai="nap" data-tt="active"><td class="mono">11681</td><td><strong style="color:#fff">Bản Mòng</strong></td><td><span class="badge badge-teal">Nạp trước</span></td><td class="mono">11681</td><td class="mono">1213776969</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="sun group nạp trước" data-loai="nap" data-tt="active"><td class="mono">6935</td><td><strong style="color:#fff">Sun Group</strong></td><td><span class="badge badge-teal">Nạp trước</span></td><td class="mono">6935</td><td class="mono">1SB2B24</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="đồi rồng nạp trước" data-loai="nap" data-tt="active"><td class="mono">11438</td><td><strong style="color:#fff">Đồi Rồng</strong></td><td><span class="badge badge-teal">Nạp trước</span></td><td class="mono">11438</td><td class="mono">0751040751058</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="delight nạp trước" data-loai="nap" data-tt="active"><td class="mono">11750</td><td><strong style="color:#fff">Delight</strong></td><td><span class="badge badge-teal">Nạp trước</span></td><td class="mono">11750</td><td class="mono">110603463866</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="samten hills dalat nạp trước" data-loai="nap" data-tt="active"><td class="mono">11462</td><td><strong style="color:#fff">Samten Hills Dalat</strong></td><td><span class="badge badge-teal">Nạp trước</span></td><td class="mono">11462</td><td class="mono">1862867777</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="tlty công nợ" data-loai="cn" data-tt="active"><td class="mono">10952</td><td><strong style="color:#fff">TLTY</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">10952</td><td class="mono">5610039478828</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="sơn tiên công nợ" data-loai="cn" data-tt="active"><td class="mono">10360</td><td><strong style="color:#fff">Sơn Tiên</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">10360</td><td class="mono">57457</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="lumiere công nợ" data-loai="cn" data-tt="active"><td class="mono">11477</td><td><strong style="color:#fff">Lumiere</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11477</td><td class="mono">8610023579</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="mikazuki công nợ" data-loai="cn" data-tt="active"><td class="mono">11423</td><td><strong style="color:#fff">Mikazuki</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11423</td><td class="mono">200077779999</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="mekong công nợ" data-loai="cn" data-tt="active"><td class="mono">11588</td><td><strong style="color:#fff">Mekong</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11588</td><td class="mono">60300641396</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="tà cú công nợ" data-loai="cn" data-tt="active"><td class="mono">10933</td><td><strong style="color:#fff">Tà Cú</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">10933</td><td class="mono">1130000077689</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="hồ tràm công nợ" data-loai="cn" data-tt="active"><td class="mono">11483</td><td><strong style="color:#fff">Hồ Tràm</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11483</td><td class="mono">1027882298</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="nova phan thiết công nợ" data-loai="cn" data-tt="active"><td class="mono">11480</td><td><strong style="color:#fff">Nova Phan Thiết</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11480</td><td class="mono">3336333979</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="công viên nước hồ tây công nợ" data-loai="cn" data-tt="active"><td class="mono">11705</td><td><strong style="color:#fff">Công viên nước Hồ Tây</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11705</td><td class="mono">11004009888</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="sealinks công nợ" data-loai="cn" data-tt="active"><td class="mono">11807</td><td><strong style="color:#fff">Sealinks</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11807</td><td class="mono">1100030038237</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="sightseeing hn công nợ" data-loai="cn" data-tt="active"><td class="mono">11762</td><td><strong style="color:#fff">Sightseeing HN</strong></td><td><span class="badge badge-indigo">Công nợ</span></td><td class="mono">11762</td><td class="mono">sightseeing</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="vinke aquarium times city nạp trước" data-loai="nap" data-tt="active"><td class="mono">11810</td><td><strong style="color:#fff">VinKE &amp; Aquarium Times City</strong></td><td><span class="badge badge-teal">Nạp trước</span></td><td class="mono">11810</td><td class="mono">1SB2B24</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-ma" class="pagination"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: KVC con nạp trước -->
+      <div class="tab-panel" id="tab-nap">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm mã hoặc tên KVC con..." oninput="applyFilter('nap')" id="search-nap" />
+            <select class="tb-select" id="filter-cha-nap" onchange="applyFilter('nap')">
+              <option value="">Tất cả KVC cha</option>
+              <option>Bản Mòng</option>
+              <option>Sun Group</option>
+              <option>Đồi Rồng</option>
+              <option>Delight</option>
+              <option>Samten Hills Dalat</option>
+              <option>VinKE &amp; Aquarium Times City</option>
+            </select>
+            <button class="add-btn" onclick="openAdd('nap')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>Thêm KVC con</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã KVC con</th>
+                  <th>Tên KVC con</th>
+                  <th>Mã KVC cha</th>
+                  <th>Tên KVC cha</th>
+                  <th>Mã loại vé</th>
+                  <th>Nhóm loại vé</th>
+                  <th>Đơn giá vốn</th>
+                  <th>Trạng thái</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-nap">
+                <tr data-search="347015 sjc thủy cung timescity bản mòng vinke" data-cha="vinke &amp; aquarium times city"><td class="mono">347015</td><td>SJC - Người lớn (Trên 1.4m) T7-CN</td><td class="mono">11810</td><td><strong style="color:#fff">VinKE &amp; Aquarium Times City</strong></td><td class="mono">347015</td><td>SJC- Thủy cung Timescity</td><td style="text-align:right;color:#60a5fa;font-weight:600">175.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="347016 sjc thủy cung timescity trẻ em vinke" data-cha="vinke &amp; aquarium times city"><td class="mono">347016</td><td>SJC - Trẻ em (1.0–1.4m) T7-CN</td><td class="mono">11810</td><td><strong style="color:#fff">VinKE &amp; Aquarium Times City</strong></td><td class="mono">347016</td><td>SJC- Thủy cung Timescity</td><td style="text-align:right;color:#60a5fa;font-weight:600">117.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="347020 thủy cung lotte sjc người lớn vinke" data-cha="vinke &amp; aquarium times city"><td class="mono">347020</td><td>SJC - Người lớn Ngày thường</td><td class="mono">11810</td><td><strong style="color:#fff">VinKE &amp; Aquarium Times City</strong></td><td class="mono">347020</td><td>Thủy cung Lotte</td><td style="text-align:right;color:#60a5fa;font-weight:600">191.250</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="347030 sjc thủy cung timescity người lớn thường vinke" data-cha="vinke &amp; aquarium times city"><td class="mono">347030</td><td>SJC - Người lớn (Trên 1.4m) Ngày thường</td><td class="mono">11810</td><td><strong style="color:#fff">VinKE &amp; Aquarium Times City</strong></td><td class="mono">347030</td><td>SJC- Thủy cung Timescity</td><td style="text-align:right;color:#60a5fa;font-weight:600">173.750</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="198432 sunworld hà nội người lớn sun group" data-cha="sun group"><td class="mono">198432</td><td>Sunworld - Người lớn Ngày thường</td><td class="mono">6935</td><td><strong style="color:#fff">Sun Group</strong></td><td class="mono">198432</td><td>Sun Group - Sunworld</td><td style="text-align:right;color:#60a5fa;font-weight:600">240.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="198433 sunworld hà nội trẻ em sun group" data-cha="sun group"><td class="mono">198433</td><td>Sunworld - Trẻ em Ngày thường</td><td class="mono">6935</td><td><strong style="color:#fff">Sun Group</strong></td><td class="mono">198433</td><td>Sun Group - Sunworld</td><td style="text-align:right;color:#60a5fa;font-weight:600">180.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="210100 bản mòng người lớn cuối tuần" data-cha="bản mòng"><td class="mono">210100</td><td>Bản Mòng - Người lớn Cuối tuần</td><td class="mono">11681</td><td><strong style="color:#fff">Bản Mòng</strong></td><td class="mono">210100</td><td>Bản Mòng Resort</td><td style="text-align:right;color:#60a5fa;font-weight:600">210.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="210101 bản mòng trẻ em cuối tuần" data-cha="bản mòng"><td class="mono">210101</td><td>Bản Mòng - Trẻ em Cuối tuần</td><td class="mono">11681</td><td><strong style="color:#fff">Bản Mòng</strong></td><td class="mono">210101</td><td>Bản Mòng Resort</td><td style="text-align:right;color:#60a5fa;font-weight:600">150.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="220110 vinpearl cửa hội người lớn cuối tuần đồi rồng" data-cha="đồi rồng"><td class="mono">220110</td><td>Đồi Rồng - Người lớn Cuối tuần</td><td class="mono">11438</td><td><strong style="color:#fff">Đồi Rồng</strong></td><td class="mono">220110</td><td>Vinpearl - Cửa Hội</td><td style="text-align:right;color:#60a5fa;font-weight:600">315.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="220115 đồi rồng người lớn ngày thường" data-cha="đồi rồng"><td class="mono">220115</td><td>Đồi Rồng - Người lớn Ngày thường</td><td class="mono">11438</td><td><strong style="color:#fff">Đồi Rồng</strong></td><td class="mono">220115</td><td>Vinpearl - Nam Hội An</td><td style="text-align:right;color:#60a5fa;font-weight:600">275.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="230500 samten hills dalat người lớn" data-cha="samten hills dalat"><td class="mono">230500</td><td>Samten Hills - Người lớn Ngày thường</td><td class="mono">11462</td><td><strong style="color:#fff">Samten Hills Dalat</strong></td><td class="mono">230500</td><td>Samten Hills Dalat</td><td style="text-align:right;color:#60a5fa;font-weight:600">290.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="230501 samten hills dalat trẻ em" data-cha="samten hills dalat"><td class="mono">230501</td><td>Samten Hills - Trẻ em Ngày thường</td><td class="mono">11462</td><td><strong style="color:#fff">Samten Hills Dalat</strong></td><td class="mono">230501</td><td>Samten Hills Dalat</td><td style="text-align:right;color:#60a5fa;font-weight:600">200.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="240100 delight người lớn ngày thường" data-cha="delight"><td class="mono">240100</td><td>Delight - Người lớn Ngày thường</td><td class="mono">11750</td><td><strong style="color:#fff">Delight</strong></td><td class="mono">240100</td><td>Delight Park</td><td style="text-align:right;color:#60a5fa;font-weight:600">135.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-nap" class="pagination"></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: KVC con công nợ -->
+      <div class="tab-panel" id="tab-cn">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm mã hoặc tên KVC con..." oninput="applyFilter('cn')" id="search-cn" />
+            <select class="tb-select" id="filter-cha-cn" onchange="applyFilter('cn')">
+              <option value="">Tất cả KVC cha</option>
+              <option>TLTY</option>
+              <option>Sơn Tiên</option>
+              <option>Lumiere</option>
+              <option>Mikazuki</option>
+              <option>Mekong</option>
+              <option>Tà Cú</option>
+              <option>Hồ Tràm</option>
+              <option>Nova Phan Thiết</option>
+              <option>Công viên nước Hồ Tây</option>
+              <option>Sealinks</option>
+              <option>Sightseeing HN</option>
+            </select>
+            <button class="add-btn" onclick="openAdd('cn')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>Thêm KVC con</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã KVC con</th>
+                  <th>Tên KVC con</th>
+                  <th>Mã KVC cha</th>
+                  <th>Tên KVC cha</th>
+                  <th>Mã loại vé</th>
+                  <th>Nhóm loại vé</th>
+                  <th>Đơn giá vốn</th>
+                  <th>Trạng thái</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-cn">
+                <tr data-search="180001 sơn tiên người lớn ngày thường công nợ" data-cha="sơn tiên"><td class="mono">180001</td><td>Sơn Tiên - Người lớn Ngày thường</td><td class="mono">10360</td><td><strong style="color:#fff">Sơn Tiên</strong></td><td class="mono">180001</td><td>Sơn Tiên - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">83.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180002 sơn tiên trẻ em ngày thường công nợ" data-cha="sơn tiên"><td class="mono">180002</td><td>Sơn Tiên - Trẻ em Ngày thường</td><td class="mono">10360</td><td><strong style="color:#fff">Sơn Tiên</strong></td><td class="mono">180002</td><td>Sơn Tiên - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">55.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180010 mikazuki người lớn cuối tuần công nợ" data-cha="mikazuki"><td class="mono">180010</td><td>Mikazuki - Người lớn Cuối tuần</td><td class="mono">11423</td><td><strong style="color:#fff">Mikazuki</strong></td><td class="mono">180010</td><td>Mikazuki - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">117.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180011 mikazuki trẻ em cuối tuần công nợ" data-cha="mikazuki"><td class="mono">180011</td><td>Mikazuki - Trẻ em Cuối tuần</td><td class="mono">11423</td><td><strong style="color:#fff">Mikazuki</strong></td><td class="mono">180011</td><td>Mikazuki - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">78.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180020 mekong người lớn ngày thường công nợ" data-cha="mekong"><td class="mono">180020</td><td>Mekong - Người lớn Ngày thường</td><td class="mono">11588</td><td><strong style="color:#fff">Mekong</strong></td><td class="mono">180020</td><td>Mekong - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">93.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180050 hồ tràm người lớn cuối tuần công nợ" data-cha="hồ tràm"><td class="mono">180050</td><td>Hồ Tràm - Người lớn Cuối tuần</td><td class="mono">11483</td><td><strong style="color:#fff">Hồ Tràm</strong></td><td class="mono">180050</td><td>Hồ Tràm - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">146.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180055 nova phan thiết người lớn ngày thường công nợ" data-cha="nova phan thiết"><td class="mono">180055</td><td>Nova - Người lớn Ngày thường</td><td class="mono">11480</td><td><strong style="color:#fff">Nova Phan Thiết</strong></td><td class="mono">180055</td><td>Nova Phan Thiết - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">176.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180060 tlty người lớn ngày thường công nợ" data-cha="tlty"><td class="mono">180060</td><td>TLTY - Người lớn Ngày thường</td><td class="mono">10952</td><td><strong style="color:#fff">TLTY</strong></td><td class="mono">180060</td><td>TLTY - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">105.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180070 lumiere người lớn ngày thường công nợ" data-cha="lumiere"><td class="mono">180070</td><td>Lumiere - Người lớn Ngày thường</td><td class="mono">11477</td><td><strong style="color:#fff">Lumiere</strong></td><td class="mono">180070</td><td>Lumiere - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">185.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180080 tà cú người lớn ngày thường công nợ" data-cha="tà cú"><td class="mono">180080</td><td>Tà Cú - Người lớn Ngày thường</td><td class="mono">10933</td><td><strong style="color:#fff">Tà Cú</strong></td><td class="mono">180080</td><td>Tà Cú - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">68.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180090 sealinks người lớn ngày thường công nợ" data-cha="sealinks"><td class="mono">180090</td><td>Sealinks - Người lớn Ngày thường</td><td class="mono">11807</td><td><strong style="color:#fff">Sealinks</strong></td><td class="mono">180090</td><td>Sealinks - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">107.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180095 công viên nước hồ tây người lớn công nợ" data-cha="công viên nước hồ tây"><td class="mono">180095</td><td>CVNHT - Người lớn Ngày thường</td><td class="mono">11705</td><td><strong style="color:#fff">Công viên nước Hồ Tây</strong></td><td class="mono">180095</td><td>Công viên nước Hồ Tây</td><td style="text-align:right;color:#60a5fa;font-weight:600">125.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+                <tr data-search="180099 sightseeing hn người lớn ngày thường công nợ" data-cha="sightseeing hn"><td class="mono">180099</td><td>Sightseeing - Người lớn Ngày thường</td><td class="mono">11762</td><td><strong style="color:#fff">Sightseeing HN</strong></td><td class="mono">180099</td><td>Sightseeing HN - Công nợ</td><td style="text-align:right;color:#60a5fa;font-weight:600">88.000</td><td><span class="badge badge-green">Hoạt động</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-cn" class="pagination"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌓 Giao diện</button>
+
+<!-- Modal sửa -->
+<div class="modal-overlay" id="edit-modal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Chỉnh sửa</span>
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeEdit()">Hủy</button>
+      <button class="btn btn-save" onclick="saveEdit()">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xoá -->
+<div class="modal-overlay" id="del-modal" onclick="if(event.target===this)closeDelete()">
+  <div class="modal confirm-modal">
+    <div class="modal-header">
+      <span class="modal-title">Xác nhận xoá</span>
+      <button class="modal-close" onclick="closeDelete()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px">
+      <p class="confirm-body">Bạn có chắc muốn xoá mục này không? Hành động này không thể hoàn tác.</p>
+      <p class="confirm-name" id="del-name"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeDelete()">Hủy</button>
+      <button class="btn btn-delete" onclick="confirmDelete()">Xoá</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed')}
+function toggleMenu(key){const sub=document.getElementById('sub-'+key);const btn=sub.previousElementSibling;sub.classList.toggle('open');btn.classList.toggle('open')}
+
+const PAGE_SIZE = 100;
+const state = { ma: 1, nap: 1, cn: 1 };
+
+function switchTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+function applyFilter(tab){ state[tab]=1; render(tab); }
+
+function render(tab){
+  let kw='', filter2='', tbody, pgId;
+
+  if(tab==='ma'){
+    kw = document.getElementById('search-ma').value.toLowerCase();
+    filter2 = document.getElementById('filter-loai-ma').value;
+    const filter3 = document.getElementById('filter-tt-ma').value;
+    tbody = document.getElementById('tbody-ma');
+    pgId = 'pg-ma';
+    const allRows = [...tbody.querySelectorAll('tr')];
+    const filtered = allRows.filter(r=>{
+      const s=r.dataset.search||'';
+      const loai=r.dataset.loai||'';
+      const tt=r.dataset.tt||'';
+      return s.includes(kw)&&(!filter2||loai===filter2)&&(!filter3||tt===filter3);
+    });
+    renderTable(tab, filtered, allRows, tbody, pgId, null);
+    return;
+  }
+
+  if(tab==='nap'){
+    kw = document.getElementById('search-nap').value.toLowerCase();
+    filter2 = document.getElementById('filter-cha-nap').value.toLowerCase();
+    tbody = document.getElementById('tbody-nap');
+    pgId = 'pg-nap';
+  } else {
+    kw = document.getElementById('search-cn').value.toLowerCase();
+    filter2 = document.getElementById('filter-cha-cn').value.toLowerCase();
+    tbody = document.getElementById('tbody-cn');
+    pgId = 'pg-cn';
+  }
+
+  const allRows = [...tbody.querySelectorAll('tr')];
+  const filtered = allRows.filter(r=>{
+    const s=r.dataset.search||'';
+    const cha=r.dataset.cha||'';
+    return s.includes(kw)&&(!filter2||cha.includes(filter2));
+  });
+  renderTable(tab, filtered, allRows, tbody, pgId, null);
+}
+
+function renderTable(tab, filtered, allRows, tbody, pgId, _unused){
+  const page = state[tab];
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  const start = (page-1)*PAGE_SIZE;
+  const pageRows = filtered.slice(start, start+PAGE_SIZE);
+  const pageSet = new Set(pageRows);
+  allRows.forEach(r=>{ r.style.display = pageSet.has(r)?'':'none'; });
+
+  const el = document.getElementById(pgId);
+  if(total===0){
+    el.innerHTML=`<span class="pagination-info">Không có dữ liệu</span>
+      <div class="pagination-btns">
+        <button class="pg-btn" disabled>‹</button>
+        <button class="pg-btn active">1</button>
+        <button class="pg-btn" disabled>›</button>
+      </div>`;
+    return;
+  }
+  const from2=start+1, to2=start+pageRows.length;
+  let btns='', pages=[];
+  if(totalPages<=7){for(let i=1;i<=totalPages;i++)pages.push(i);}
+  else{
+    pages=[1];
+    let lo=Math.max(2,page-2),hi=Math.min(totalPages-1,page+2);
+    if(lo>2)pages.push('…');
+    for(let i=lo;i<=hi;i++)pages.push(i);
+    if(hi<totalPages-1)pages.push('…');
+    pages.push(totalPages);
+  }
+  pages.forEach(p=>{
+    if(p==='…')btns+=`<span style="color:#6b7280;padding:0 4px">…</span>`;
+    else btns+=`<button class="pg-btn${p===page?' active':''}" onclick="goPage('${tab}',${p})">${p}</button>`;
+  });
+  el.innerHTML=`
+    <span class="pagination-info">Hiển thị ${from2}–${to2} / ${total} dòng</span>
+    <div class="pagination-btns">
+      <button class="pg-btn" onclick="goPage('${tab}',${page-1})" ${page<=1?'disabled':''}>‹</button>
+      ${btns}
+      <button class="pg-btn" onclick="goPage('${tab}',${page+1})" ${page>=totalPages?'disabled':''}>›</button>
+    </div>`;
+}
+
+function goPage(tab, p){ state[tab]=p; render(tab); }
+
+/* ── Edit buttons inject ── */
+function injectEditButtons(){
+  document.querySelectorAll('#tbody-ma tr, #tbody-nap tr, #tbody-cn tr').forEach(row=>{
+    const td=document.createElement('td');
+    td.style.textAlign='center';
+    const tabType = row.closest('#tab-ma') ? 'ma' : row.closest('#tab-nap') ? 'nap' : 'cn';
+    td.innerHTML=`<button class="edit-btn" onclick="openEdit(this,'${tabType}')" title="Sửa"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button><button class="delete-btn" onclick="openDeleteConfirm(this)" title="Xoá"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>`;
+    row.appendChild(td);
+  });
+}
+
+/* ── Modal ── */
+let currentRow = null;
+let currentTabType = null;
+
+function openEdit(btn, tabType){
+  mode = 'edit';
+  currentRow = btn.closest('tr');
+  currentTabType = tabType;
+  const cells = currentRow.querySelectorAll('td');
+  const getText = i => cells[i]?.innerText?.trim() || '';
+  const getInner = (i, sel) => cells[i]?.querySelector(sel)?.innerText?.trim() || '';
+
+  let title='', body='';
+
+  if(tabType==='ma'){
+    title = 'Chỉnh sửa Mã KVC';
+    const ma     = getText(0);
+    const ten    = getInner(1,'strong') || getText(1);
+    const loai   = getInner(2,'.badge') === 'Nạp trước' ? 'nap' : 'cn';
+    const madk   = getText(3);
+    const nh     = getText(4);
+    const tt     = getInner(5,'.badge').includes('Hoạt động') ? 'active' : 'inactive';
+    body=`<div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Mã KVC</label>
+        <input class="form-input" value="${ma}" id="ef-ma">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Loại</label>
+        <select class="form-select" id="ef-loai">
+          <option value="nap" ${loai==='nap'?'selected':''}>Nạp trước</option>
+          <option value="cn"  ${loai==='cn' ?'selected':''}>Công nợ</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Tên khu vui chơi</label>
+        <input class="form-input" value="${ten}" id="ef-ten">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã định danh tìm kiếm</label>
+        <input class="form-input" value="${madk}" id="ef-madk">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã ngân hàng / TK</label>
+        <input class="form-input" value="${nh}" id="ef-nh">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Trạng thái</label>
+        <select class="form-select" id="ef-tt">
+          <option value="active"   ${tt==='active'  ?'selected':''}>Hoạt động</option>
+          <option value="inactive" ${tt==='inactive'?'selected':''}>Ngừng hoạt động</option>
+        </select>
+      </div>
+    </div>`;
+  } else {
+    title = tabType==='nap' ? 'Chỉnh sửa KVC con nạp trước' : 'Chỉnh sửa KVC con công nợ';
+    const macon  = getText(0);
+    const tencon = getText(1);
+    const macha  = getText(2);
+    const tencha = getInner(3,'strong') || getText(3);
+    const malov  = getText(4);
+    const nhom   = getText(5);
+    const dongia = getText(6).replace(/[^\d]/g,'');
+    const tt     = getInner(7,'.badge').includes('Hoạt động') ? 'active' : 'inactive';
+    body=`<div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Mã KVC con</label>
+        <input class="form-input" value="${macon}" id="ef-macon">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã KVC cha</label>
+        <input class="form-input" value="${macha}" id="ef-macha">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Tên KVC cha</label>
+        <input class="form-input" value="${tencha}" id="ef-tencha">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Tên KVC con</label>
+        <input class="form-input" value="${tencon}" id="ef-tencon">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã loại vé</label>
+        <input class="form-input" value="${malov}" id="ef-malov">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Đơn giá vốn (VNĐ)</label>
+        <input class="form-input" type="number" value="${dongia}" id="ef-dongia">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Nhóm loại vé</label>
+        <input class="form-input" value="${nhom}" id="ef-nhom">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Trạng thái</label>
+        <select class="form-select" id="ef-tt">
+          <option value="active"   ${tt==='active'  ?'selected':''}>Hoạt động</option>
+          <option value="inactive" ${tt==='inactive'?'selected':''}>Ngừng hoạt động</option>
+        </select>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEdit(){
+  document.getElementById('edit-modal').classList.remove('open');
+  currentRow = null;
+  mode = 'edit';
+}
+
+function handleOverlayClick(e){
+  if(e.target===document.getElementById('edit-modal')) closeEdit();
+}
+
+function saveEdit(){
+  if(!currentRow) return;
+  const cells = currentRow.querySelectorAll('td');
+
+  if(currentTabType==='ma'){
+    const ma     = document.getElementById('ef-ma').value.trim();
+    const ten    = document.getElementById('ef-ten').value.trim();
+    const loai   = document.getElementById('ef-loai').value;
+    const madk   = document.getElementById('ef-madk').value.trim();
+    const nh     = document.getElementById('ef-nh').value.trim();
+    const tt     = document.getElementById('ef-tt').value;
+    const loaiLabel = loai==='nap' ? 'Nạp trước' : 'Công nợ';
+    const loaiBadge = loai==='nap'
+      ? '<span class="badge badge-teal">Nạp trước</span>'
+      : '<span class="badge badge-indigo">Công nợ</span>';
+    const ttBadge = tt==='active'
+      ? '<span class="badge badge-green">Hoạt động</span>'
+      : '<span class="badge badge-red">Ngừng hoạt động</span>';
+    cells[0].textContent = ma;
+    cells[1].innerHTML = `<strong style="color:#fff">${ten}</strong>`;
+    cells[2].innerHTML = loaiBadge;
+    cells[3].textContent = madk;
+    cells[4].textContent = nh;
+    cells[5].innerHTML = ttBadge;
+    currentRow.dataset.search = `${ten} ${loaiLabel}`.toLowerCase();
+    currentRow.dataset.loai = loai;
+    currentRow.dataset.tt = tt;
+  } else {
+    const macon  = document.getElementById('ef-macon').value.trim();
+    const macha  = document.getElementById('ef-macha').value.trim();
+    const tencha = document.getElementById('ef-tencha').value.trim();
+    const tencon = document.getElementById('ef-tencon').value.trim();
+    const malov  = document.getElementById('ef-malov').value.trim();
+    const nhom   = document.getElementById('ef-nhom').value.trim();
+    const dongia = parseInt(document.getElementById('ef-dongia').value)||0;
+    const tt     = document.getElementById('ef-tt').value;
+    const ttBadge = tt==='active'
+      ? '<span class="badge badge-green">Hoạt động</span>'
+      : '<span class="badge badge-red">Ngừng hoạt động</span>';
+    const fmtDongia = dongia.toLocaleString('vi-VN');
+    cells[0].textContent = macon;
+    cells[1].textContent = tencon;
+    cells[2].textContent = macha;
+    cells[3].innerHTML = `<strong style="color:#fff">${tencha}</strong>`;
+    cells[4].textContent = malov;
+    cells[5].textContent = nhom;
+    cells[6].innerHTML = `<span style="color:#60a5fa;font-weight:600">${fmtDongia}</span>`;
+    cells[7].innerHTML = ttBadge;
+    currentRow.dataset.tt = tt;
+  }
+
+  if(mode==='add'){
+    const tbody = document.getElementById(
+      currentTabType==='ma' ? 'tbody-ma' : currentTabType==='nap' ? 'tbody-nap' : 'tbody-cn'
+    );
+    tbody.appendChild(currentRow);
+    injectDeleteEditForRow(currentRow, currentTabType);
+  }
+  closeEdit();
+}
+
+/* ── Delete ── */
+let deleteRow = null;
+
+function openDeleteConfirm(btn){
+  deleteRow = btn.closest('tr');
+  const cells = deleteRow.querySelectorAll('td');
+  const name = cells[1]?.innerText?.trim() || cells[0]?.innerText?.trim() || '';
+  document.getElementById('del-name').textContent = name;
+  document.getElementById('del-modal').classList.add('open');
+}
+
+function closeDelete(){
+  document.getElementById('del-modal').classList.remove('open');
+  deleteRow = null;
+}
+
+function confirmDelete(){
+  if(deleteRow){ deleteRow.remove(); }
+  closeDelete();
+}
+
+/* ── Add ── */
+let mode = 'edit';
+
+function openAdd(tabType){
+  mode = 'add';
+  currentTabType = tabType;
+  currentRow = document.createElement('tr');
+
+  let title='', body='';
+  if(tabType==='ma'){
+    title='Thêm KVC mới';
+    body=`<div class="form-grid">
+      <div class="form-group"><label class="form-label">Mã KVC</label><input class="form-input" value="" id="ef-ma"></div>
+      <div class="form-group"><label class="form-label">Loại</label><select class="form-select" id="ef-loai"><option value="nap">Nạp trước</option><option value="cn">Công nợ</option></select></div>
+      <div class="form-group full"><label class="form-label">Tên khu vui chơi</label><input class="form-input" value="" id="ef-ten"></div>
+      <div class="form-group"><label class="form-label">Mã định danh tìm kiếm</label><input class="form-input" value="" id="ef-madk"></div>
+      <div class="form-group"><label class="form-label">Mã ngân hàng / TK</label><input class="form-input" value="" id="ef-nh"></div>
+      <div class="form-group"><label class="form-label">Trạng thái</label><select class="form-select" id="ef-tt"><option value="active">Hoạt động</option><option value="inactive">Ngừng hoạt động</option></select></div>
+    </div>`;
+    /* pre-fill empty cells so saveEdit indexes work */
+    for(let i=0;i<6;i++) currentRow.insertCell();
+  } else {
+    title = tabType==='nap' ? 'Thêm KVC con nạp trước' : 'Thêm KVC con công nợ';
+    body=`<div class="form-grid">
+      <div class="form-group"><label class="form-label">Mã KVC con</label><input class="form-input" value="" id="ef-macon"></div>
+      <div class="form-group"><label class="form-label">Mã KVC cha</label><input class="form-input" value="" id="ef-macha"></div>
+      <div class="form-group full"><label class="form-label">Tên KVC cha</label><input class="form-input" value="" id="ef-tencha"></div>
+      <div class="form-group full"><label class="form-label">Tên KVC con</label><input class="form-input" value="" id="ef-tencon"></div>
+      <div class="form-group"><label class="form-label">Mã loại vé</label><input class="form-input" value="" id="ef-malov"></div>
+      <div class="form-group"><label class="form-label">Đơn giá vốn (VNĐ)</label><input class="form-input" type="number" value="" id="ef-dongia"></div>
+      <div class="form-group full"><label class="form-label">Nhóm loại vé</label><input class="form-input" value="" id="ef-nhom"></div>
+      <div class="form-group"><label class="form-label">Trạng thái</label><select class="form-select" id="ef-tt"><option value="active">Hoạt động</option><option value="inactive">Ngừng hoạt động</option></select></div>
+    </div>`;
+    for(let i=0;i<8;i++) currentRow.insertCell();
+  }
+
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function injectDeleteEditForRow(row, tabType){
+  const td=document.createElement('td');
+  td.style.textAlign='center';
+  td.innerHTML=`<button class="edit-btn" onclick="openEdit(this,'${tabType}')" title="Sửa"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button><button class="delete-btn" onclick="openDeleteConfirm(this)" title="Xoá"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>`;
+  row.appendChild(td);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  render('ma'); render('nap'); render('cn');
+  injectEditButtons();
+});
+</script>
+</body>
+</html>
+
+

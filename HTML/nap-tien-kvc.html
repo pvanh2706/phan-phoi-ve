@@ -1,0 +1,1401 @@
+﻿<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var t=localStorage.getItem('ppv-theme')||'dark';document.documentElement.setAttribute('data-theme',t==='system'?(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Danh sách nạp tiền KVC theo ngày - ezCloud PPV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background-color:#05091a;background-image:radial-gradient(ellipse 70% 55% at 10% 50%,#0a2a5a 0%,transparent 55%),radial-gradient(ellipse 55% 50% at 90% 20%,#2a0e50 0%,transparent 50%),radial-gradient(ellipse 50% 55% at 60% 85%,#0d3060 0%,transparent 50%),radial-gradient(ellipse 45% 40% at 50% 5%,#3a1060 0%,transparent 45%);background-attachment:fixed;color:#eee0d3;min-height:100vh}
+[data-theme="light"] body{background-color:#f0eeff;background-image:radial-gradient(ellipse 65% 55% at 8% 8%,rgba(180,130,255,0.72) 0%,transparent 60%),radial-gradient(ellipse 50% 45% at 90% 18%,rgba(100,168,255,0.62) 0%,transparent 55%),radial-gradient(ellipse 60% 50% at 12% 92%,rgba(255,205,70,0.68) 0%,transparent 55%),radial-gradient(ellipse 55% 45% at 90% 88%,rgba(60,205,175,0.65) 0%,transparent 50%),radial-gradient(ellipse 50% 45% at 50% 48%,rgba(255,255,255,0.82) 0%,transparent 65%);color:#111827}
+.app-shell{display:flex;height:100vh;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0}
+.page-content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:none}
+.page-content::-webkit-scrollbar{display:none}
+.sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;background:rgba(0,0,0,0.60);backdrop-filter:blur(12px);border-right:1px solid rgba(255,255,255,0.10);transition:width 0.3s ease;overflow:hidden}
+.sidebar.collapsed{width:64px}
+[data-theme="light"] .sidebar{background:rgba(255,255,255,0.65);border-right-color:rgba(0,0,0,0.08)}
+.sidebar-brand{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.sidebar.collapsed .sidebar-brand{padding:16px;justify-content:center}
+.brand-logo{width:32px;height:32px;background:rgba(255,255,255,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
+[data-theme="light"] .brand-logo{background:rgba(0,0,0,0.10);color:#111827}
+.brand-text{overflow:hidden}
+.brand-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap}
+.brand-role{font-size:11px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .brand-name{color:#111827}
+.sidebar.collapsed .brand-text{display:none}
+.sidebar-nav{flex:1;padding:8px 10px;overflow-y:auto;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.sidebar.collapsed .sidebar-nav{padding:8px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;white-space:nowrap;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#e5e7eb}
+.nav-item.active{background:rgba(99,102,241,0.20);color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-item{color:#374151}
+[data-theme="light"] .nav-item:hover{background:rgba(0,0,0,0.06);color:#111827}
+[data-theme="light"] .nav-item.active{background:rgba(99,102,241,0.12);color:#4338ca}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-arrow{display:none}
+.nav-icon{font-size:15px;line-height:1;flex-shrink:0}
+.nav-label{flex:1}
+.nav-arrow{display:flex;align-items:center;color:#6b7280;transition:transform 0.2s}
+.nav-item.open .nav-arrow{transform:rotate(180deg)}
+.nav-sub{margin-left:28px;margin-top:1px;margin-bottom:2px;overflow:hidden;max-height:0;transition:max-height 0.25s ease}
+.nav-sub.open{max-height:500px}
+.sidebar.collapsed .nav-sub{display:none}
+.nav-sub-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;color:#6b7280;cursor:pointer;text-decoration:none;transition:background 0.15s,color 0.15s;margin-bottom:1px;white-space:nowrap}
+.nav-sub-item:hover{background:rgba(255,255,255,0.05);color:#d1d5db}
+.nav-sub-item.active{color:#a5b4fc;font-weight:600}
+[data-theme="light"] .nav-sub-item.active{color:#4338ca}
+.nav-sub-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.5;flex-shrink:0}
+.sidebar-user{border-top:1px solid rgba(255,255,255,0.07);padding:10px}
+[data-theme="light"] .sidebar-user{border-top-color:rgba(0,0,0,0.08)}
+.user-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
+[data-theme="light"] .user-card{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.08)}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.avatar{width:34px;height:34px;background:linear-gradient(135deg,#4b5563,#374151);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;position:relative;flex-shrink:0}
+.avatar-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid #1f2937;border-radius:50%}
+.user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
+.user-email{font-size:10px;color:#6b7280;white-space:nowrap}
+[data-theme="light"] .user-name{color:#111827}
+.user-actions{display:flex;gap:6px}
+.user-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;border-radius:8px;font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;transition:background 0.15s,color 0.15s;text-decoration:none}
+.user-btn:hover{background:rgba(255,255,255,0.06);color:#fff}
+.user-btn.logout:hover{background:rgba(239,68,68,0.10);color:#f87171}
+[data-theme="light"] .user-btn{color:#6b7280}
+.header{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(0,0,0,0.50);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.10)}
+[data-theme="light"] .header{background:rgba(255,255,255,0.60);border-bottom-color:rgba(0,0,0,0.08)}
+.header-left,.header-right{display:flex;align-items:center;gap:12px}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:none;border:none;color:#9ca3af;cursor:pointer;transition:background 0.15s,color 0.15s}
+.icon-btn:hover{background:rgba(255,255,255,0.07);color:#fff}
+[data-theme="light"] .icon-btn{color:#6b7280}
+.page-title{font-size:14px;font-weight:500;color:#d1d5db}
+[data-theme="light"] .page-title{color:#111827}
+.search-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:6px 12px;font-size:12px;color:#d1d5db;outline:none;width:176px;font-family:inherit}
+.search-input::placeholder{color:#4b5563}
+[data-theme="light"] .search-input{background:rgba(255,255,255,0.80);border-color:rgba(0,0,0,0.15);color:#111827}
+.notif-btn{position:relative}
+.notif-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;background:#ef4444;border-radius:50%}
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.page-header p{font-size:13px;color:#6b7280}
+[data-theme="light"] .page-header h1{color:#111827}
+.card{background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 100%);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px}
+[data-theme="light"] .card{background:rgba(255,255,255,0.60);border-color:rgba(0,0,0,0.08)}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tb-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;min-width:200px}
+.tb-input::placeholder{color:#4b5563}
+[data-theme="light"] .tb-input{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.tb-date{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;cursor:pointer;color-scheme:dark}
+[data-theme="light"] .tb-date{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827;color-scheme:light}
+.tb-label{font-size:12px;color:#6b7280;white-space:nowrap}
+.tb-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:7px 12px;font-size:13px;color:#d1d5db;outline:none;font-family:inherit;cursor:pointer}
+.tb-select option{background:#1a1f3a}
+[data-theme="light"] .tb-select{background:rgba(255,255,255,0.70);border-color:rgba(0,0,0,0.15);color:#111827}
+.table-wrap{overflow-x:auto;scrollbar-width:none}
+.table-wrap::-webkit-scrollbar{display:none}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.08);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d1d5db;vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+[data-theme="light"] th{color:#374151;border-bottom-color:rgba(0,0,0,0.10)}
+[data-theme="light"] td{color:#111827;border-bottom-color:rgba(0,0,0,0.06)}
+[data-theme="light"] tr:hover td{background:rgba(0,0,0,0.03)}
+.date-separator td{padding:6px 12px;background:rgba(99,102,241,0.08);border-top:1px solid rgba(99,102,241,0.20);border-bottom:1px solid rgba(99,102,241,0.20);font-size:11px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.06em;pointer-events:none}
+[data-theme="light"] .date-separator td{background:rgba(99,102,241,0.06);border-color:rgba(99,102,241,0.20);color:#4338ca}
+.date-separator:hover td{background:rgba(99,102,241,0.08) !important}
+.amount{font-weight:600;font-variant-numeric:tabular-nums}
+.amount-green{color:#4ade80}
+.amount-red{color:#f87171}
+[data-theme="light"] .amount-green{color:#16a34a}
+[data-theme="light"] .amount-red{color:#dc2626}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-teal{background:rgba(20,184,166,0.15);color:#5eead4;border:1px solid rgba(20,184,166,0.25)}
+.badge-green{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+[data-theme="light"] .badge-teal{background:rgba(13,148,136,0.10);color:#0f766e;border-color:rgba(13,148,136,0.25)}
+[data-theme="light"] .badge-green{background:rgba(22,163,74,0.12);color:#16a34a;border-color:rgba(22,163,74,0.30)}
+[data-theme="light"] .badge-amber{background:rgba(180,83,9,0.10);color:#b45309;border-color:rgba(180,83,9,0.25)}
+.mono{font-family:'Courier New',monospace;font-size:12px;color:#9ca3af}
+[data-theme="light"] .mono{color:#374151}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07);flex-wrap:wrap;gap:10px}
+[data-theme="light"] .pagination{border-top-color:rgba(0,0,0,0.08)}
+.pagination-info{font-size:12px;color:#6b7280}
+.pagination-btns{display:flex;align-items:center;gap:6px}
+.pg-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);color:#9ca3af;font-size:13px;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.pg-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.pg-btn.active{background:rgba(99,102,241,0.30);border-color:#6366f1;color:#a5b4fc;font-weight:700}
+.pg-btn:disabled{opacity:0.3;cursor:not-allowed}
+[data-theme="light"] .pg-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.12);color:#374151}
+[data-theme="light"] .pg-btn:hover{background:rgba(0,0,0,0.08);color:#111827}
+[data-theme="light"] .pg-btn.active{background:rgba(99,102,241,0.15);border-color:#6366f1;color:#4338ca}
+[data-theme="light"] td strong{color:#111827 !important}
+[data-theme="light"] .theme-toggle{background:rgba(0,0,0,0.07);border-color:rgba(0,0,0,0.15);color:#374151}
+.theme-toggle{position:fixed;bottom:24px;right:24px;padding:8px 16px;border-radius:20px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:13px;cursor:pointer;backdrop-filter:blur(8px);font-family:inherit;transition:background 0.2s;z-index:500}
+.theme-toggle:hover{background:rgba(255,255,255,0.18)}
+.tabs-bar{display:flex;gap:4px;margin-bottom:16px}
+.tab-btn{padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.05);color:#9ca3af;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.tab-btn:hover{background:rgba(255,255,255,0.10);color:#fff}
+.tab-btn.active{background:rgba(99,102,241,0.25);border-color:#6366f1;color:#a5b4fc;font-weight:600}
+.tab-panel{display:none}.tab-panel.active{display:block}
+[data-theme="light"] .tab-btn{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.10);color:#6b7280}
+[data-theme="light"] .tab-btn.active{background:rgba(99,102,241,0.12);border-color:#6366f1;color:#4338ca}
+.content-cell{font-size:12px;color:#9ca3af;max-width:500px;word-break:break-word}
+/* ── Kanban ── */
+.kanban-wrap{overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.10) transparent}
+.kanban-wrap::-webkit-scrollbar{height:6px}
+.kanban-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px}
+.kanban-board{display:flex;gap:14px;min-width:max-content;padding:4px 2px 12px}
+.kb-col{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+/* Column head */
+.kb-col-head{border-radius:10px;padding:10px 14px 8px;border:1px solid rgba(255,255,255,0.08);position:relative}
+.kb-col-head-gray{background:rgba(107,114,128,0.13);border-color:rgba(107,114,128,0.18)}
+.kb-col-head-sky{background:rgba(14,165,233,0.11);border-color:rgba(14,165,233,0.20)}
+.kb-col-head-indigo{background:rgba(99,102,241,0.13);border-color:rgba(99,102,241,0.22)}
+.kb-col-head-green{background:rgba(34,197,94,0.13);border-color:rgba(34,197,94,0.22)}
+.kb-col-head-red{background:rgba(239,68,68,0.13);border-color:rgba(239,68,68,0.22)}
+[data-theme="light"] .kb-col-head{border-color:rgba(0,0,0,0.08)}
+[data-theme="light"] .kb-col-head-gray{background:rgba(107,114,128,0.08)}
+[data-theme="light"] .kb-col-head-sky{background:rgba(2,132,199,0.07)}
+[data-theme="light"] .kb-col-head-indigo{background:rgba(99,102,241,0.07)}
+[data-theme="light"] .kb-col-head-green{background:rgba(22,163,74,0.07)}
+[data-theme="light"] .kb-col-head-red{background:rgba(220,38,38,0.07)}
+.kb-col-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.kb-col-title{font-size:12px;font-weight:700;letter-spacing:0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.kb-col-title-gray{color:#9ca3af}
+.kb-col-title-sky{color:#38bdf8}
+.kb-col-title-indigo{color:#a5b4fc}
+.kb-col-title-green{color:#4ade80}
+.kb-col-title-red{color:#f87171}
+[data-theme="light"] .kb-col-title-gray{color:#374151}
+[data-theme="light"] .kb-col-title-sky{color:#0369a1}
+[data-theme="light"] .kb-col-title-indigo{color:#4338ca}
+[data-theme="light"] .kb-col-title-green{color:#16a34a}
+[data-theme="light"] .kb-col-title-red{color:#dc2626}
+.kb-col-arrow{color:#6b7280;font-size:10px;cursor:pointer;padding:0 2px}
+.kb-avatars{display:flex;align-items:center;margin-bottom:6px}
+.kb-av{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.35);font-size:8px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;margin-right:-5px;flex-shrink:0;background:linear-gradient(135deg,#4b5563,#374151)}
+.kb-av-indigo{background:linear-gradient(135deg,#6366f1,#4338ca)}
+.kb-av-teal{background:linear-gradient(135deg,#14b8a6,#0f766e)}
+.kb-av-amber{background:linear-gradient(135deg,#f59e0b,#b45309)}
+.kb-av-rose{background:linear-gradient(135deg,#f43f5e,#be123c)}
+.kb-col-stats{display:flex;align-items:center;gap:6px;font-size:10px;color:#6b7280;flex-wrap:wrap;margin-top:1px}
+.kb-stat{display:flex;align-items:center;gap:2px;white-space:nowrap}
+.kb-stat-sep{color:rgba(255,255,255,0.15);margin:0 1px}
+[data-theme="light"] .kb-stat-sep{color:rgba(0,0,0,0.12)}
+.kb-stat-green{color:#4ade80}
+.kb-stat-red{color:#f87171}
+[data-theme="light"] .kb-stat-green{color:#16a34a}
+[data-theme="light"] .kb-stat-red{color:#dc2626}
+/* Cards */
+.kb-cards{display:flex;flex-direction:column;gap:8px;min-height:60px}
+.kb-card{background:linear-gradient(135deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px;transition:border-color 0.15s,transform 0.15s;cursor:pointer}
+.kb-card:hover{border-color:rgba(99,102,241,0.40);transform:translateY(-1px)}
+[data-theme="light"] .kb-card{background:rgba(255,255,255,0.85);border-color:rgba(0,0,0,0.08)}
+[data-theme="light"] .kb-card:hover{border-color:rgba(99,102,241,0.35)}
+.kb-card-title{font-size:12px;font-weight:600;color:#e5e7eb;line-height:1.45;margin-bottom:5px}
+[data-theme="light"] .kb-card-title{color:#111827}
+.kb-card-desc{font-size:11px;color:#6b7280;line-height:1.4;margin-bottom:8px}
+.kb-card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.kb-card-amount{font-size:11px;font-weight:700;color:#4ade80}
+[data-theme="light"] .kb-card-amount{color:#16a34a}
+.kb-card-amount-red{color:#f87171}
+[data-theme="light"] .kb-card-amount-red{color:#dc2626}
+.kb-card-meta{font-size:10px;color:#4b5563;display:flex;align-items:center;gap:5px}
+.kb-tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;margin-bottom:5px}
+.kb-tag-teal{background:rgba(20,184,166,0.18);color:#5eead4;border:1px solid rgba(20,184,166,0.25)}
+.kb-tag-indigo{background:rgba(99,102,241,0.18);color:#a5b4fc;border:1px solid rgba(99,102,241,0.25)}
+.kb-tag-amber{background:rgba(245,158,11,0.18);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+[data-theme="light"] .kb-tag-teal{background:rgba(13,148,136,0.10);color:#0f766e}
+[data-theme="light"] .kb-tag-indigo{background:rgba(99,102,241,0.10);color:#4338ca}
+[data-theme="light"] .kb-tag-amber{background:rgba(180,83,9,0.10);color:#b45309}
+/* Drag & Drop */
+.kb-card[draggable]{cursor:grab}
+.kb-card.dragging{opacity:0.35;transform:rotate(1.5deg) scale(0.97);border-color:rgba(99,102,241,0.50) !important}
+.kb-cards.drag-over{background:rgba(99,102,241,0.08);border-radius:10px;outline:2px dashed rgba(99,102,241,0.40)}
+[data-theme="light"] .kb-cards.drag-over{background:rgba(99,102,241,0.06);outline-color:rgba(99,102,241,0.30)}
+.kb-drop-placeholder{height:80px;border-radius:10px;border:2px dashed rgba(99,102,241,0.35);background:rgba(99,102,241,0.05);margin-bottom:0;pointer-events:none}
+[data-theme="light"] .kb-drop-placeholder{border-color:rgba(99,102,241,0.30);background:rgba(99,102,241,0.04)}
+/* Task full-screen */
+.task-screen{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+.task-screen.open{display:flex}
+.task-bar{padding:10px 24px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;flex-shrink:0;background:rgba(0,0,0,0.18)}
+[data-theme="light"] .task-bar{border-bottom-color:rgba(0,0,0,0.08);background:rgba(255,255,255,0.30)}
+.task-back{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.05);color:#9ca3af;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.15s}
+.task-back:hover{background:rgba(255,255,255,0.10);color:#e5e7eb}
+[data-theme="light"] .task-back{border-color:rgba(0,0,0,0.10);background:rgba(0,0,0,0.03);color:#374151}
+[data-theme="light"] .task-back:hover{background:rgba(0,0,0,0.07);color:#111827}
+.task-crumb{font-size:11px;color:#4b5563}
+.task-body{flex:1;overflow-y:auto;padding:24px 28px;max-width:900px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.10) transparent}
+.task-body::-webkit-scrollbar{width:4px}
+.task-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px}
+.task-main-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.35}
+[data-theme="light"] .task-main-title{color:#111827}
+.task-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.task-step-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+.task-step-gray{background:rgba(107,114,128,0.18);color:#9ca3af;border-color:rgba(107,114,128,0.25)}
+.task-step-sky{background:rgba(14,165,233,0.15);color:#38bdf8;border-color:rgba(14,165,233,0.25)}
+.task-step-indigo{background:rgba(99,102,241,0.18);color:#a5b4fc;border-color:rgba(99,102,241,0.25)}
+.task-step-green{background:rgba(34,197,94,0.15);color:#4ade80;border-color:rgba(34,197,94,0.25)}
+.task-step-red{background:rgba(239,68,68,0.15);color:#f87171;border-color:rgba(239,68,68,0.25)}
+[data-theme="light"] .task-step-gray{background:rgba(107,114,128,0.10);color:#374151;border-color:rgba(107,114,128,0.20)}
+[data-theme="light"] .task-step-sky{background:rgba(2,132,199,0.10);color:#0369a1;border-color:rgba(2,132,199,0.20)}
+[data-theme="light"] .task-step-indigo{background:rgba(99,102,241,0.10);color:#4338ca;border-color:rgba(99,102,241,0.20)}
+[data-theme="light"] .task-step-green{background:rgba(22,163,74,0.10);color:#16a34a;border-color:rgba(22,163,74,0.20)}
+[data-theme="light"] .task-step-red{background:rgba(220,38,38,0.10);color:#dc2626;border-color:rgba(220,38,38,0.20)}
+.task-date-meta{font-size:11px;color:#4b5563}
+.task-sec{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:12px;overflow:hidden}
+[data-theme="light"] .task-sec{background:rgba(255,255,255,0.75);border-color:rgba(0,0,0,0.08)}
+.task-sec-head{display:flex;align-items:center;gap:8px;padding:12px 18px;cursor:pointer;user-select:none;transition:background 0.12s}
+.task-sec-head:hover{background:rgba(255,255,255,0.03)}
+[data-theme="light"] .task-sec-head:hover{background:rgba(0,0,0,0.02)}
+.task-sec-arr{font-size:10px;color:#6b7280;transition:transform 0.2s;flex-shrink:0}
+.task-sec.collapsed .task-sec-arr{transform:rotate(-90deg)}
+.task-sec-title{font-size:11px;font-weight:700;color:#818cf8;letter-spacing:0.06em;text-transform:uppercase;flex:1}
+[data-theme="light"] .task-sec-title{color:#4338ca}
+.task-sec-body{padding:0 18px 14px;border-top:1px solid rgba(255,255,255,0.06)}
+[data-theme="light"] .task-sec-body{border-top-color:rgba(0,0,0,0.06)}
+.task-sec.collapsed .task-sec-body{display:none}
+.task-sub-lbl{font-size:10px;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:0.08em;padding:10px 0 5px;display:flex;align-items:center;gap:5px}
+.task-sub-lbl::before{content:'→';color:#6366f1}
+[data-theme="light"] .task-sub-lbl::before{color:#4338ca}
+.task-field{padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:14px;align-items:flex-start}
+[data-theme="light"] .task-field{border-bottom-color:rgba(0,0,0,0.05)}
+.task-field:last-child{border-bottom:none}
+.task-field-no{font-size:11px;color:#4b5563;min-width:20px;text-align:right;font-family:'Courier New',monospace;padding-top:2px;flex-shrink:0}
+.task-field-inner{flex:1}
+.task-field-lbl{font-size:11px;color:#6b7280;margin-bottom:3px}
+.task-field-row{display:flex;align-items:center;gap:8px}
+.task-field-val{font-size:13px;color:#e5e7eb;font-weight:500;line-height:1.4}
+[data-theme="light"] .task-field-val{color:#111827}
+.task-field-link{font-size:12px;color:#818cf8;cursor:pointer}
+.task-field-link:hover{text-decoration:underline}
+[data-theme="light"] .task-field-link{color:#4338ca}
+.task-field-edit{font-size:11px;color:#818cf8;cursor:pointer;margin-left:auto;flex-shrink:0}
+[data-theme="light"] .task-field-edit{color:#4338ca}
+.task-ans-no{color:#f87171;font-weight:600;font-size:13px}
+.task-ans-yes{color:#4ade80;font-weight:600;font-size:13px}
+[data-theme="light"] .task-ans-no{color:#dc2626}
+[data-theme="light"] .task-ans-yes{color:#16a34a}
+/* Create task toolbar */
+.kb-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px}
+.btn-create-task{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:none;background:#6366f1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s,transform 0.1s;line-height:1}
+.btn-create-task:hover{background:#4f46e5}
+.btn-create-task:active{transform:scale(0.97)}
+[data-theme="light"] .btn-create-task{background:#4f46e5}
+[data-theme="light"] .btn-create-task:hover{background:#4338ca}
+/* Create task modal */
+.ct-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:900;display:none;align-items:center;justify-content:center}
+.ct-overlay.open{display:flex}
+.ct-modal{background:#0f172a;border:1px solid rgba(255,255,255,0.10);border-radius:16px;width:440px;max-width:94vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,0.7)}
+[data-theme="light"] .ct-modal{background:#fff;border-color:rgba(0,0,0,0.10)}
+.ct-head{padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+[data-theme="light"] .ct-head{border-bottom-color:rgba(0,0,0,0.07)}
+.ct-title{font-size:15px;font-weight:700;color:#fff}
+[data-theme="light"] .ct-title{color:#111827}
+.ct-close{width:28px;height:28px;border-radius:7px;border:none;background:rgba(255,255,255,0.07);color:#9ca3af;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background 0.15s}
+.ct-close:hover{background:rgba(255,255,255,0.14);color:#fff}
+[data-theme="light"] .ct-close{background:rgba(0,0,0,0.05);color:#374151}
+.ct-body{padding:18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.ct-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ct-field{display:flex;flex-direction:column;gap:5px}
+.ct-field.full{grid-column:1/-1}
+.ct-lbl{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em}
+.ct-input,.ct-select{width:100%;padding:8px 11px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.05);color:#e5e7eb;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.15s;box-sizing:border-box}
+.ct-input:focus,.ct-select:focus{border-color:#6366f1}
+[data-theme="light"] .ct-input,[data-theme="light"] .ct-select{border-color:rgba(0,0,0,0.12);background:#f9fafb;color:#111827}
+[data-theme="light"] .ct-input:focus,[data-theme="light"] .ct-select:focus{border-color:#6366f1}
+/* Custom KVC dropdown */
+.ct-dropdown{position:relative}
+.ct-dd-btn{width:100%;padding:8px 11px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.05);color:#e5e7eb;font-size:13px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;transition:border-color 0.15s;text-align:left}
+.ct-dd-btn:focus,.ct-dropdown.open .ct-dd-btn{border-color:#6366f1;outline:none}
+[data-theme="light"] .ct-dd-btn{border-color:rgba(0,0,0,0.12);background:#f9fafb;color:#111827}
+.ct-dd-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1a2540;border:1px solid rgba(255,255,255,0.12);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,0.6);z-index:1000;display:none;overflow:hidden}
+[data-theme="light"] .ct-dd-panel{background:#fff;border-color:rgba(0,0,0,0.10);box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+.ct-dropdown.open .ct-dd-panel{display:block}
+.ct-dd-search-wrap{padding:8px 8px 6px}
+.ct-dd-search{width:100%;padding:6px 10px;border-radius:7px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.07);color:#e5e7eb;font-size:12px;font-family:inherit;outline:none;box-sizing:border-box}
+.ct-dd-search:focus{border-color:#6366f1}
+.ct-dd-search::placeholder{color:#4b5563}
+[data-theme="light"] .ct-dd-search{border-color:rgba(0,0,0,0.10);background:#f3f4f6;color:#111827}
+[data-theme="light"] .ct-dd-search::placeholder{color:#9ca3af}
+.ct-dd-list{max-height:210px;overflow-y:auto;padding:4px 0 6px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.10) transparent}
+.ct-dd-list::-webkit-scrollbar{width:4px}
+.ct-dd-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px}
+.ct-dd-group{padding:6px 12px 3px;font-size:10px;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:0.07em}
+[data-theme="light"] .ct-dd-group{color:#9ca3af}
+.ct-dd-opt{padding:7px 14px;font-size:13px;color:#cbd5e1;cursor:pointer;transition:background 0.10s}
+.ct-dd-opt:hover{background:rgba(99,102,241,0.15);color:#e5e7eb}
+.ct-dd-opt.selected{background:rgba(99,102,241,0.22);color:#a5b4fc;font-weight:600}
+.ct-dd-opt.hidden{display:none}
+[data-theme="light"] .ct-dd-opt{color:#374151}
+[data-theme="light"] .ct-dd-opt:hover{background:rgba(99,102,241,0.08);color:#111827}
+[data-theme="light"] .ct-dd-opt.selected{background:rgba(99,102,241,0.12);color:#4338ca}
+.ct-type-row{display:flex;gap:8px}
+.ct-type-btn{flex:1;padding:7px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.04);color:#9ca3af;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;text-align:center}
+.ct-type-btn.active{background:rgba(99,102,241,0.20);border-color:#6366f1;color:#a5b4fc}
+[data-theme="light"] .ct-type-btn{border-color:rgba(0,0,0,0.10);background:#f3f4f6;color:#374151}
+[data-theme="light"] .ct-type-btn.active{background:rgba(99,102,241,0.10);border-color:#6366f1;color:#4338ca}
+.ct-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+[data-theme="light"] .ct-foot{border-top-color:rgba(0,0,0,0.07)}
+.ct-btn-cancel{padding:7px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);background:transparent;color:#9ca3af;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s}
+.ct-btn-cancel:hover{background:rgba(255,255,255,0.07)}
+[data-theme="light"] .ct-btn-cancel{border-color:rgba(0,0,0,0.10);color:#374151}
+.ct-btn-submit{padding:7px 20px;border-radius:8px;border:none;background:#6366f1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s}
+.ct-btn-submit:hover{background:#4f46e5}
+/* Column settings button */
+.kb-settings-btn{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:5px;border:none;background:rgba(255,255,255,0.07);color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:background 0.15s,color 0.15s;flex-shrink:0;line-height:1}
+.kb-settings-btn:hover{background:rgba(255,255,255,0.15);color:#e5e7eb}
+[data-theme="light"] .kb-settings-btn{background:rgba(0,0,0,0.06);color:#6b7280}
+[data-theme="light"] .kb-settings-btn:hover{background:rgba(0,0,0,0.10);color:#111827}
+/* Column settings popover */
+.col-pop{position:fixed;width:272px;background:#111827;border:1px solid rgba(255,255,255,0.12);border-radius:12px;box-shadow:0 20px 48px rgba(0,0,0,0.6);z-index:850;display:none;overflow:hidden}
+[data-theme="light"] .col-pop{background:#fff;border-color:rgba(0,0,0,0.10);box-shadow:0 8px 32px rgba(0,0,0,0.14)}
+.col-pop.open{display:block}
+.col-pop-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.08)}
+[data-theme="light"] .col-pop-tabs{border-bottom-color:rgba(0,0,0,0.08)}
+.col-pop-tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.15s}
+.col-pop-tab:hover{color:#d1d5db}
+.col-pop-tab.active{color:#a5b4fc;border-bottom-color:#6366f1}
+[data-theme="light"] .col-pop-tab.active{color:#4338ca}
+.col-pop-body{padding:12px 14px;max-height:268px;overflow-y:auto;scrollbar-width:thin}
+.col-pop-ttl{font-size:10px;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px}
+.col-pop-sub{font-size:11px;color:#6b7280;margin-bottom:8px;line-height:1.4}
+.col-check{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer}
+.col-check input{accent-color:#6366f1;width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.col-check-lbl{font-size:12px;color:#d1d5db}
+[data-theme="light"] .col-check-lbl{color:#374151}
+.col-pop-sep{height:1px;background:rgba(255,255,255,0.07);margin:8px 0}
+[data-theme="light"] .col-pop-sep{background:rgba(0,0,0,0.07)}
+.col-user-row{display:flex;align-items:center;gap:8px;padding:5px 0}
+.col-user-av{width:22px;height:22px;border-radius:50%;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.col-user-name{font-size:12px;color:#d1d5db;flex:1}
+[data-theme="light"] .col-user-name{color:#374151}
+.col-user-chk{accent-color:#6366f1;width:13px;height:13px;cursor:pointer;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">ez</div>
+      <div class="brand-text"><div class="brand-name">ezCloud PPV</div><div class="brand-role">admin</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item has-children open" onclick="toggleMenu('park')"><span class="nav-icon">🎢</span><span class="nav-label">Khu vui chơi</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub open" id="sub-park">
+        <a href="danh-sach-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Danh sách khu vui chơi</a>
+        <a href="ma-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Mã khu vui chơi</a>
+        <a href="so-du-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Số dư khu vui chơi hàng ngày</a>
+        <a href="nap-tien-kvc.html" class="nav-sub-item active"><span class="nav-sub-dot"></span>Danh sách nạp tiền KVC theo ngày</a>
+        <a href="chi-tiet-gia-von-ve-ban.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Chi tiết giá vốn vé bán</a>
+        <a href="doi-soat-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Đối soát Khu vui chơi</a>
+        <a href="kvc-hoan-tien.html" class="nav-sub-item"><span class="nav-sub-dot"></span>KVC hoàn tiền</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">🤝</span><span class="nav-label">Đại lý</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Khách lẻ</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Đối soát Vin</span></a>
+      <a href="#" class="nav-item"><span class="nav-icon">🌐</span><span class="nav-label">Các đại lý OTA</span></a>
+      <div class="nav-item has-children" onclick="toggleMenu('hoantien')"><span class="nav-icon">🔄</span><span class="nav-label">Hoàn tiền</span><span class="nav-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+      <div class="nav-sub" id="sub-hoantien">
+        <a href="hoan-tien-kvc.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Quy trình hoàn tiền</a>
+        <a href="trang-thai-hoan-tien-kh.html" class="nav-sub-item"><span class="nav-sub-dot"></span>Trạng thái hoàn tiền cho khách hàng</a>
+      </div>
+      <a href="#" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Quy trình đối soát</span></a>    </nav>
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="user-info">
+          <div class="avatar">AT<span class="avatar-dot"></span></div>
+          <div style="min-width:0"><div class="user-name">Anh Thảo</div><div class="user-email">admin@ezcloud.vn</div></div>
+        </div>
+        <div class="user-actions">
+          <a href="system.html" class="user-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg> Cài đặt</a>
+          <button class="user-btn logout"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg> Đăng xuất</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" onclick="toggleSidebar()"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h16"/></svg></button>
+        <span class="page-title">Khu vui chơi / Danh sách nạp tiền KVC theo ngày</span>
+      </div>
+      <div class="header-right">
+        <input type="search" class="search-input" placeholder="Tìm kiếm..." />
+        <button class="icon-btn notif-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <!-- Task full-screen detail (inside main-content, sibling of page-content) -->
+    <div id="task-screen" class="task-screen">
+      <div class="task-bar">
+        <button class="task-back" onclick="closeTaskPanel()">← Quay lại</button>
+        <span class="task-crumb">Khu vui chơi / Danh sách nạp tiền KVC theo ngày / Quy trình nạp tiền KVC</span>
+      </div>
+      <div class="task-body">
+        <div class="task-main-title" id="task-main-title">Chi tiết nhiệm vụ</div>
+        <div class="task-meta-row">
+          <span class="task-step-badge task-step-gray" id="task-step-badge"></span>
+          <span class="task-date-meta" id="task-date-meta"></span>
+        </div>
+        <div id="task-sections"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1>Danh sách nạp tiền KVC theo ngày</h1>
+        <p>Lịch sử các giao dịch nạp tiền vào tài khoản khu vui chơi</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab('quytrinh',this)">Quy trình nạp tiền KVC</button>
+        <button class="tab-btn" onclick="switchTab('nap',this)">Nạp tiền cho KVC nạp tiền</button>
+        <button class="tab-btn" onclick="switchTab('cn',this)">Thanh toán KVC công nợ</button>
+      </div>
+
+      <!-- Tab Kanban: Quy trình nạp tiền -->
+      <div class="tab-panel active" id="tab-quytrinh">
+        <div class="kb-toolbar">
+          <button class="btn-create-task" onclick="openCreateTask()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+            Tạo nhiệm vụ
+          </button>
+        </div>
+        <div class="card">
+          <div class="kanban-wrap">
+            <div class="kanban-board">
+
+              <!-- Cột 1: Kế toán / NVKD lập phiếu -->
+              <div class="kb-col">
+                <div class="kb-col-head kb-col-head-gray">
+                  <div class="kb-col-title-row">
+                    <span class="kb-col-title kb-col-title-gray">Kế toán / NVKD lập phiếu</span>
+                    <span class="kb-col-arrow">▾</span>
+                  </div>
+                  <div class="kb-avatars">
+                    <div class="kb-av kb-av-indigo" title="Anh Thảo">AT</div>
+                    <div class="kb-av kb-av-teal" title="Ngọc Hà">NH</div>
+                    <div class="kb-av" title="Thu Lan">TL</div>
+                  </div>
+                  <div class="kb-col-stats">
+                    <span class="kb-stat">0/0 NV</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">0 Q.hạn</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">⏱ 2.00h</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">📋 1 CV</span>
+                  </div>
+                </div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Vin Nha Trang</div>
+                    <div class="kb-card-desc">Cần ezCloud Key tạy tiền trên hệ thống<br>TK: 19139932758899 · Techcombank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">50.000.000 ₫</span>
+                      <span class="kb-card-meta">📅 24/06/2026</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 2: Trưởng bộ phận duyệt -->
+              <div class="kb-col">
+                <div class="kb-col-head kb-col-head-sky">
+                  <div class="kb-col-title-row">
+                    <span class="kb-col-title kb-col-title-sky">Trưởng bộ phận duyệt</span>
+                    <span class="kb-col-arrow">▾</span>
+                  </div>
+                  <div class="kb-avatars">
+                    <div class="kb-av kb-av-amber" title="Trung Minh">TM</div>
+                    <div class="kb-av kb-av-rose" title="Bảo Hân">BH</div>
+                  </div>
+                  <div class="kb-col-stats">
+                    <span class="kb-stat">0/0 NV</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">0 Q.hạn</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">⏱ 2.00h</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">📋 2 CV</span>
+                  </div>
+                </div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Vin Phú Quốc</div>
+                    <div class="kb-card-desc">Cần ezCloud Key tạy tiền trên hệ thống<br>TK: 0091000593278 · Vietcombank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">100.000.000 ₫</span>
+                      <span class="kb-card-meta">📅 28/04/2026</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Vin Nam Hội An</div>
+                    <div class="kb-card-desc">Cần ezCloud Key tạy tiền trên hệ thống<br>TK: 1029876329 · Vietcombank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">50.000.000 ₫</span>
+                      <span class="kb-card-meta">📅 28/04/2026</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 3: Kế toán kiểm tra & chuyển khoản -->
+              <div class="kb-col">
+                <div class="kb-col-head kb-col-head-indigo">
+                  <div class="kb-col-title-row">
+                    <span class="kb-col-title kb-col-title-indigo">Kế toán kiểm tra & chuyển khoản</span>
+                    <span class="kb-col-arrow">▾</span>
+                  </div>
+                  <div class="kb-avatars">
+                    <div class="kb-av kb-av-indigo" title="Anh Thảo">AT</div>
+                    <div class="kb-av kb-av-teal" title="Kế Toán">KT</div>
+                  </div>
+                  <div class="kb-col-stats">
+                    <span class="kb-stat">987/1489 NV</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat kb-stat-red">898 Q.hạn</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">⏱ 72.00h</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">📋 2 CV</span>
+                  </div>
+                </div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Thủy Cung Lotte (Lần 1)</div>
+                    <div class="kb-card-desc">Bộ phận công tác: Phân Phối Vé · Kế Toán<br>TK: 700029610000 · Shinhan Bank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">365.625.000 ₫</span>
+                      <span class="kb-card-meta">📅 29/04/2026</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Thủy Cung Lotte (Lần 2)</div>
+                    <div class="kb-card-desc">Bộ phận công tác: Phân Phối Vé · Kế Toán<br>TK: 700029610000 · Shinhan Bank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">237.375.000 ₫</span>
+                      <span class="kb-card-meta">📅 29/04/2026</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 4: Hoàn thành -->
+              <div class="kb-col">
+                <div class="kb-col-head kb-col-head-green">
+                  <div class="kb-col-title-row">
+                    <span class="kb-col-title kb-col-title-green">Hoàn thành</span>
+                    <span class="kb-col-arrow">▾</span>
+                  </div>
+                  <div class="kb-avatars">
+                    <div class="kb-av kb-av-teal" title="Ngọc Hà">NH</div>
+                    <div class="kb-av kb-av-indigo" title="Anh Thảo">AT</div>
+                  </div>
+                  <div class="kb-col-stats">
+                    <span class="kb-stat kb-stat-green">6/520 NV</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">0 Q.hạn</span>
+                  </div>
+                </div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Bản Mòng</div>
+                    <div class="kb-card-desc">Bộ phận công tác: Phân Phối Vé · Trưởng bộ<br>TK: 1213776969 · NCB</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">490.000.000 ₫</span>
+                      <span class="kb-card-meta">✅ 14/11/2025</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Sunworld</div>
+                    <div class="kb-card-desc">Bộ phận công tác: Phân Phối Vé · Kế Toán<br>TK: 1SB2B24 · NCB</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">490.000.000 ₫</span>
+                      <span class="kb-card-meta">✅ 28/04/2026</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Vin Cửa Hội</div>
+                    <div class="kb-card-desc">Bộ phận công tác: Phân Phối Vé · Kế Toán<br>TK: 19139932758899 · Techcombank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount">50.000.000 ₫</span>
+                      <span class="kb-card-meta">✅ 28/04/2026</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 5: Thất bại -->
+              <div class="kb-col">
+                <div class="kb-col-head kb-col-head-red">
+                  <div class="kb-col-title-row">
+                    <span class="kb-col-title kb-col-title-red">Thất bại</span>
+                    <span class="kb-col-arrow">▾</span>
+                  </div>
+                  <div class="kb-avatars">
+                    <div class="kb-av kb-av-rose" title="Bảo Hân">BH</div>
+                  </div>
+                  <div class="kb-col-stats">
+                    <span class="kb-stat kb-stat-red">7/18 NV</span>
+                    <span class="kb-stat-sep">·</span>
+                    <span class="kb-stat">0 Q.hạn</span>
+                  </div>
+                </div>
+                <div class="kb-cards">
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-teal">Nạp tiền</div>
+                    <div class="kb-card-title">Nạp tiền - Vin Vũ Yên (Lần 2)</div>
+                    <div class="kb-card-desc">Cần ezCloud Key tạy tiền trên hệ thống<br>Sai số tài khoản, cần kiểm tra lại</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount kb-card-amount-red">50.000.000 ₫</span>
+                      <span class="kb-card-meta">❌ 15/06/2026</span>
+                    </div>
+                  </div>
+                  <div class="kb-card">
+                    <div class="kb-tag kb-tag-indigo">Công nợ</div>
+                    <div class="kb-card-title">Thanh toán Công nợ - Sealinks</div>
+                    <div class="kb-card-desc">Sai thông tin tài khoản thụ hưởng<br>TK: 1100030038237 · Vietcombank</div>
+                    <div class="kb-card-footer">
+                      <span class="kb-card-amount kb-card-amount-red">8.110.000 ₫</span>
+                      <span class="kb-card-meta">❌ 16/09/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Nạp tiền -->
+      <div class="tab-panel" id="tab-nap">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm nội dung..." oninput="applyFilter('nap')" id="search-nap" />
+            <span class="tb-label">Từ ngày</span>
+            <input type="date" class="tb-date" id="from-nap" onchange="applyFilter('nap')" />
+            <span class="tb-label">Đến ngày</span>
+            <input type="date" class="tb-date" id="to-nap" onchange="applyFilter('nap')" />
+          </div>
+          <div class="table-wrap">
+            <table id="tbl-nap" class="data-table">
+              <thead><tr><th>Ngày giờ giao dịch</th><th style="text-align:right">Ghi nợ</th><th style="text-align:right">Ghi có</th><th>Nội dung</th></tr></thead>
+              <tbody>
+                <tr data-date="2025-09-17" data-search="top up sunworld ncb"><td style="color:#6b7280;white-space:nowrap">17/09/2025 17:33:32</td><td class="amount amount-green" style="text-align:right">490.000.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :1SB2B24, tại NCB. ND Top up Sunworld - ezCloud 17.09.2025 -CTLNHIDO000012817233009-1/1-PMT-002</td></tr>
+                <tr data-date="2026-04-28" data-search="sunworld ncb"><td style="color:#6b7280;white-space:nowrap">28/04/2026</td><td class="amount amount-green" style="text-align:right">50.000.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :19139932758899, tại Techcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN CUA HOI ngay 28 04 2026 -CTLNHIDO000015124913428-1/1-PMT-002 244</td></tr>
+                <tr data-date="2026-04-28" data-search="viet nam hoi an vietcombank"><td style="color:#6b7280;white-space:nowrap">28/04/2026</td><td class="amount amount-green" style="text-align:right">50.000.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :1029876329, tại Vietcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN NAM HOI AN ngay 28 04 2026 -CTLNHIDO000015124944210-1/1-PMT-002 245</td></tr>
+                <tr data-date="2026-04-28" data-search="sunworld ncb"><td style="color:#6b7280;white-space:nowrap">28/04/2026</td><td class="amount amount-green" style="text-align:right">490.000.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :1SB2B24, tại NCB. ND Top-up SUNWORLD ezCloud ngay 28 04 2026 -CTLNHIDO000015124947382-1/1-PMT-002 246</td></tr>
+                <tr data-date="2026-04-28" data-search="phu quoc vietcombank"><td style="color:#6b7280;white-space:nowrap">28/04/2026</td><td class="amount amount-green" style="text-align:right">100.000.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :0091000593278, tại Vietcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN PHU QUOC ngay 28 04 2026 -CTLNHIDO000015124982897-1/1-PMT-002 248</td></tr>
+                <tr data-date="2026-04-29" data-search="thuy cung lotte shinhan lan 1"><td style="color:#6b7280;white-space:nowrap">29/04/2026</td><td class="amount amount-green" style="text-align:right">365.625.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :700029610000, tại Shinhan Bank V. ND ezCloud thanh toan nhap lo cho THUY CUNG LOTTE ngay 29 04 2026 lan 1 -CTLNHIDO000015134693760-1/1-PMT-002 243</td></tr>
+                <tr data-date="2026-04-29" data-search="thuy cung lotte shinhan lan 2"><td style="color:#6b7280;white-space:nowrap">29/04/2026</td><td class="amount amount-green" style="text-align:right">237.375.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :700029610000, tại Shinhan Bank V. ND ezCloud thanh toan nhap lo cho THUY CUNG LOTTE ngay 29 04 2026 lan 2 -CTLNHIDO000015134727960-1/1-PMT-002 246</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-nap" class="pagination"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Công nợ -->
+      <div class="tab-panel" id="tab-cn">
+        <div class="card">
+          <div class="toolbar">
+            <input type="text" class="tb-input" placeholder="🔍  Tìm nội dung..." oninput="applyFilter('cn')" id="search-cn" />
+            <span class="tb-label">Từ ngày</span>
+            <input type="date" class="tb-date" id="from-cn" onchange="applyFilter('cn')" />
+            <span class="tb-label">Đến ngày</span>
+            <input type="date" class="tb-date" id="to-cn" onchange="applyFilter('cn')" />
+          </div>
+          <div class="table-wrap">
+            <table id="tbl-cn" class="data-table">
+              <thead><tr><th>Ngày giờ giao dịch</th><th style="text-align:right">Ghi nợ</th><th style="text-align:right">Ghi có</th><th>Nội dung</th></tr></thead>
+              <tbody>
+                <tr data-date="2025-09-16" data-search="son tien techcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">42.495.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :57457, tại Techcombank. ND ezCloud thanh toan cong no cho Son Tien ngay 16 09 2025 -CTLNHIDO-PMT-001</td></tr>
+                <tr data-date="2025-09-16" data-search="mikazuki vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">35.953.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :200077779999, tại Vietcombank. ND ezCloud thanh toan cong no cho Mikazuki ngay 16 09 2025 -CTLNHIDO-PMT-002</td></tr>
+                <tr data-date="2025-09-16" data-search="mekong vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">49.833.500</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :60300641396, tại Vietcombank. ND ezCloud thanh toan cong no cho Mekong ngay 16 09 2025 -CTLNHIDO-PMT-003</td></tr>
+                <tr data-date="2025-09-16" data-search="ho tram vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">22.850.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :1027882298, tại Vietcombank. ND ezCloud thanh toan cong no cho Ho Tram ngay 16 09 2025 -CTLNHIDO-PMT-004</td></tr>
+                <tr data-date="2025-09-16" data-search="nova phan thiet vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">119.995.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :3336333979, tại Vietcombank. ND ezCloud thanh toan cong no cho Nova Phan Thiet ngay 16 09 2025 -CTLNHIDO-PMT-005</td></tr>
+                <tr data-date="2025-09-16" data-search="cong vien nuoc ho tay vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">32.082.500</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :11004009888, tại Vietcombank. ND ezCloud thanh toan cong no cho Cong Vien Nuoc Ho Tay ngay 16 09 2025 -CTLNHIDO-PMT-006</td></tr>
+                <tr data-date="2025-09-16" data-search="sealinks vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">8.110.000</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :1100030038237, tại Vietcombank. ND ezCloud thanh toan cong no cho Sealinks ngay 16 09 2025 -CTLNHIDO-PMT-007</td></tr>
+                <tr data-date="2025-09-16" data-search="sightseeing hn vietcombank"><td style="color:#6b7280;white-space:nowrap">16/09/2025</td><td class="amount amount-green" style="text-align:right">9.996.172.999</td><td style="text-align:right;color:#6b7280">0</td><td class="content-cell">HBK-TKThe :sightseeing, tại Vietcombank. ND ezCloud thanh toan cong no cho Sightseeing HN ngay 16 09 2025 -CTLNHIDO-PMT-008</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="pg-cn" class="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create task modal -->
+<div class="ct-overlay" id="ct-overlay" onclick="if(event.target===this)closeCreateTask()">
+  <div class="ct-modal">
+    <div class="ct-head">
+      <span class="ct-title">Tạo nhiệm vụ mới</span>
+      <button class="ct-close" onclick="closeCreateTask()">✕</button>
+    </div>
+    <div class="ct-body">
+      <div class="ct-field full">
+        <span class="ct-lbl">Tên nhiệm vụ</span>
+        <input class="ct-input" id="ct-name" type="text" placeholder="VD: Nạp tiền tháng 6 - Vin Nha Trang" />
+      </div>
+      <div class="ct-field full">
+        <span class="ct-lbl">Loại nhiệm vụ</span>
+        <div class="ct-type-row">
+          <button class="ct-type-btn active" id="ct-type-nap" onclick="selectType('nap')">Nạp tiền</button>
+          <button class="ct-type-btn" id="ct-type-cn" onclick="selectType('cn')">Thanh toán Công nợ</button>
+        </div>
+      </div>
+      <div class="ct-field full">
+        <span class="ct-lbl">Tên KVC</span>
+        <div class="ct-dropdown" id="ct-kvc-dd">
+          <button type="button" class="ct-dd-btn" id="ct-dd-btn" onclick="toggleCtDd()">
+            <span id="ct-dd-label" style="color:#6b7280">-- Chọn KVC --</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="ct-dd-panel" id="ct-dd-panel">
+            <div class="ct-dd-search-wrap">
+              <input class="ct-dd-search" id="ct-dd-search" type="text" placeholder="🔍 Tìm KVC..." oninput="filterCtDd()" autocomplete="off" />
+            </div>
+            <div class="ct-dd-list" id="ct-dd-list">
+              <div class="ct-dd-group">Nạp tiền</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Vin Nha Trang</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Vin Phú Quốc</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Vin Nam Hội An</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Vin Cửa Hội</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Vin Vũ Yên</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Thủy Cung Lotte</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Bản Mòng</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Sunworld</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Đồi Rồng</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Samten Hills Dalat</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'nap')">Delight</div>
+              <div class="ct-dd-group">Công nợ</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Sealinks</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">TLTY</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Sơn Tiên</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Lumiere</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Mikazuki</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Mekong</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Tà Cú</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Hồ Tràm</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Nova Phan Thiết</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Tiên Sa show</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Công viên nước</div>
+              <div class="ct-dd-opt" onclick="selectCtKvc(this,'cn')">Sightseeing HN</div>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="ct-kvc" />
+      </div>
+      <div class="ct-row">
+        <div class="ct-field">
+          <span class="ct-lbl">Số tài khoản</span>
+          <input class="ct-input" id="ct-acct" type="text" placeholder="VD: 19139932758899" />
+        </div>
+        <div class="ct-field">
+          <span class="ct-lbl">Ngân hàng</span>
+          <input class="ct-input" id="ct-bank" type="text" placeholder="VD: Techcombank" />
+        </div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-field">
+          <span class="ct-lbl">Số tiền (₫)</span>
+          <input class="ct-input" id="ct-amount" type="text" placeholder="VD: 50.000.000" />
+        </div>
+        <div class="ct-field">
+          <span class="ct-lbl">Ngày thực hiện</span>
+          <input class="ct-input" id="ct-date" type="date" />
+        </div>
+      </div>
+      <div class="ct-field full">
+        <span class="ct-lbl">Ghi chú</span>
+        <input class="ct-input" id="ct-note" type="text" placeholder="Ghi chú thêm (tuỳ chọn)" />
+      </div>
+    </div>
+    <div class="ct-foot">
+      <button class="ct-btn-cancel" onclick="closeCreateTask()">Huỷ</button>
+      <button class="ct-btn-submit" onclick="submitCreateTask()">Tạo nhiệm vụ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Column settings popover -->
+<div class="col-pop" id="col-pop">
+  <div class="col-pop-tabs">
+    <div class="col-pop-tab active" onclick="switchColTab(0,this)">Trường thông tin</div>
+    <div class="col-pop-tab" onclick="switchColTab(1,this)">Phân quyền</div>
+  </div>
+  <div class="col-pop-body" id="col-pop-body"></div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌓 Đổi theme</button>
+
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark')}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed')}
+function toggleMenu(key){const sub=document.getElementById('sub-'+key);const btn=sub.previousElementSibling;sub.classList.toggle('open');btn.classList.toggle('open')}
+
+const PAGE_SIZE = 100;
+const state = { nap: 1, cn: 1 };
+
+function formatDate(d){ const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+
+function switchTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+function sortDesc(tableId){
+  const tbody=document.querySelector('#'+tableId+' tbody');
+  const rows=[...tbody.querySelectorAll('tr[data-date]')];
+  rows.sort((a,b)=>b.dataset.date.localeCompare(a.dataset.date));
+  rows.forEach(r=>tbody.appendChild(r));
+}
+
+function applyFilter(tab){ state[tab]=1; render(tab); }
+
+function render(tab){
+  const tblId = tab==='nap' ? 'tbl-nap' : 'tbl-cn';
+  const kw=document.getElementById('search-'+tab).value.toLowerCase();
+  const from=document.getElementById('from-'+tab).value;
+  const to=document.getElementById('to-'+tab).value;
+
+  const tbody=document.querySelector('#'+tblId+' tbody');
+  tbody.querySelectorAll('.date-separator').forEach(r=>r.remove());
+  const allRows=[...tbody.querySelectorAll('tr[data-date]')];
+
+  const filtered=allRows.filter(r=>{
+    const search=r.dataset.search||'';
+    const date=r.dataset.date||'';
+    return search.includes(kw)&&(!from||date>=from)&&(!to||date<=to);
+  });
+
+  const page=state[tab];
+  const total=filtered.length;
+  const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  const start=(page-1)*PAGE_SIZE;
+  const pageRows=filtered.slice(start,start+PAGE_SIZE);
+  const pageSet=new Set(pageRows);
+  allRows.forEach(r=>{ r.style.display=pageSet.has(r)?'':'none'; });
+
+  const colCount=document.querySelector('#'+tblId+' thead tr').cells.length;
+  let lastDate=null;
+  pageRows.forEach(r=>{
+    const d=r.dataset.date;
+    if(d&&d!==lastDate){
+      const sep=document.createElement('tr');
+      sep.className='date-separator';
+      sep.innerHTML=`<td colspan="${colCount}">📅 ${formatDate(d)}</td>`;
+      tbody.insertBefore(sep,r);
+      lastDate=d;
+    }
+  });
+
+  const el=document.getElementById('pg-'+tab);
+  if(total===0){el.innerHTML='<span style="font-size:12px;color:#6b7280">Không có dữ liệu</span>';return;}
+  const from2=start+1,to2=start+pageRows.length;
+  let btns='';
+  let pages=[];
+  if(totalPages<=7){for(let i=1;i<=totalPages;i++)pages.push(i);}
+  else{
+    pages=[1];
+    let lo=Math.max(2,page-2),hi=Math.min(totalPages-1,page+2);
+    if(lo>2)pages.push('…');
+    for(let i=lo;i<=hi;i++)pages.push(i);
+    if(hi<totalPages-1)pages.push('…');
+    pages.push(totalPages);
+  }
+  pages.forEach(p=>{
+    if(p==='…')btns+=`<span style="color:#6b7280;padding:0 4px">…</span>`;
+    else btns+=`<button class="pg-btn${p===page?' active':''}" onclick="goPage('${tab}',${p})">${p}</button>`;
+  });
+  el.innerHTML=`
+    <span class="pagination-info">Hiển thị ${from2}–${to2} / ${total} dòng</span>
+    <div class="pagination-btns">
+      <button class="pg-btn" onclick="goPage('${tab}',${page-1})" ${page<=1?'disabled':''}>‹</button>
+      ${btns}
+      <button class="pg-btn" onclick="goPage('${tab}',${page+1})" ${page>=totalPages?'disabled':''}>›</button>
+    </div>`;
+}
+
+function goPage(tab,p){state[tab]=p;render(tab);}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  sortDesc('tbl-nap'); sortDesc('tbl-cn');
+  render('nap'); render('cn');
+  initKanban();
+});
+
+// ── Kanban Drag & Drop ──
+function initKanban(){
+  document.querySelectorAll('.kb-card').forEach(card=>{
+    card.setAttribute('draggable','true');
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragend', onDragEnd);
+    card.addEventListener('click', function(e){
+      if(!this.classList.contains('dragging')) openTaskPanel(this);
+    });
+  });
+  document.querySelectorAll('.kb-cards').forEach(zone=>{
+    zone.addEventListener('dragover', onDragOver);
+    zone.addEventListener('dragenter', onDragEnter);
+    zone.addEventListener('dragleave', onDragLeave);
+    zone.addEventListener('drop', onDrop);
+  });
+  // Inject settings button into each column header (absolute top-right)
+  document.querySelectorAll('.kb-col').forEach((col,idx)=>{
+    const head = col.querySelector('.kb-col-head');
+    if(!head) return;
+    const btn = document.createElement('button');
+    btn.className = 'kb-settings-btn';
+    btn.title = 'Cài đặt cột';
+    btn.innerHTML = '⚙';
+    btn.addEventListener('click', e=>{ e.stopPropagation(); openColSettings(btn, idx); });
+    head.appendChild(btn);
+  });
+}
+
+let dragCard = null;
+let placeholder = null;
+
+function onDragStart(e){
+  dragCard = this;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  placeholder = document.createElement('div');
+  placeholder.className = 'kb-drop-placeholder';
+  setTimeout(()=>{ if(dragCard) dragCard.style.display='none'; }, 0);
+}
+
+function onDragEnd(){
+  if(dragCard) dragCard.style.display='';
+  dragCard && dragCard.classList.remove('dragging');
+  placeholder && placeholder.remove();
+  document.querySelectorAll('.kb-cards').forEach(z=>z.classList.remove('drag-over'));
+  dragCard = null;
+  placeholder = null;
+  updateColCounts();
+}
+
+function onDragEnter(e){
+  e.preventDefault();
+  this.classList.add('drag-over');
+}
+
+function onDragLeave(e){
+  if(!this.contains(e.relatedTarget)) this.classList.remove('drag-over');
+}
+
+function onDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const zone = this;
+  const afterEl = getDragAfterElement(zone, e.clientY);
+  placeholder && placeholder.remove();
+  if(afterEl) zone.insertBefore(placeholder, afterEl);
+  else zone.appendChild(placeholder);
+}
+
+function onDrop(e){
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  if(!dragCard) return;
+  const zone = this;
+  placeholder && placeholder.remove();
+  const afterEl = getDragAfterElement(zone, e.clientY);
+  if(afterEl) zone.insertBefore(dragCard, afterEl);
+  else zone.appendChild(dragCard);
+}
+
+function getDragAfterElement(container, y){
+  const cards = [...container.querySelectorAll('.kb-card:not(.dragging)')];
+  return cards.reduce((closest, child)=>{
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height/2;
+    if(offset < 0 && offset > closest.offset) return {offset, element: child};
+    return closest;
+  }, {offset: Number.NEGATIVE_INFINITY}).element;
+}
+
+function updateColCounts(){
+  document.querySelectorAll('.kb-col').forEach(col=>{
+    const count = col.querySelectorAll('.kb-cards .kb-card').length;
+    const stat = col.querySelector('.kb-col-stats .kb-stat:last-child');
+    if(stat && stat.textContent.includes('CV')) stat.textContent = '📋 '+count+' CV';
+  });
+}
+
+// ── Column settings ──
+const COL_FIELDS = [
+  {id:'title', label:'Tiêu đề nhiệm vụ', checked:true},
+  {id:'desc',  label:'Mô tả / Ghi chú',  checked:true},
+  {id:'amount',label:'Số tiền',           checked:true},
+  {id:'date',  label:'Ngày thực hiện',    checked:true},
+  {id:'tag',   label:'Loại topup (tag)',  checked:true},
+  {id:'bank',  label:'Ngân hàng / Số TK', checked:false},
+  {id:'person',label:'Người phụ trách',   checked:false},
+];
+const COL_USERS = [
+  {i:'AT', c:'#6366f1', n:'Anh Thảo (Admin)',        ok:true},
+  {i:'NH', c:'#14b8a6', n:'Ngọc Hà (Kế Toán)',       ok:true},
+  {i:'TL', c:'#4b5563', n:'Thu Lan (NVKD)',           ok:true},
+  {i:'TM', c:'#f59e0b', n:'Trung Minh (Trưởng BP)',  ok:true},
+  {i:'BH', c:'#f43f5e', n:'Bảo Hân (Kế Toán)',       ok:false},
+  {i:'KT', c:'#0ea5e9', n:'Kế Toán Trưởng',          ok:false},
+];
+let _colPopIdx = -1, _colTabIdx = 0;
+
+function openColSettings(btn, idx){
+  const pop = document.getElementById('col-pop');
+  if(_colPopIdx === idx && pop.classList.contains('open')){ closeColSettings(); return; }
+  _colPopIdx = idx; _colTabIdx = 0;
+  document.querySelectorAll('.col-pop-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  renderColPopBody();
+  pop.classList.add('open');
+  const r = btn.getBoundingClientRect();
+  const pw = 272;
+  let left = r.right - pw;
+  if(left < 8) left = 8;
+  if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  pop.style.top  = (r.bottom + 6) + 'px';
+  pop.style.left = left + 'px';
+}
+function closeColSettings(){ document.getElementById('col-pop').classList.remove('open'); _colPopIdx = -1; }
+function switchColTab(idx, tab){
+  _colTabIdx = idx;
+  document.querySelectorAll('.col-pop-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  renderColPopBody();
+}
+function renderColPopBody(){
+  const body = document.getElementById('col-pop-body');
+  const cols  = document.querySelectorAll('.kb-col');
+  const colTitle = cols[_colPopIdx]?.querySelector('.kb-col-title')?.textContent || '';
+  if(_colTabIdx === 0){
+    body.innerHTML = `<div class="col-pop-ttl">Trường hiển thị trên card</div>`
+      + COL_FIELDS.map(f=>`<label class="col-check"><input type="checkbox" ${f.checked?'checked':''} onchange="COL_FIELDS.find(x=>x.id==='${f.id}').checked=this.checked"><span class="col-check-lbl">${f.label}</span></label>`).join('');
+  } else {
+    body.innerHTML = `<div class="col-pop-ttl">Ai được chuyển task ở bước này?</div>`
+      + `<div class="col-pop-sub">Bước: <strong>${colTitle}</strong></div>`
+      + COL_USERS.map((u,i)=>`<div class="col-user-row"><div class="col-user-av" style="background:${u.c}">${u.i}</div><span class="col-user-name">${u.n}</span><input type="checkbox" class="col-user-chk" ${u.ok?'checked':''} onchange="COL_USERS[${i}].ok=this.checked"></div>`).join('');
+  }
+}
+document.addEventListener('click', e=>{
+  const pop = document.getElementById('col-pop');
+  if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.classList.contains('kb-settings-btn'))
+    closeColSettings();
+});
+
+// ── Task detail panel ──
+const KVC_FULL = {
+  'VIN NHA TRANG':'CTY CP VINWONDERS NHA TRANG','BAN MONG':'KDL BẢN MÒNG',
+  'VIN PHU QUOC':'CTY CP VINWONDERS PHÚ QUỐC','VIN NAM HOI AN':'CTY CP VINWONDERS NAM HỘI AN',
+  'VIN CUA HOI':'CTY CP VINWONDERS CỬA HỘI','THUY CUNG LOTTE':'CTY CP THỦY CUNG LOTTE',
+  'VIN VU YEN':'CTY CP VINWONDERS VŨ YÊN','SUNWORLD':'CTY CP SUNWORLD',
+};
+const STEP_SECTIONS = [
+  // Col 0 – KT/NVKD lập phiếu
+  [{ lbl:'1. KẾ TOÁN / NVKD LẬP PHIẾU', sub:null, fields:[
+    {no:'01',q:'Có ezCloud Key tạy tiền trên hệ thống ezTicket?', type:'no', a:'Không'},
+    {no:'02',q:'Tên KVC (người thụ hưởng)', a:'__name__'},
+    {no:'03',q:'Số tiền cần nạp', a:'__amount__', type:'amount'},
+    {no:'04',q:'Ngân hàng thu hưởng', a:'__bank__'},
+    {no:'05',q:'Số tài khoản thu hưởng', a:'__acct__', editable:true},
+    {no:'06',q:'Các file, bằng chứng đính kèm', type:'file'},
+  ]}],
+  // Col 1 – Trưởng BP duyệt
+  [
+    { lbl:'1. KẾ TOÁN / NVKD LẬP PHIẾU', sub:'ĐẦU VÀO', fields:[
+      {no:'01',q:'Có ezCloud Key tạy tiền trên hệ thống ezTicket?', type:'no', a:'Không'},
+      {no:'05',q:'Các file, bằng chứng, thông tin đính kèm', type:'file'},
+    ]},
+    { lbl:'2. TRƯỞNG BỘ PHẬN DUYỆT LỆNH NẠP TIỀN', sub:null, fields:[
+      {no:'07',q:'Đơn vị/người thu hưởng', a:'__name__'},
+      {no:'08',q:'Số tài khoản', a:'__acct__', editable:true},
+      {no:'09',q:'Ngân hàng thu hưởng', a:'__bank__'},
+      {no:'13',q:'Tổng số tiền (bằng số)', a:'__amount__', type:'amount'},
+      {no:'14',q:'Tổng số tiền (bằng chữ)', a:'__amtword__'},
+      {no:'16',q:'Số phải trả', a:'__amount__', type:'amount'},
+    ]},
+  ],
+  // Col 2 – KT kiểm tra & chuyển khoản
+  [
+    { lbl:'2. TRƯỞNG BỘ PHẬN DUYỆT LỆNH NẠP TIỀN', sub:'ĐẦU VÀO', fields:[
+      {no:'07',q:'Đơn vị/người thu hưởng', a:'__name__'},
+      {no:'08',q:'Số tài khoản', a:'__acct__', editable:true},
+      {no:'09',q:'Ngân hàng thu hưởng', a:'__bank__'},
+      {no:'13',q:'Tổng số tiền (bằng số)', a:'__amount__', type:'amount'},
+      {no:'14',q:'Tổng số tiền (bằng chữ)', a:'__amtword__'},
+    ]},
+    { lbl:'3. KẾ TOÁN KIỂM TRA SỐ TIỀN KHU VUI CHƠI ĐÃ NẠP CHO EZCLOUD HAY CHƯA?', sub:null, fields:[
+      {no:'17',q:'Số tiền KVC đã nạp vào ezCloud', a:'__amount__', type:'amount'},
+      {no:'18',q:'Biên lai / ảnh chụp xác nhận', type:'file'},
+      {no:'19',q:'Ghi chú', a:'Đã xác nhận số dư cập nhật trên hệ thống'},
+    ]},
+  ],
+  // Col 3 – Hoàn thành
+  [{ lbl:'4. HOÀN THÀNH', sub:null, fields:[
+    {no:'07',q:'Đơn vị/người thu hưởng', a:'__name__'},
+    {no:'13',q:'Tổng số tiền đã nạp', a:'__amount__', type:'amount'},
+    {no:'20',q:'Thời gian hoàn thành', a:'__date__'},
+    {no:'21',q:'Người xác nhận', a:'Ngọc Hà (Kế Toán)'},
+    {no:'22',q:'Trạng thái trên hệ thống ezTicket', type:'yes', a:'Đã cập nhật số dư'},
+  ]}],
+  // Col 4 – Thất bại
+  [{ lbl:'5. THẤT BẠI / TỪ CHỐI', sub:null, fields:[
+    {no:'07',q:'Đơn vị/người thu hưởng', a:'__name__'},
+    {no:'13',q:'Số tiền yêu cầu', a:'__amount__', type:'amount'},
+    {no:'23',q:'Lý do thất bại', a:'Sai thông tin tài khoản thụ hưởng'},
+    {no:'24',q:'Người xử lý', a:'Bảo Hân (Kế Toán)'},
+    {no:'25',q:'Hành động tiếp theo', a:'Liên hệ KVC để xác nhận lại thông tin'},
+  ]}],
+];
+
+function extractCard(card){
+  const titleEl = card.querySelector('.kb-card-title');
+  const descEl  = card.querySelector('.kb-card-desc');
+  const amtEl   = card.querySelector('.kb-card-amount');
+  const metaEl  = card.querySelector('.kb-card-meta');
+  const title   = titleEl?.textContent || '';
+  const desc    = descEl?.innerText   || '';
+  const amtRaw  = amtEl?.textContent?.replace(/[₫\s]/g,'') || '';
+  // Parse "Nạp tiền - Tên KVC" or "Thanh toán Công nợ - Tên KVC"
+  const parts = title.split(' - ');
+  const kvcName = parts.slice(1).join(' - ').trim() || title;
+  // Full company name lookup, fallback to card name
+  const name = KVC_FULL[kvcName.toUpperCase()] || kvcName;
+  // Bank & account from desc line "TK: XXXX · Bank"
+  const tkLine = desc.split('\n').find(l=>l.includes('TK:')) || '';
+  const acct   = tkLine.match(/TK[:\s]+([\w]+)/i)?.[1] || '—';
+  const bank   = tkLine.match(/·\s*(.+)$/)?.[1]?.trim()  || '—';
+  const date   = metaEl?.textContent?.replace(/[✅❌📅]/g,'').trim() || '';
+  return {name, acct, bank, amount:amtRaw, amtword:toWords(amtRaw), date};
+}
+
+function toWords(s){
+  const n = parseInt(s.replace(/[.,]/g,''));
+  if(isNaN(n)) return '—';
+  const tbl = {
+    50000000:'Năm mươi triệu đồng', 100000000:'Một trăm triệu đồng',
+    490000000:'Bốn trăm chín mươi triệu đồng',
+    365625000:'Ba trăm sáu mươi lăm triệu sáu trăm hai mươi lăm nghìn đồng',
+    237375000:'Hai trăm ba mươi bảy triệu ba trăm bảy mươi lăm nghìn đồng',
+    8110000:'Tám triệu một trăm mười nghìn đồng',
+  };
+  if(tbl[n]) return tbl[n];
+  const tr = Math.floor(n/1000000);
+  return (tr > 0 ? tr + ' triệu' : '') + (n%1000000 > 0 ? ' '+((n%1000000).toLocaleString('vi')):'') + ' đồng';
+}
+
+function renderFld(f, d){
+  let val = (f.a||'').replace('__name__',d.name).replace('__acct__',d.acct)
+    .replace('__bank__',d.bank).replace('__amount__',d.amount)
+    .replace('__amtword__',d.amtword).replace('__date__',d.date);
+  let valHTML;
+  if(f.type==='file')   valHTML=`<a class="task-field-link" href="#">Preview: 2aOboQfhi…jpg</a>&nbsp; OR &nbsp;<a class="task-field-link" href="#">Download</a>`;
+  else if(f.type==='no')  valHTML=`<span class="task-ans-no">${val}</span>`;
+  else if(f.type==='yes') valHTML=`<span class="task-ans-yes">${val}</span>`;
+  else                    valHTML=`<span class="task-field-val">${val||'—'}</span>`;
+  const edit = f.editable ? `<span class="task-field-edit">Chỉnh sửa</span>` : '';
+  return `<div class="task-field">
+    <div class="task-field-no">${f.no}</div>
+    <div class="task-field-inner">
+      <div class="task-field-lbl">${f.q}</div>
+      <div class="task-field-row">${valHTML}${edit}</div>
+    </div>
+  </div>`;
+}
+
+const COL_STEP_LABELS = [
+  {lbl:'Kế toán / NVKD lập phiếu', cls:'task-step-gray'},
+  {lbl:'Trưởng bộ phận duyệt', cls:'task-step-sky'},
+  {lbl:'Kế toán kiểm tra & chuyển khoản', cls:'task-step-indigo'},
+  {lbl:'Hoàn thành', cls:'task-step-green'},
+  {lbl:'Thất bại', cls:'task-step-red'},
+];
+function openTaskPanel(card){
+  const cols  = [...document.querySelectorAll('.kb-col')];
+  const colIdx = cols.indexOf(card.closest('.kb-col'));
+  const d = extractCard(card);
+  const secs = STEP_SECTIONS[colIdx] || STEP_SECTIONS[0];
+  const title = card.querySelector('.kb-card-title')?.textContent || 'Chi tiết';
+  const dateEl = card.querySelector('.kb-card-meta');
+  const stepInfo = COL_STEP_LABELS[colIdx] || COL_STEP_LABELS[0];
+
+  document.getElementById('task-main-title').textContent = title;
+
+  const badge = document.getElementById('task-step-badge');
+  badge.textContent = stepInfo.lbl;
+  badge.className = 'task-step-badge ' + stepInfo.cls;
+
+  document.getElementById('task-date-meta').textContent = dateEl ? dateEl.textContent : '';
+
+  document.getElementById('task-sections').innerHTML = secs.map((sec,si)=>`
+    <div class="task-sec" id="tsec${si}">
+      <div class="task-sec-head" onclick="document.getElementById('tsec${si}').classList.toggle('collapsed')">
+        <span class="task-sec-arr">▾</span>
+        <span class="task-sec-title">${sec.lbl}</span>
+      </div>
+      <div class="task-sec-body">
+        ${sec.sub ? `<div class="task-sub-lbl">${sec.sub}</div>` : ''}
+        ${sec.fields.map(f=>renderFld(f,d)).join('')}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('task-screen').classList.add('open');
+  document.querySelector('.page-content').style.display = 'none';
+}
+function closeTaskPanel(){
+  document.getElementById('task-screen').classList.remove('open');
+  document.querySelector('.page-content').style.display = '';
+}
+
+/* ── Create task ── */
+/* ── Custom KVC dropdown ── */
+function toggleCtDd(){
+  const dd = document.getElementById('ct-kvc-dd');
+  const isOpen = dd.classList.toggle('open');
+  if(isOpen){
+    document.getElementById('ct-dd-search').value = '';
+    filterCtDd();
+    setTimeout(()=>document.getElementById('ct-dd-search').focus(), 50);
+  }
+}
+function closeCtDd(){
+  document.getElementById('ct-kvc-dd').classList.remove('open');
+}
+function filterCtDd(){
+  const q = document.getElementById('ct-dd-search').value.toLowerCase();
+  const list = document.getElementById('ct-dd-list');
+  let lastGroup = null, groupHasVisible = false;
+  list.querySelectorAll('.ct-dd-opt,.ct-dd-group').forEach(el=>{
+    if(el.classList.contains('ct-dd-group')){
+      if(lastGroup) lastGroup.style.display = groupHasVisible ? '' : 'none';
+      lastGroup = el; groupHasVisible = false;
+    } else {
+      const match = el.textContent.toLowerCase().includes(q);
+      el.classList.toggle('hidden', !match);
+      if(match) groupHasVisible = true;
+    }
+  });
+  if(lastGroup) lastGroup.style.display = groupHasVisible ? '' : 'none';
+}
+function selectCtKvc(el, type){
+  const val = el.textContent;
+  document.getElementById('ct-kvc').value = val;
+  const lbl = document.getElementById('ct-dd-label');
+  lbl.textContent = val;
+  lbl.style.color = '';
+  document.querySelectorAll('#ct-dd-list .ct-dd-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectType(type);
+  // Auto-fill tên nhiệm vụ nếu đang trống
+  const nameEl = document.getElementById('ct-name');
+  const typeLabel = type === 'nap' ? 'Nạp tiền' : 'Thanh toán Công nợ';
+  if(!nameEl.value.trim()) nameEl.value = `${typeLabel} - ${val}`;
+  closeCtDd();
+}
+document.addEventListener('click', e=>{
+  const dd = document.getElementById('ct-kvc-dd');
+  if(dd && !dd.contains(e.target)) closeCtDd();
+});
+
+let ctType = 'nap';
+function openCreateTask(){
+  ctType = 'nap';
+  document.getElementById('ct-type-nap').classList.add('active');
+  document.getElementById('ct-type-cn').classList.remove('active');
+  document.getElementById('ct-kvc').value = '';
+  document.getElementById('ct-dd-label').textContent = '-- Chọn KVC --';
+  document.getElementById('ct-dd-label').style.color = '#6b7280';
+  document.querySelectorAll('#ct-dd-list .ct-dd-opt').forEach(o=>o.classList.remove('selected'));
+  closeCtDd();
+  document.getElementById('ct-name').value = '';
+  document.getElementById('ct-acct').value = '';
+  document.getElementById('ct-bank').value = '';
+  document.getElementById('ct-amount').value = '';
+  document.getElementById('ct-note').value = '';
+  // default date = today
+  const today = new Date();
+  const ymd = today.toISOString().slice(0,10);
+  document.getElementById('ct-date').value = ymd;
+  document.getElementById('ct-overlay').classList.add('open');
+}
+function closeCreateTask(){
+  document.getElementById('ct-overlay').classList.remove('open');
+}
+function selectType(t){
+  ctType = t;
+  document.getElementById('ct-type-nap').classList.toggle('active', t==='nap');
+  document.getElementById('ct-type-cn').classList.toggle('active', t==='cn');
+}
+function submitCreateTask(){
+  const name   = document.getElementById('ct-name').value.trim();
+  const kvc    = document.getElementById('ct-kvc').value.trim();
+  const acct   = document.getElementById('ct-acct').value.trim();
+  const bank   = document.getElementById('ct-bank').value.trim();
+  const amount = document.getElementById('ct-amount').value.trim();
+  const dateVal= document.getElementById('ct-date').value;
+  const note   = document.getElementById('ct-note').value.trim();
+  if(!name){ alert('Vui lòng nhập tên nhiệm vụ.'); document.getElementById('ct-name').focus(); return; }
+  if(!kvc){ alert('Vui lòng chọn KVC.'); return; }
+  if(!amount){ alert('Vui lòng nhập số tiền.'); return; }
+
+  const typeLabel = ctType === 'nap' ? 'Nạp tiền' : 'Thanh toán Công nợ';
+  const tagClass  = ctType === 'nap' ? 'kb-tag-teal' : 'kb-tag-indigo';
+  const dateDisp  = dateVal ? dateVal.split('-').reverse().join('/') : '—';
+  const descLine  = [acct ? `TK: ${acct}` : '', bank].filter(Boolean).join(' · ');
+  const noteHTML  = note ? `<br><span style="font-size:11px;color:#6b7280">${note}</span>` : '';
+
+  const card = document.createElement('div');
+  card.className = 'kb-card';
+  card.innerHTML = `
+    <div class="kb-tag ${tagClass}">${typeLabel}</div>
+    <div class="kb-card-title">${name}</div>
+    <div class="kb-card-desc">${descLine}${noteHTML}</div>
+    <div class="kb-card-footer">
+      <span class="kb-card-amount">${amount} ₫</span>
+      <span class="kb-card-meta">📅 ${dateDisp}</span>
+    </div>`;
+
+  // Add drag + click handlers
+  card.setAttribute('draggable','true');
+  card.addEventListener('dragstart', onDragStart);
+  card.addEventListener('dragend', onDragEnd);
+  card.addEventListener('click', function(e){
+    if(!this.classList.contains('dragging')) openTaskPanel(this);
+  });
+
+  // Insert into first column's kb-cards zone
+  const firstZone = document.querySelector('#tab-quytrinh .kb-col .kb-cards');
+  if(firstZone) firstZone.appendChild(card);
+
+  updateColCounts();
+  closeCreateTask();
+}
+</script>
+</body>
+</html>
+
+
+
