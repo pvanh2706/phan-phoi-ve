@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Application.Auth;
+using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
 using PpvRecon.Application.Users;
 using PpvRecon.Domain.Entities.Identity;
@@ -15,7 +16,8 @@ namespace PpvRecon.Api.Controllers;
 [Route("api/users")]
 public sealed class UsersController(
     PpvReconDbContext dbContext,
-    IPasswordHasher passwordHasher) : PpvControllerBase
+    IPasswordHasher passwordHasher,
+    IAuditService auditService) : PpvControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResult<UserListItemDto>>>> List(
@@ -119,6 +121,14 @@ public sealed class UsersController(
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            Module = "Settings",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.Create,
+            After = ToUserListItem(user),
+        }, cancellationToken);
 
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, ApiResponse<UserListItemDto>.Ok(ToUserListItem(user), "Tạo người dùng thành công."));
     }
@@ -157,6 +167,7 @@ public sealed class UsersController(
             return BadRequest(ApiResponse<UserListItemDto>.Fail("Bạn không thể tự đổi role hoặc vô hiệu hóa chính mình."));
         }
 
+        var before = ToUserListItem(user);
         var nowUtc = DateTime.UtcNow;
         user.FullName = request.FullName.Trim();
         user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
@@ -183,6 +194,16 @@ public sealed class UsersController(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            Module = "Settings",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.Update,
+            Before = before,
+            After = ToUserListItem(user),
+        }, cancellationToken);
+
         return Ok(ApiResponse<UserListItemDto>.Ok(ToUserListItem(user), "Cập nhật người dùng thành công."));
     }
 
@@ -206,6 +227,7 @@ public sealed class UsersController(
             return NotFound(ApiResponse<object?>.Fail("Không tìm thấy người dùng."));
         }
 
+        var before = ToUserListItem(user);
         var nowUtc = DateTime.UtcNow;
         user.PasswordHash = passwordHasher.HashPassword(request.NewPassword);
         user.PasswordChangedAtUtc = nowUtc;
@@ -218,6 +240,15 @@ public sealed class UsersController(
 
         await RevokeActiveSessionsAsync(user.Id, nowUtc, CurrentUserId, "PasswordReset", cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            Module = "Settings",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.ResetPassword,
+            Before = before,
+            After = ToUserListItem(user),
+        }, cancellationToken);
 
         return Ok(ApiResponse<object?>.Ok(null, "Đặt lại mật khẩu thành công."));
     }
@@ -233,6 +264,7 @@ public sealed class UsersController(
             return NotFound(ApiResponse<object?>.Fail("Không tìm thấy người dùng."));
         }
 
+        var before = ToUserListItem(user);
         user.Status = UserStatus.Active;
         user.FailedLoginCount = 0;
         user.LockedAtUtc = null;
@@ -240,6 +272,15 @@ public sealed class UsersController(
         user.UpdatedAtUtc = DateTime.UtcNow;
         user.UpdatedByUserId = CurrentUserId;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            Module = "Settings",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.UnlockUser,
+            Before = before,
+            After = ToUserListItem(user),
+        }, cancellationToken);
 
         return Ok(ApiResponse<object?>.Ok(null, "Mở khóa người dùng thành công."));
     }
@@ -260,12 +301,22 @@ public sealed class UsersController(
             return NotFound(ApiResponse<object?>.Fail("Không tìm thấy người dùng."));
         }
 
+        var before = ToUserListItem(user);
         var nowUtc = DateTime.UtcNow;
         user.Status = UserStatus.Inactive;
         user.UpdatedAtUtc = nowUtc;
         user.UpdatedByUserId = CurrentUserId;
         await RevokeActiveSessionsAsync(user.Id, nowUtc, CurrentUserId, "DisabledByAdmin", cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            Module = "Settings",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.Update,
+            Before = before,
+            After = ToUserListItem(user),
+        }, cancellationToken);
 
         return Ok(ApiResponse<object?>.Ok(null, "Vô hiệu hóa người dùng thành công."));
     }
@@ -281,6 +332,7 @@ public sealed class UsersController(
             return NotFound(ApiResponse<object?>.Fail("Không tìm thấy người dùng."));
         }
 
+        var before = ToUserListItem(user);
         user.Status = UserStatus.Active;
         user.FailedLoginCount = 0;
         user.LockedAtUtc = null;
@@ -288,6 +340,15 @@ public sealed class UsersController(
         user.UpdatedAtUtc = DateTime.UtcNow;
         user.UpdatedByUserId = CurrentUserId;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            Module = "Settings",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.Update,
+            Before = before,
+            After = ToUserListItem(user),
+        }, cancellationToken);
 
         return Ok(ApiResponse<object?>.Ok(null, "Kích hoạt người dùng thành công."));
     }

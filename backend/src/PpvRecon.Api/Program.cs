@@ -6,7 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using PpvRecon.Api.Auth;
 using PpvRecon.Api.Commands;
 using PpvRecon.Api.Middleware;
+using PpvRecon.Api.Services;
 using PpvRecon.Application.Auth;
+using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
 using Serilog;
 using PpvRecon.Infrastructure;
@@ -54,6 +56,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();

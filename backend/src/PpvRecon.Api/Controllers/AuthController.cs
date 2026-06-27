@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Api.Auth;
 using PpvRecon.Application.Auth;
+using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
 using PpvRecon.Domain.Entities.Identity;
 using PpvRecon.Domain.Enums;
@@ -16,7 +17,8 @@ namespace PpvRecon.Api.Controllers;
 public sealed class AuthController(
     PpvReconDbContext dbContext,
     IPasswordHasher passwordHasher,
-    ITokenService tokenService) : ControllerBase
+    ITokenService tokenService,
+    IAuditService auditService) : ControllerBase
 {
     private const string InvalidLoginMessage = "Email hoặc mật khẩu không đúng.";
     private const string ExpiredSessionMessage = "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
@@ -57,6 +59,16 @@ public sealed class AuthController(
                 await RevokeActiveSessionsAsync(user.Id, nowUtc, null, "LockedAfterFailedLogin", cancellationToken);
 
                 await dbContext.SaveChangesAsync(cancellationToken);
+                await auditService.LogAsync(new AuditLogEntry
+                {
+                    UserId = user.Id,
+                    Module = "Auth",
+                    EntityName = "User",
+                    EntityId = user.Id.ToString(),
+                    Action = AuditAction.LockUser,
+                    After = new { user.Id, user.Email, user.Status, user.LockReason },
+                }, cancellationToken);
+
                 return Unauthorized(ApiResponse<LoginResponse>.Fail("Tài khoản đã bị khóa do nhập sai mật khẩu 3 lần. Vui lòng liên hệ Admin."));
             }
 
@@ -94,6 +106,15 @@ public sealed class AuthController(
 
         session.JwtId = accessToken.JwtId;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            UserId = user.Id,
+            Module = "Auth",
+            EntityName = "User",
+            EntityId = user.Id.ToString(),
+            Action = AuditAction.Login,
+            After = new { user.Id, user.Email, user.Role, user.LastLoginAtUtc },
+        }, cancellationToken);
 
         AppendRefreshCookie(refreshToken.RefreshToken, refreshToken.ExpiresAtUtc);
 
@@ -205,6 +226,15 @@ public sealed class AuthController(
                 session.RevokedByUserId = GetCurrentUserIdOrNull();
                 session.RevokeReason = "Logout";
                 await dbContext.SaveChangesAsync(cancellationToken);
+                await auditService.LogAsync(new AuditLogEntry
+                {
+                    UserId = session.UserId,
+                    Module = "Auth",
+                    EntityName = "UserSession",
+                    EntityId = session.Id.ToString(),
+                    Action = AuditAction.Logout,
+                    After = new { session.Id, session.UserId, session.RevokedAtUtc, session.RevokeReason },
+                }, cancellationToken);
             }
         }
 
