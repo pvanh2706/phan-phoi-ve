@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Data.Sqlite;
+using PpvRecon.Application.Auth;
 using PpvRecon.Infrastructure.Persistence;
+using PpvRecon.Infrastructure.Security;
 
 namespace PpvRecon.Infrastructure;
 
@@ -20,6 +22,8 @@ public static class DependencyInjection
 
         services.AddDbContext<PpvReconDbContext>(options =>
             options.UseSqlite(connectionString));
+
+        services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 
         return services;
     }
