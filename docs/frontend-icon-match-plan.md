@@ -1,22 +1,23 @@
-# Plan khớp icon frontend với thiết kế HTML gốc
+# Plan khớp giao diện và icon frontend với thiết kế HTML gốc
 
 Ngày tạo: 2026-06-27
 
 ## 1. Bối cảnh
 
-Frontend hiện tại đã có icon trở lại sau commit `0a87e3d Restore frontend icons`, nhưng icon chưa giống thiết kế ban đầu trong thư mục `HTML`.
+Frontend hiện tại đã có icon trở lại sau commit `0a87e3d Restore frontend icons`, nhưng icon và một số chi tiết giao diện chưa chắc đã giống thiết kế ban đầu trong thư mục `HTML`.
 
 Lần sửa trước đã thêm `frontend/src/components/ui/AppIcon.vue` và chuyển nhiều vị trí sang SVG line icon ổn định. Cách này giúp không bị mất icon, nhưng chưa chắc khớp với visual gốc vì HTML ban đầu có thể dùng icon dạng ký tự, emoji, SVG inline hoặc style riêng.
 
-Mục tiêu lần tiếp theo là không chỉ "có icon", mà phải "giống thiết kế HTML gốc" theo từng khu vực UI.
+Mục tiêu lần tiếp theo là không chỉ "có icon", mà phải đối chiếu toàn bộ giao diện với HTML gốc theo từng khu vực UI: bố cục, spacing, màu sắc, bảng, form, tab, nút, modal, responsive và icon.
 
 ## 2. Mục tiêu
 
+- Đối chiếu giao diện frontend với HTML gốc theo từng màn và từng phần.
 - Đối chiếu toàn bộ icon trong frontend với thiết kế gốc trong `HTML`.
 - Ghi rõ vị trí nào lệch, lệch kiểu gì, sửa ở file nào.
-- Chỉnh icon theo từng phần nhỏ để dễ kiểm tra.
+- Chỉnh giao diện và icon theo từng phần nhỏ để dễ kiểm tra.
 - Không sửa logic nghiệp vụ, API, DB, auth, job hoặc backend.
-- Không sửa text tiếng Việt hoặc encoding nếu không liên quan trực tiếp đến icon.
+- Không sửa text tiếng Việt hoặc encoding nếu không liên quan trực tiếp đến giao diện/icon.
 - Sau khi sửa xong phải build frontend, đồng bộ `dist` sang backend `wwwroot`, build backend và commit riêng.
 
 ## 3. Nguồn chuẩn
@@ -56,15 +57,45 @@ Frontend hiện tại cần kiểm tra:
 ## 4. Nguyên tắc sửa
 
 1. HTML gốc là chuẩn ưu tiên.
-2. Nếu HTML gốc dùng icon ký tự/emoji và visual đó là chủ ý thiết kế, frontend nên khôi phục đúng kiểu đó hoặc tạo component render tương đương.
-3. Nếu HTML gốc dùng SVG inline, frontend nên dùng SVG/component tương đương với cùng nét, kích thước, màu và vị trí.
-4. Không tự đổi sang icon line-style khác nếu thiết kế gốc không dùng kiểu đó.
-5. Icon phải ổn định trong sidebar thu gọn, mobile, hover, active và dark/light theme.
-6. Không để icon làm thay đổi chiều cao dòng, chiều rộng cột hoặc gây nhảy layout.
-7. Với nút thao tác, phải giữ `title` hoặc `aria-label` nếu icon-only.
-8. Không chỉnh backend ngoài việc cập nhật lại file build trong `backend/src/PpvRecon.Api/wwwroot`.
+2. Khi so sánh, kiểm tra cả bố cục, khoảng cách, kích thước, màu sắc, font weight, border radius, shadow/blur, trạng thái hover/active/disabled và icon.
+3. Nếu HTML gốc dùng icon ký tự/emoji và visual đó là chủ ý thiết kế, frontend nên khôi phục đúng kiểu đó hoặc tạo component render tương đương.
+4. Nếu HTML gốc dùng SVG inline, frontend nên dùng SVG/component tương đương với cùng nét, kích thước, màu và vị trí.
+5. Không tự đổi sang icon line-style khác nếu thiết kế gốc không dùng kiểu đó.
+6. Icon phải ổn định trong sidebar thu gọn, mobile, hover, active và dark/light theme.
+7. Không để icon làm thay đổi chiều cao dòng, chiều rộng cột hoặc gây nhảy layout.
+8. Với nút thao tác, phải giữ `title` hoặc `aria-label` nếu icon-only.
+9. Không chỉnh backend ngoài việc cập nhật lại file build trong `backend/src/PpvRecon.Api/wwwroot`.
+10. Không sửa giao diện theo cảm tính nếu chưa đối chiếu HTML gốc tương ứng.
 
 ## 5. Audit cần làm trước khi code
+
+### 5.0. Checklist đối chiếu giao diện cho từng phần
+
+Khi kiểm tra bất kỳ màn nào, phải đối chiếu theo checklist này trước khi sửa:
+
+| Nhóm cần kiểm tra | Cần đối chiếu với HTML gốc |
+| --- | --- |
+| Layout tổng thể | Sidebar, header, content width, padding ngoài, scroll area, vị trí card/table/form |
+| Navigation | Icon, text, trạng thái active, hover, submenu, collapsed sidebar |
+| Typography | Font size, font weight, line height, màu chữ, chữ hoa/thường trong table header |
+| Màu sắc | Background, màu surface/card, màu border, màu badge, màu button, dark/light theme |
+| Spacing | Gap giữa các block, padding card, padding toolbar, padding cell, khoảng cách icon-text |
+| Border/radius | Radius của sidebar item, card, input, button, table row, modal |
+| Buttons | Kiểu primary/secondary/danger/add/action, icon, text, hover, disabled, kích thước |
+| Form controls | Input, select, textarea, placeholder, focus state, chiều cao, width |
+| Table | Header, row height, cell padding, hover row, alignment, action column |
+| Tabs | Tab container, active tab, inactive tab, icon trong tab, spacing |
+| Badges/status | Text, màu, border, icon cảnh báo nếu có, kích thước |
+| Modal | Overlay, modal width, header/footer, close button, padding, button order |
+| Cards/stat cards | Background, border, blur/shadow, radius, title/value spacing |
+| Responsive | Desktop, sidebar collapsed, mobile/narrow viewport nếu HTML có style |
+| Icon | Kiểu icon, kích thước, stroke/fill, màu, vị trí, active/hover |
+
+Kết quả audit nên ghi thành bảng:
+
+| Màn/phần | HTML gốc | Frontend hiện tại | Lệch giao diện | Lệch icon | File cần sửa | Ưu tiên |
+| --- | --- | --- | --- | --- | --- | --- |
+| Ví dụ: Sidebar menu cha | `HTML/danh-sach-kvc.html` | `AppShell.vue` | Cần audit | Cần audit | `navigation.ts`, `AppShell.vue`, `style.css` | Cao |
 
 ### 5.1. Tìm icon trong HTML
 
@@ -135,6 +166,10 @@ File cần xem:
 
 Việc cần làm:
 
+- Đối chiếu width sidebar, padding, brand/logo, màu nền, border, blur, scroll.
+- Đối chiếu layout khi sidebar mở rộng và thu gọn.
+- Đối chiếu typography của brand, role, menu label, submenu.
+- Đối chiếu spacing giữa icon và label, margin giữa menu item.
 - So sánh icon từng menu cha.
 - Chỉnh `navigation.ts` nếu tên icon hiện tại không khớp.
 - Nếu HTML dùng icon dạng ký tự/emoji, cân nhắc tạo `AppMenuIcon` hoặc mở rộng `AppIcon` để render đúng.
@@ -144,6 +179,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
+- Sidebar nhìn giống HTML gốc về layout, màu, spacing và trạng thái tương tác.
 - Sidebar menu cha nhìn giống HTML gốc.
 - Menu thu gọn vẫn hiện icon đúng.
 - Không còn chữ viết tắt kiểu `KV`, `DL`, `OTA` trừ khi HTML gốc thật sự dùng như vậy.
@@ -159,6 +195,9 @@ File cần xem:
 
 Việc cần làm:
 
+- Đối chiếu chiều cao header, padding trái/phải, màu nền, border bottom.
+- Đối chiếu search input: width, placeholder, radius, màu, focus nếu HTML có.
+- Đối chiếu user card: avatar, tên, email, nút con, layout khi sidebar thu gọn.
 - Đối chiếu icon thu gọn menu.
 - Đối chiếu icon thông báo.
 - Đối chiếu icon cài đặt.
@@ -167,7 +206,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
-- Các icon topbar/user-card giống HTML gốc về kiểu, size, màu và vị trí.
+- Header, user-card, theme toggle và icon topbar giống HTML gốc về layout, size, màu và vị trí.
 
 ### Phase 3: Menu Khu vui chơi và màn mã KVC
 
@@ -181,6 +220,10 @@ File cần xem:
 
 Việc cần làm:
 
+- Đối chiếu tab `KVC cha` và `Loại vé / KVC con`: kích thước, màu, active state.
+- Đối chiếu toolbar: input, select, button, wrap trên màn nhỏ.
+- Đối chiếu card/table: padding card, header, row height, cell alignment, hover.
+- Đối chiếu modal thêm/sửa: width, header, body, form grid, footer, close button.
 - Đối chiếu nút thêm KVC/thêm loại vé.
 - Đối chiếu action sửa.
 - Đối chiếu action ngừng sử dụng.
@@ -190,6 +233,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
+- Màn mã KVC giống `HTML/ma-kvc.html` về tab, toolbar, table, modal, button và spacing.
 - Bảng KVC cha và loại vé/KVC con có action giống `HTML/ma-kvc.html`.
 - Không làm rộng cột hành động quá mức.
 
@@ -214,6 +258,10 @@ File frontend cần xem:
 
 Việc cần làm:
 
+- Đối chiếu layout page header, stat cards, filter toolbar, tabs, table card.
+- Đối chiếu màu/kiểu số tiền âm dương, badge trạng thái, dòng cảnh báo.
+- Đối chiếu table: column width, alignment, header uppercase, row hover, empty state.
+- Đối chiếu nút add/build/filter/reload nếu HTML có.
 - Đối chiếu icon search trong ô tìm kiếm nếu HTML có.
 - Đối chiếu icon badge cảnh báo nếu HTML có.
 - Đối chiếu icon action xem/sửa/xóa trong bảng hoàn tiền.
@@ -222,6 +270,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
+- Các màn báo cáo trong Khu vui chơi giống HTML gốc về layout, card, table, filter, badge và action.
 - Các màn báo cáo không còn icon lệch kiểu với HTML gốc.
 - Không còn icon ký tự lạ do encoding sai.
 
@@ -236,6 +285,10 @@ File cần xem:
 
 Việc cần làm:
 
+- Đối chiếu layout filter, bảng lỗi, trạng thái, notice, modal nhập tay.
+- Đối chiếu màu trạng thái lỗi/thành công/manual.
+- Đối chiếu button group chạy job và gửi email.
+- Đối chiếu form nhập tay theo từng loại lỗi.
 - Đối chiếu icon chạy job.
 - Đối chiếu icon gửi email lỗi.
 - Đối chiếu icon nhập tay.
@@ -243,6 +296,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
+- Màn lỗi đồng bộ giống thiết kế gốc về toolbar, table, modal và trạng thái.
 - Kế toán/admin nhìn được các action quan trọng rõ ràng và icon đồng bộ với HTML.
 
 ### Phase 6: Cài đặt hệ thống
@@ -256,6 +310,13 @@ File cần xem:
 
 Việc cần làm:
 
+- Đối chiếu page header, tab bar, card content, form grid và spacing.
+- Đối chiếu profile/avatar upload area.
+- Đối chiếu theme cards: preview, selected state, check mark, label.
+- Đối chiếu password form.
+- Đối chiếu device list: icon, meta text, button đăng xuất.
+- Đối chiếu users table và recipients table.
+- Đối chiếu user/recipient modal.
 - Đối chiếu icon từng tab:
   - Thông tin tài khoản.
   - Giao diện.
@@ -276,7 +337,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
-- `SystemSettingsView` giống `HTML/system.html` nhất có thể về icon và spacing.
+- `SystemSettingsView` giống `HTML/system.html` nhất có thể về layout, tab, form, table, modal, icon và spacing.
 
 ### Phase 7: Quy trình hoàn tiền và Kanban
 
@@ -291,6 +352,10 @@ File cần xem:
 
 Việc cần làm:
 
+- Đối chiếu Kanban board: column width, gap, header, count badge, task card.
+- Đối chiếu drag/hover visual nếu HTML có.
+- Đối chiếu modal chi tiết task và modal thêm task.
+- Đối chiếu table/list trạng thái hoàn tiền khách hàng.
 - Đối chiếu icon cột Kanban.
 - Đối chiếu modal close.
 - Đối chiếu nút thêm/đóng/lưu nếu HTML gốc có icon.
@@ -298,6 +363,7 @@ Việc cần làm:
 
 Hoàn thành khi:
 
+- Quy trình hoàn tiền và Kanban giống HTML gốc về layout, card, modal, button, badge và icon.
 - Kanban không bị lệch icon so với thiết kế gốc.
 - Modal close đúng style HTML.
 
@@ -393,6 +459,22 @@ Cần kiểm tra:
 - Hover/active của menu.
 - Hover của nút action.
 - Icon không bị mất màu hoặc lệch dòng.
+- Layout tổng thể có khớp HTML gốc không.
+- Card/table/form/modal có cùng spacing, radius, màu và kích thước với HTML gốc không.
+- Không có text bị tràn, nút bị nhảy kích thước hoặc icon bị lệch baseline.
+- Nếu có thể, mở song song HTML gốc và app frontend để so từng phần.
+
+## 8.1. Gợi ý kiểm tra bằng screenshot
+
+Nếu cần kiểm tra kỹ hơn, có thể chạy app và chụp screenshot từng route để so với HTML gốc:
+
+1. Mở file HTML gốc tương ứng trong browser.
+2. Mở frontend route tương ứng.
+3. So theo checklist ở mục `5.0`.
+4. Ghi lại các điểm lệch trước khi sửa.
+5. Sửa từng nhóm nhỏ, build lại, rồi so lại.
+
+Không nên sửa nhiều màn cùng lúc nếu chưa có danh sách điểm lệch rõ ràng.
 
 ## 9. Quy tắc commit
 
@@ -414,7 +496,8 @@ Không commit nếu:
 ## 10. Ghi chú cho AI tiếp theo
 
 - Repo hiện tại sau commit `0a87e3d` có `AppIcon.vue`. Đừng xóa ngay component này nếu chưa audit xong, vì nhiều màn đang dùng nó.
-- Người dùng muốn giống thiết kế HTML gốc, không chỉ muốn có icon.
+- Người dùng muốn giống thiết kế HTML gốc theo từng phần giao diện, không chỉ muốn có icon.
+- Khi làm tiếp, phải audit cả layout, spacing, màu, bảng, form, modal, responsive và icon.
 - Hãy đọc HTML trước khi sửa.
 - Nếu phát hiện HTML gốc dùng emoji/ký tự icon, cần cân nhắc giữ đúng visual đó thay vì thay bằng SVG line icon.
 - Nếu phát hiện HTML gốc dùng SVG, hãy đưa SVG vào component chung để dễ bảo trì.
@@ -422,4 +505,3 @@ Không commit nếu:
 - Không sửa DB.
 - Không sửa text tiếng Việt nếu không liên quan đến icon.
 - Sau mỗi nhóm sửa lớn nên commit hoặc ít nhất build để tránh dồn lỗi.
-
