@@ -11,6 +11,7 @@ using PpvRecon.Application.Auth;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
 using PpvRecon.Application.Jobs;
+using PpvRecon.Application.Reconciliation;
 using Serilog;
 using PpvRecon.Infrastructure;
 
@@ -60,6 +61,7 @@ builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IJobRunner, JobRunner>();
+builder.Services.AddScoped<IReconciliationBuilder, ReconciliationBuilder>();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
