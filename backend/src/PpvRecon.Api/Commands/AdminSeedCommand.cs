@@ -60,7 +60,7 @@ public static class AdminSeedCommand
                 continue;
             }
 
-            var passwordError = ValidatePassword(password);
+            var passwordError = PasswordPolicy.Validate(password);
             if (passwordError is not null)
             {
                 Console.WriteLine(passwordError);
@@ -155,33 +155,4 @@ public static class AdminSeedCommand
         }
     }
 
-    private static string? ValidatePassword(string password)
-    {
-        if (password.Length < 8)
-        {
-            return "Mat khau phai co it nhat 8 ky tu.";
-        }
-
-        if (!password.Any(char.IsUpper))
-        {
-            return "Mat khau phai co it nhat 1 chu hoa.";
-        }
-
-        if (!password.Any(char.IsLower))
-        {
-            return "Mat khau phai co it nhat 1 chu thuong.";
-        }
-
-        if (!password.Any(char.IsDigit))
-        {
-            return "Mat khau phai co it nhat 1 chu so.";
-        }
-
-        if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
-        {
-            return "Mat khau phai co it nhat 1 ky tu dac biet.";
-        }
-
-        return null;
-    }
 }
