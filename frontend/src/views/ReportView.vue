@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError, type PagedResult } from '../services/apiClient'
 import { authState } from '../services/authStore'
@@ -308,7 +307,7 @@ onMounted(async () => {
         v-if="props.pageKey === 'parkList'"
         v-model="filters.keyword"
         class="tb-input"
-        placeholder="Tìm mã, tên, tài khoản..."
+        placeholder="🔍  Tìm khu vui chơi..."
         @keyup.enter="load"
       />
       <input v-if="needsDate" v-model="filters.businessDate" class="tb-date" type="date" @change="page = 1; load()" />
@@ -343,7 +342,9 @@ onMounted(async () => {
       <button class="btn-secondary" type="button" @click="load">Tải lại</button>
       <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
       <button v-if="props.pageKey === 'reconciliation'" class="add-btn" type="button" @click="runBuild">
-        <AppIcon name="play" :size="14" />
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+        </svg>
         Build đối soát
       </button>
     </div>
@@ -351,7 +352,7 @@ onMounted(async () => {
     <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
     <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
-    <div class="table-wrap">
+    <div class="table-wrap report-table-wrap">
       <table v-if="props.pageKey === 'parkList'">
         <thead>
           <tr>
@@ -477,7 +478,9 @@ onMounted(async () => {
                 type="button"
                 @click="openResolve(asReconciliation(row))"
               >
-                <AppIcon name="edit" :size="14" />
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
                 Xử lý
               </button>
             </td>
@@ -504,7 +507,7 @@ onMounted(async () => {
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Xử lý lệch đối soát</span>
-        <button class="modal-close" type="button" @click="resolveModal.open = false">x</button>
+        <button class="modal-close" type="button" @click="resolveModal.open = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="notice notice-indigo" style="margin-bottom: 14px">{{ resolveModal.title }}</div>

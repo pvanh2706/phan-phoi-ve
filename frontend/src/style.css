@@ -265,6 +265,7 @@ a {
 .edit-btn svg,
 .delete-btn svg,
 .inactive-btn svg,
+.view-btn svg,
 .btn-secondary svg,
 .btn-primary svg {
   display: block;
@@ -1126,9 +1127,34 @@ tbody tr:hover td {
   white-space: nowrap;
 }
 
+.report-table-wrap {
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+  scrollbar-width: thin;
+}
+
+.report-table-wrap::-webkit-scrollbar {
+  display: block;
+  height: 4px;
+}
+
+.report-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.report-table-wrap::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.report-table-wrap td {
+  padding: 11px 12px;
+  white-space: nowrap;
+}
+
 .edit-btn,
 .delete-btn,
-.inactive-btn {
+.inactive-btn,
+.view-btn {
   display: inline-flex;
   width: 28px;
   height: 28px;
@@ -1140,7 +1166,10 @@ tbody tr:hover td {
 }
 
 .edit-btn + .inactive-btn,
-.inactive-btn + .delete-btn {
+.inactive-btn + .delete-btn,
+.view-btn + .edit-btn,
+.view-btn + .delete-btn,
+.edit-btn + .delete-btn {
   margin-left: 4px;
 }
 
@@ -1154,6 +1183,18 @@ tbody tr:hover td {
   border-color: #6366f1;
   background: rgba(99, 102, 241, 0.25);
   color: #c7d2fe;
+}
+
+.view-btn {
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.10);
+  color: #93c5fd;
+}
+
+.view-btn:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.20);
+  color: #bfdbfe;
 }
 
 .inactive-btn {

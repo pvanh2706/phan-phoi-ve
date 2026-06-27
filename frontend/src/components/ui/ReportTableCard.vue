@@ -58,6 +58,10 @@ function reset() {
 }
 
 watch(() => props.tab.id, reset)
+
+function addButtonText(label: string) {
+  return label.replace(/^\+\s*/, '')
+}
 </script>
 
 <template>
@@ -87,7 +91,10 @@ watch(() => props.tab.id, reset)
         </option>
       </select>
       <button v-if="tab.addLabel" class="add-btn" type="button" @click="emit('add')">
-        {{ tab.addLabel }}
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+        {{ addButtonText(tab.addLabel) }}
       </button>
     </div>
 
