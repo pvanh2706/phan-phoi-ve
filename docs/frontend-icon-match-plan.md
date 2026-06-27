@@ -2,6 +2,8 @@
 
 Ngày tạo: 2026-06-27
 
+Ghi chú sau khi thực hiện: tài liệu này giữ lại cả kế hoạch ban đầu để làm dấu vết audit. Trạng thái cuối cùng nằm ở mục `11. Trạng thái thực hiện`; sau phase 8, `AppIcon.vue` đã được xóa và các icon đang bám theo HTML gốc.
+
 ## 1. Bối cảnh
 
 Frontend hiện tại đã có icon trở lại sau commit `0a87e3d Restore frontend icons`, nhưng icon và một số chi tiết giao diện chưa chắc đã giống thiết kế ban đầu trong thư mục `HTML`.
