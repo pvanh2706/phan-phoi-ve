@@ -1,175 +1,171 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import KanbanBoard from '../components/ui/KanbanBoard.vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
-import ReportTableCard from '../components/ui/ReportTableCard.vue'
-import { cloneColumns, topUpReportTabs, topUpWorkflow, type KanbanTask } from '../data/workflows'
+import { ApiClientError } from '../services/apiClient'
+import { listParks, type ParkDto } from '../services/parksApi'
+import {
+  listBankTransactionSummaries,
+  type DailyBankTransactionSummaryDto,
+} from '../services/summariesApi'
+import {
+  badgeClassForStatus,
+  bankTransactionTypeLabel,
+  formatDate,
+  formatMoney,
+  formatNumber,
+  paymentTypeLabel,
+  sourceTypeLabel,
+  type BankTransactionType,
+  type PaymentType,
+  type SourceType,
+} from '../services/formatters'
 
-const activeTab = ref('quytrinh')
-const columns = ref(cloneColumns(topUpWorkflow))
-const selectedTask = ref<KanbanTask | null>(null)
-const showCreateTask = ref(false)
-const createType = ref<'nap' | 'cn'>('nap')
-const form = reactive({
-  name: '',
-  park: '',
-  account: '',
-  bank: '',
-  amount: '',
-  date: new Date().toISOString().slice(0, 10),
-  note: '',
+const loading = ref(false)
+const error = ref('')
+const rows = ref<DailyBankTransactionSummaryDto[]>([])
+const parks = ref<ParkDto[]>([])
+const totalItems = ref(0)
+const page = ref(1)
+
+const filters = reactive({
+  businessDate: '',
+  parkId: '' as number | '',
+  paymentType: '' as PaymentType | '',
+  transactionType: '' as BankTransactionType | '',
+  sourceType: '' as SourceType | '',
 })
 
-const currentReport = computed(() => topUpReportTabs.find((tab) => tab.id === activeTab.value) ?? topUpReportTabs[0])
-const parkOptions = computed(() =>
-  createType.value === 'nap'
-    ? ['Vin Nha Trang', 'Vin Phú Quốc', 'Vin Nam Hội An', 'Bản Mòng', 'Sunworld', 'Đồi Rồng', 'Samten Hills Dalat', 'Delight']
-    : ['Sealinks', 'TLTY', 'Sơn Tiên', 'Lumiere', 'Mikazuki', 'Mekong', 'Tà Cú', 'Hồ Tràm', 'Sightseeing HN'],
-)
+function errorText(err: unknown, fallback: string) {
+  return err instanceof ApiClientError ? err.message : fallback
+}
 
-function moveTask(taskId: string, toColumnId: string) {
-  const fromColumn = columns.value.find((column) => column.tasks.some((task) => task.id === taskId))
-  const toColumn = columns.value.find((column) => column.id === toColumnId)
-  if (!fromColumn || !toColumn || fromColumn.id === toColumn.id) {
-    return
+async function loadParks() {
+  const result = await listParks({ page: 1 })
+  parks.value = result.items
+}
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const result = await listBankTransactionSummaries({
+      page: page.value,
+      businessDate: filters.businessDate,
+      parkId: filters.parkId,
+      paymentType: filters.paymentType,
+      transactionType: filters.transactionType,
+      sourceType: filters.sourceType,
+    })
+    rows.value = result.items
+    totalItems.value = result.totalItems
+  } catch (err) {
+    error.value = errorText(err, 'Không tải được dữ liệu nạp tiền/thanh toán công nợ.')
+  } finally {
+    loading.value = false
   }
-
-  const index = fromColumn.tasks.findIndex((task) => task.id === taskId)
-  const [task] = fromColumn.tasks.splice(index, 1)
-  toColumn.tasks.push(task)
 }
 
-function openCreateTask() {
-  form.name = ''
-  form.park = ''
-  form.account = ''
-  form.bank = ''
-  form.amount = ''
-  form.date = new Date().toISOString().slice(0, 10)
-  form.note = ''
-  createType.value = 'nap'
-  showCreateTask.value = true
+function resetFilters() {
+  filters.businessDate = ''
+  filters.parkId = ''
+  filters.paymentType = ''
+  filters.transactionType = ''
+  filters.sourceType = ''
+  page.value = 1
+  void load()
 }
 
-function submitCreateTask() {
-  if (!form.name || !form.park || !form.amount) {
-    return
-  }
+watch(filters, () => {
+  page.value = 1
+  void load()
+})
 
-  columns.value[0].tasks.unshift({
-    id: `new-${Date.now()}`,
-    title: form.name,
-    park: form.park,
-    owner: 'Anh Thảo',
-    date: form.date.split('-').reverse().join('/'),
-    amount: `${form.amount} đ`,
-    status: 'Mới tạo',
-    tone: 'blue',
-    details: {
-      'Số tài khoản': form.account || '—',
-      'Ngân hàng': form.bank || '—',
-      'Ghi chú': form.note || '—',
-    },
-  })
-  showCreateTask.value = false
-}
+onMounted(async () => {
+  await loadParks().catch(() => undefined)
+  await load()
+})
 </script>
 
 <template>
-  <PageHeader title="Danh sách nạp tiền KVC theo ngày" subtitle="Quy trình tạo nhiệm vụ, duyệt và theo dõi lịch sử nạp tiền/công nợ" />
+  <PageHeader
+    title="Danh sách nạp tiền KVC theo ngày"
+    subtitle="Tổng hợp giao dịch ngân hàng theo ngày + KVC + loại giao dịch, lấy từ API hoặc kế toán nhập tay khi job lỗi"
+  />
 
-  <div class="tabs-bar">
-    <button class="tab-btn" :class="{ active: activeTab === 'quytrinh' }" type="button" @click="activeTab = 'quytrinh'">
-      Quy trình nạp tiền KVC
-    </button>
-    <button class="tab-btn" :class="{ active: activeTab === 'nap' }" type="button" @click="activeTab = 'nap'">
-      Nạp tiền cho KVC nạp tiền
-    </button>
-    <button class="tab-btn" :class="{ active: activeTab === 'cn' }" type="button" @click="activeTab = 'cn'">
-      Thanh toán KVC công nợ
-    </button>
-  </div>
-
-  <section v-if="activeTab === 'quytrinh'" class="card">
+  <section class="card">
     <div class="toolbar">
-      <button class="btn-create-task" type="button" style="padding: 8px 16px" @click="openCreateTask">+ Tạo nhiệm vụ</button>
+      <input v-model="filters.businessDate" class="tb-date" type="date" />
+      <select v-model="filters.paymentType" class="tb-select">
+        <option value="">Tất cả loại thanh toán</option>
+        <option value="Prepaid">Nạp trước</option>
+        <option value="Debt">Công nợ</option>
+      </select>
+      <select v-model="filters.transactionType" class="tb-select">
+        <option value="">Tất cả loại giao dịch</option>
+        <option value="TopUp">Nạp tiền</option>
+        <option value="DebtPayment">Thanh toán công nợ</option>
+        <option value="Refund">Hoàn tiền</option>
+        <option value="Other">Khác</option>
+      </select>
+      <select v-model="filters.parkId" class="tb-select">
+        <option value="">Tất cả KVC</option>
+        <option v-for="park in parks" :key="park.id" :value="park.id">
+          {{ park.code }} - {{ park.name }}
+        </option>
+      </select>
+      <select v-model="filters.sourceType" class="tb-select">
+        <option value="">Tất cả nguồn</option>
+        <option value="Api">API</option>
+        <option value="Manual">Nhập tay</option>
+      </select>
+      <button class="btn-secondary" type="button" @click="load">Tải lại</button>
+      <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
     </div>
-    <KanbanBoard :columns="columns" @task-open="selectedTask = $event" @task-move="moveTask" />
+
+    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>KVC</th>
+            <th>Loại KVC</th>
+            <th>Loại giao dịch</th>
+            <th>Tiền vào</th>
+            <th>Tiền ra</th>
+            <th>Số giao dịch</th>
+            <th>Nguồn</th>
+            <th>Lý do nhập tay</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading">
+            <td colspan="9">Đang tải...</td>
+          </tr>
+          <tr v-for="row in rows" :key="row.id">
+            <td>{{ formatDate(row.businessDate) }}</td>
+            <td class="cell-strong">{{ row.parkCode }} - {{ row.parkName }}</td>
+            <td>{{ paymentTypeLabel(row.paymentType) }}</td>
+            <td><span class="badge badge-indigo">{{ bankTransactionTypeLabel(row.transactionType) }}</span></td>
+            <td class="amount amount-green">{{ formatMoney(row.totalCreditAmount) }}</td>
+            <td class="amount amount-red">{{ formatMoney(row.totalDebitAmount) }}</td>
+            <td>{{ formatNumber(row.transactionCount) }}</td>
+            <td><span class="badge" :class="badgeClassForStatus(row.sourceType)">{{ sourceTypeLabel(row.sourceType) }}</span></td>
+            <td class="cell-muted">{{ row.manualReason || '-' }}</td>
+          </tr>
+          <tr v-if="!loading && rows.length === 0">
+            <td colspan="9" class="cell-muted" style="text-align: center">Chưa có giao dịch phù hợp</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span class="pg-info">Tổng {{ totalItems }} dòng</span>
+      <button class="pg-btn" type="button" :disabled="page <= 1" @click="page -= 1; load()">‹</button>
+      <button class="pg-btn active" type="button">{{ page }}</button>
+      <button class="pg-btn" type="button" :disabled="page * 100 >= totalItems" @click="page += 1; load()">›</button>
+    </div>
   </section>
-  <ReportTableCard v-else :tab="currentReport" />
-
-  <aside v-if="selectedTask" class="task-panel">
-    <div class="task-panel-head">
-      <div class="task-panel-title">{{ selectedTask.title }}</div>
-      <button class="modal-close" type="button" @click="selectedTask = null">✕</button>
-    </div>
-    <div class="task-panel-body">
-      <div class="detail-row"><span class="detail-label">KVC</span><span>{{ selectedTask.park }}</span></div>
-      <div class="detail-row"><span class="detail-label">Người phụ trách</span><span>{{ selectedTask.owner }}</span></div>
-      <div class="detail-row"><span class="detail-label">Ngày thực hiện</span><span>{{ selectedTask.date }}</span></div>
-      <div class="detail-row"><span class="detail-label">Số tiền</span><span class="task-money">{{ selectedTask.amount }}</span></div>
-      <div class="detail-row"><span class="detail-label">Trạng thái</span><span class="badge" :class="`badge-${selectedTask.tone}`">{{ selectedTask.status }}</span></div>
-      <div v-for="(value, key) in selectedTask.details" :key="key" class="detail-row">
-        <span class="detail-label">{{ key }}</span>
-        <span>{{ value }}</span>
-      </div>
-    </div>
-  </aside>
-
-  <div v-if="showCreateTask" class="ct-overlay" @click.self="showCreateTask = false">
-    <div class="ct-modal">
-      <div class="modal-header">
-        <span class="modal-title">Tạo nhiệm vụ mới</span>
-        <button class="modal-close" type="button" @click="showCreateTask = false">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Tên nhiệm vụ</label>
-          <input v-model="form.name" class="form-input" placeholder="VD: Nạp tiền tháng 6 - Vin Nha Trang" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Loại nhiệm vụ</label>
-          <div class="tabs-bar" style="margin-bottom: 0">
-            <button class="tab-btn" :class="{ active: createType === 'nap' }" type="button" @click="createType = 'nap'">Nạp tiền</button>
-            <button class="tab-btn" :class="{ active: createType === 'cn' }" type="button" @click="createType = 'cn'">Thanh toán Công nợ</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tên KVC</label>
-          <select v-model="form.park" class="form-select">
-            <option value="">-- Chọn KVC --</option>
-            <option v-for="park in parkOptions" :key="park" :value="park">{{ park }}</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Số tài khoản</label>
-            <input v-model="form.account" class="form-input" placeholder="19139932758899" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Ngân hàng</label>
-            <input v-model="form.bank" class="form-input" placeholder="Techcombank" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Số tiền</label>
-            <input v-model="form.amount" class="form-input" placeholder="50,000,000" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Ngày thực hiện</label>
-            <input v-model="form.date" class="form-input" type="date" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Ghi chú</label>
-          <input v-model="form.note" class="form-input" placeholder="Ghi chú thêm" />
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" type="button" @click="showCreateTask = false">Hủy</button>
-        <button class="btn-primary" type="button" @click="submitCreateTask">Tạo nhiệm vụ</button>
-      </div>
-    </div>
-  </div>
 </template>

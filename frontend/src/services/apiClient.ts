@@ -31,9 +31,19 @@ export class ApiClientError extends Error {
 
 let accessToken: string | null = null
 
-const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ??
-  (window.location.port === '5173' ? 'http://localhost:5052/api' : '/api')
+function resolveApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+
+  const isViteDevHost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    && Boolean(window.location.port)
+    && window.location.port !== '5052'
+
+  return isViteDevHost ? 'http://localhost:5052/api' : '/api'
+}
+
+const apiBaseUrl = resolveApiBaseUrl()
 
 export function setAccessToken(token: string | null) {
   accessToken = token

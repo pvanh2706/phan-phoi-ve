@@ -37,7 +37,7 @@ async function submit() {
   <main class="login-page">
     <section class="login-panel">
       <div class="login-brand">
-        <div class="brand-logo login-logo">ez</div>
+        <div class="brand-logo login-logo">PPV</div>
         <div>
           <h1>Đối soát phân phối vé</h1>
           <p>Đăng nhập nội bộ</p>

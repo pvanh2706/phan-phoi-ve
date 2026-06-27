@@ -34,7 +34,7 @@ const router = createRouter({
       path: '/khu-vui-choi/so-du',
       component: ReportView,
       props: { pageKey: 'dailyBalances' },
-      meta: { title: 'Khu vui chơi / Số dư khu vui chơi hàng ngày' },
+      meta: { title: 'Khu vui chơi / Số dư khu vui chơi hằng ngày' },
     },
     {
       path: '/khu-vui-choi/nap-tien',

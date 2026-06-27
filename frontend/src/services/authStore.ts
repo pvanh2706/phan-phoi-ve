@@ -54,6 +54,10 @@ export async function login(email: string, password: string) {
   return data.user
 }
 
+export function setCurrentUser(user: CurrentUser | null) {
+  authState.user = user
+}
+
 export async function logout() {
   try {
     await apiRequest('/auth/logout', { method: 'POST' }, false)

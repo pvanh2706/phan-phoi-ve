@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { navigation } from '../../data/navigation'
 import { useTheme } from '../../composables/useTheme'
 import { authState, logout } from '../../services/authStore'
+import { userRoleLabel } from '../../services/formatters'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,7 +15,7 @@ const openMenus = reactive<Record<string, boolean>>({
 })
 const { toggleTheme } = useTheme()
 
-const title = computed(() => String(route.meta.title ?? 'ezCloud PPV'))
+const title = computed(() => String(route.meta.title ?? 'Đối soát phân phối vé'))
 const user = computed(() => authState.user)
 const initials = computed(() => {
   const name = user.value?.fullName?.trim() || user.value?.email || 'U'
@@ -24,11 +25,7 @@ const initials = computed(() => {
     .map((part) => part[0]?.toUpperCase())
     .join('')
 })
-const roleLabel = computed(() => {
-  if (user.value?.role === 'Admin') return 'Quản trị'
-  if (user.value?.role === 'Accountant') return 'Kế toán'
-  return 'Thành viên'
-})
+const roleLabel = computed(() => userRoleLabel(user.value?.role))
 
 function isChildActive(path: string) {
   return route.path === path
@@ -64,9 +61,9 @@ watch(
   <div class="app-shell">
     <aside class="sidebar" :class="{ collapsed }" id="sidebar">
       <div class="sidebar-brand">
-        <div class="brand-logo">ez</div>
+        <div class="brand-logo">PPV</div>
         <div class="brand-text">
-          <div class="brand-name">ezCloud PPV</div>
+          <div class="brand-name">Đối soát vé</div>
           <div class="brand-role">{{ roleLabel }}</div>
         </div>
       </div>
@@ -172,5 +169,5 @@ watch(
     </div>
   </div>
 
-  <button class="theme-toggle" type="button" @click="toggleTheme">🌓 Đổi theme</button>
+  <button class="theme-toggle" type="button" @click="toggleTheme">Đổi theme</button>
 </template>

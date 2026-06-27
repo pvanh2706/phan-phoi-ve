@@ -1,155 +1,432 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { ApiClientError } from '../services/apiClient'
+import { authState, logout, setCurrentUser } from '../services/authStore'
 import { useTheme, type ThemeMode } from '../composables/useTheme'
+import {
+  changePassword,
+  getPreferences,
+  getProfile,
+  listSessions,
+  revokeAllSessions,
+  revokeSession,
+  updatePreferences,
+  updateProfile,
+  uploadAvatar,
+  type ProfileDto,
+  type UserSessionDto,
+} from '../services/meApi'
+import {
+  createUser,
+  disableUser,
+  enableUser,
+  listUsers,
+  resetUserPassword,
+  unlockUser,
+  updateUser,
+} from '../services/usersApi'
+import {
+  createNotificationRecipient,
+  deactivateNotificationRecipient,
+  listNotificationRecipients,
+  updateNotificationRecipient,
+  type NotificationRecipientDto,
+} from '../services/notificationsApi'
+import {
+  badgeClassForStatus,
+  formatDateTime,
+  notificationTypeLabel,
+  userRoleLabel,
+  userStatusLabel,
+  type NotificationType,
+  type UserRole,
+  type UserStatus,
+} from '../services/formatters'
 
-interface UserRecord {
-  id: string
-  name: string
-  phone: string
-  email: string
-  dept: string
-  role: 'Admin' | 'Member'
-  status: 'active' | 'inactive'
-}
+type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipients'
 
-const tabs = [
-  { id: 's1', icon: '👤', label: 'Thông tin tài khoản' },
-  { id: 's2', icon: '🎨', label: 'Giao diện' },
-  { id: 's3', icon: '🔔', label: 'Thông báo' },
-  { id: 's4', icon: '🔒', label: 'Đổi mật khẩu' },
-  { id: 's5', icon: '💻', label: 'Quản lý thiết bị' },
-  { id: 's6', icon: '👥', label: 'Quản lý người dùng' },
-  { id: 's7', icon: '🏨', label: 'Tài khoản khách hàng' },
-]
-
+const router = useRouter()
 const { mode, setMode } = useTheme()
-const activeTab = ref('s1')
-const avatarUrl = ref('')
+const activeTab = ref<TabKey>('profile')
+const loading = ref(false)
+const error = ref('')
+const message = ref('')
 const avatarInput = ref<HTMLInputElement | null>(null)
-const newPassword = ref('')
-const showPassword = ref(false)
-const userSearch = ref('')
-const roleFilter = ref('')
-const statusFilter = ref('')
-const showUserModal = ref(false)
-const showDeleteModal = ref(false)
-const editingUserId = ref<string | null>(null)
-const deletingUserId = ref<string | null>(null)
-const users = ref<UserRecord[]>([
-  { id: 'u1', name: 'Nguyễn Anh Thảo', phone: '0912 345 678', email: 'admin@ezcloud.vn', dept: 'Ban Giám đốc', role: 'Admin', status: 'active' },
-  { id: 'u2', name: 'Trần Minh Tuấn', phone: '0913 456 789', email: 'tuan.tm@ezcloud.vn', dept: 'Kinh doanh', role: 'Member', status: 'active' },
-  { id: 'u3', name: 'Lê Thị Lan Anh', phone: '0914 567 890', email: 'lananh@ezcloud.vn', dept: 'Kinh doanh', role: 'Member', status: 'active' },
-  { id: 'u4', name: 'Phạm Hồng Nhung', phone: '0915 678 901', email: 'nhung.ph@ezcloud.vn', dept: 'Kế toán', role: 'Member', status: 'active' },
-  { id: 'u5', name: 'Đặng Thị Mai', phone: '0917 890 123', email: 'mai.dt@ezcloud.vn', dept: 'Kỹ thuật', role: 'Member', status: 'inactive' },
-])
-const userForm = reactive<UserRecord & { password: string }>({
-  id: '',
-  name: '',
-  phone: '',
+
+const profile = reactive({
+  fullName: '',
+  phoneNumber: '',
   email: '',
-  dept: '',
-  role: 'Member',
-  status: 'active',
+  role: '' as UserRole | '',
+})
+
+const passwordForm = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+const sessions = ref<UserSessionDto[]>([])
+const users = ref<ProfileDto[]>([])
+const recipients = ref<NotificationRecipientDto[]>([])
+const userKeyword = ref('')
+
+const userModal = reactive({
+  open: false,
+  id: null as number | null,
+  fullName: '',
+  email: '',
+  phoneNumber: '',
+  role: 'Member' as UserRole,
+  status: 'Active' as UserStatus,
   password: '',
 })
-const themeOptions: { id: ThemeMode; label: string; icon: string; preview: string }[] = [
-  { id: 'dark', label: 'Tối', icon: '🌙', preview: 'theme-preview-dark' },
-  { id: 'light', label: 'Sáng', icon: '☀️', preview: 'theme-preview-light' },
-  { id: 'system', label: 'Hệ thống', icon: '💻', preview: 'theme-preview-system' },
+
+const passwordModal = reactive({
+  open: false,
+  userId: 0,
+  fullName: '',
+  newPassword: '',
+})
+
+const recipientModal = reactive({
+  open: false,
+  id: null as number | null,
+  notificationType: 'SyncErrorSummary' as NotificationType,
+  email: '',
+  displayName: '',
+  isActive: true,
+})
+
+const isAdmin = computed(() => authState.user?.role === 'Admin')
+const tabs = computed(() => {
+  const base = [
+    { id: 'profile', label: 'Thông tin tài khoản' },
+    { id: 'theme', label: 'Giao diện' },
+    { id: 'password', label: 'Đổi mật khẩu' },
+    { id: 'sessions', label: 'Quản lý thiết bị' },
+  ] as { id: TabKey; label: string }[]
+
+  if (isAdmin.value) {
+    base.push({ id: 'users', label: 'Quản lý người dùng' })
+    base.push({ id: 'recipients', label: 'Email nhận lỗi' })
+  }
+
+  return base
+})
+
+const themeOptions: { id: ThemeMode; label: string; preview: string }[] = [
+  { id: 'dark', label: 'Tối', preview: 'theme-preview-dark' },
+  { id: 'light', label: 'Sáng', preview: 'theme-preview-light' },
+  { id: 'system', label: 'Hệ thống', preview: 'theme-preview-system' },
 ]
 
-const criteria = computed(() => [
-  { label: 'Tối thiểu 8 ký tự', ok: newPassword.value.length >= 8 },
-  { label: 'Có chữ hoa', ok: /[A-Z]/.test(newPassword.value) },
-  { label: 'Có chữ số', ok: /[0-9]/.test(newPassword.value) },
-  { label: 'Có ký tự đặc biệt', ok: /[^A-Za-z0-9]/.test(newPassword.value) },
-])
-
-const passwordScore = computed(() => {
-  const base = criteria.value.filter((item) => item.ok).length
-  return Math.min(5, base + (newPassword.value.length >= 12 ? 1 : 0))
-})
-
-const filteredUsers = computed(() => {
-  const keyword = userSearch.value.trim().toLowerCase()
-  return users.value.filter((user) => {
-    const text = `${user.name} ${user.phone} ${user.email} ${user.dept}`.toLowerCase()
-    return (
-      (!keyword || text.includes(keyword)) &&
-      (!roleFilter.value || user.role === roleFilter.value) &&
-      (!statusFilter.value || user.status === statusFilter.value)
-    )
-  })
-})
-
-function selectTheme(value: ThemeMode) {
-  setMode(value)
+function errorText(err: unknown, fallback: string) {
+  return err instanceof ApiClientError ? err.message : fallback
 }
 
-function openAvatarPicker() {
-  avatarInput.value?.click()
+function clearNotice() {
+  error.value = ''
+  message.value = ''
 }
 
-function onAvatarChange(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (file) {
-    avatarUrl.value = URL.createObjectURL(file)
+function initials(name: string) {
+  return (name || 'U')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+}
+
+function apiThemeToUi(value: 'Dark' | 'Light' | 'System'): ThemeMode {
+  if (value === 'Dark') return 'dark'
+  if (value === 'Light') return 'light'
+  return 'system'
+}
+
+function uiThemeToApi(value: ThemeMode): 'Dark' | 'Light' | 'System' {
+  if (value === 'dark') return 'Dark'
+  if (value === 'light') return 'Light'
+  return 'System'
+}
+
+async function loadProfile() {
+  const data = await getProfile()
+  profile.fullName = data.fullName
+  profile.phoneNumber = data.phoneNumber ?? ''
+  profile.email = data.email
+  profile.role = data.role
+}
+
+async function saveProfile() {
+  loading.value = true
+  clearNotice()
+  try {
+    const data = await updateProfile({
+      fullName: profile.fullName,
+      phoneNumber: profile.phoneNumber || null,
+    })
+    if (authState.user) {
+      setCurrentUser({
+        ...authState.user,
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
+      })
+    }
+    message.value = 'Đã cập nhật thông tin tài khoản.'
+  } catch (err) {
+    error.value = errorText(err, 'Không lưu được thông tin tài khoản.')
+  } finally {
+    loading.value = false
   }
 }
 
-function openUserModal(user?: UserRecord) {
-  editingUserId.value = user?.id ?? null
-  Object.assign(userForm, {
-    id: user?.id ?? '',
-    name: user?.name ?? '',
-    phone: user?.phone ?? '',
-    email: user?.email ?? '',
-    dept: user?.dept ?? '',
-    role: user?.role ?? 'Member',
-    status: user?.status ?? 'active',
-    password: '',
-  })
-  showUserModal.value = true
+async function handleAvatarChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  loading.value = true
+  clearNotice()
+  try {
+    const result = await uploadAvatar(file)
+    if (authState.user) {
+      setCurrentUser({ ...authState.user, avatarPath: result.avatarPath })
+    }
+    message.value = 'Đã cập nhật avatar.'
+  } catch (err) {
+    error.value = errorText(err, 'Không upload được avatar.')
+  } finally {
+    loading.value = false
+  }
 }
 
-function saveUser() {
-  if (!userForm.name || !userForm.email) {
+async function loadPreferences() {
+  const data = await getPreferences()
+  setMode(apiThemeToUi(data.themeMode))
+}
+
+async function saveTheme(value: ThemeMode) {
+  setMode(value)
+  clearNotice()
+  try {
+    await updatePreferences({ themeMode: uiThemeToApi(value), language: 'vi-VN' })
+    message.value = 'Đã lưu giao diện.'
+  } catch (err) {
+    error.value = errorText(err, 'Không lưu được giao diện.')
+  }
+}
+
+async function savePassword() {
+  clearNotice()
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    error.value = 'Mật khẩu mới nhập lại không khớp.'
     return
   }
 
-  const payload: UserRecord = {
-    id: editingUserId.value ?? `u-${Date.now()}`,
-    name: userForm.name,
-    phone: userForm.phone,
-    email: userForm.email,
-    dept: userForm.dept,
-    role: 'Member',
-    status: userForm.status,
+  loading.value = true
+  try {
+    await changePassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+    })
+    passwordForm.currentPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    message.value = 'Đã đổi mật khẩu.'
+  } catch (err) {
+    error.value = errorText(err, 'Không đổi được mật khẩu.')
+  } finally {
+    loading.value = false
   }
-  const index = users.value.findIndex((user) => user.id === payload.id)
-  if (index >= 0) {
-    users.value[index] = payload
+}
+
+async function loadSessions() {
+  sessions.value = await listSessions()
+}
+
+async function revokeDevice(session: UserSessionDto) {
+  await revokeSession(session.id)
+  if (session.isCurrent) {
+    await logout()
+    await router.replace('/login')
+    return
+  }
+  await loadSessions()
+  message.value = 'Đã đăng xuất thiết bị.'
+}
+
+async function revokeAllDevices() {
+  await revokeAllSessions()
+  await logout()
+  await router.replace('/login')
+}
+
+async function loadUsers() {
+  if (!isAdmin.value) return
+  const result = await listUsers({ page: 1, keyword: userKeyword.value })
+  users.value = result.items
+}
+
+function openUserModal(user?: ProfileDto) {
+  userModal.open = true
+  userModal.id = user?.id ?? null
+  userModal.fullName = user?.fullName ?? ''
+  userModal.email = user?.email ?? ''
+  userModal.phoneNumber = user?.phoneNumber ?? ''
+  userModal.role = user?.role ?? 'Member'
+  userModal.status = user?.status ?? 'Active'
+  userModal.password = ''
+}
+
+async function saveUser() {
+  loading.value = true
+  clearNotice()
+  try {
+    if (userModal.id) {
+      await updateUser(userModal.id, {
+        fullName: userModal.fullName,
+        phoneNumber: userModal.phoneNumber || null,
+        role: userModal.role,
+        status: userModal.status,
+      })
+      message.value = 'Đã cập nhật người dùng.'
+    } else {
+      await createUser({
+        fullName: userModal.fullName,
+        email: userModal.email,
+        phoneNumber: userModal.phoneNumber || null,
+        role: userModal.role,
+        password: userModal.password,
+      })
+      message.value = 'Đã tạo người dùng.'
+    }
+    userModal.open = false
+    await loadUsers()
+  } catch (err) {
+    error.value = errorText(err, 'Không lưu được người dùng.')
+  } finally {
+    loading.value = false
+  }
+}
+
+function openPasswordModal(user: ProfileDto) {
+  passwordModal.open = true
+  passwordModal.userId = user.id
+  passwordModal.fullName = user.fullName
+  passwordModal.newPassword = ''
+}
+
+async function saveResetPassword() {
+  loading.value = true
+  clearNotice()
+  try {
+    await resetUserPassword(passwordModal.userId, passwordModal.newPassword)
+    passwordModal.open = false
+    message.value = 'Đã đặt lại mật khẩu.'
+    await loadUsers()
+  } catch (err) {
+    error.value = errorText(err, 'Không đặt lại được mật khẩu.')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function toggleUserStatus(user: ProfileDto) {
+  clearNotice()
+  if (user.status === 'Inactive') {
+    await enableUser(user.id)
+    message.value = 'Đã kích hoạt người dùng.'
   } else {
-    users.value.push(payload)
+    await disableUser(user.id)
+    message.value = 'Đã vô hiệu hóa người dùng.'
   }
-  showUserModal.value = false
+  await loadUsers()
 }
 
-function askDelete(id: string) {
-  deletingUserId.value = id
-  showDeleteModal.value = true
+async function unlock(user: ProfileDto) {
+  clearNotice()
+  await unlockUser(user.id)
+  message.value = 'Đã mở khóa người dùng.'
+  await loadUsers()
 }
 
-function confirmDelete() {
-  users.value = users.value.filter((user) => user.id !== deletingUserId.value)
-  showDeleteModal.value = false
+async function loadRecipients() {
+  if (!isAdmin.value) return
+  const result = await listNotificationRecipients({ page: 1 })
+  recipients.value = result.items
 }
+
+function openRecipientModal(recipient?: NotificationRecipientDto) {
+  recipientModal.open = true
+  recipientModal.id = recipient?.id ?? null
+  recipientModal.notificationType = recipient?.notificationType ?? 'SyncErrorSummary'
+  recipientModal.email = recipient?.email ?? ''
+  recipientModal.displayName = recipient?.displayName ?? ''
+  recipientModal.isActive = recipient?.isActive ?? true
+}
+
+async function saveRecipient() {
+  loading.value = true
+  clearNotice()
+  try {
+    const payload = {
+      notificationType: recipientModal.notificationType,
+      email: recipientModal.email,
+      displayName: recipientModal.displayName || null,
+      isActive: recipientModal.isActive,
+    }
+    if (recipientModal.id) {
+      await updateNotificationRecipient(recipientModal.id, payload)
+      message.value = 'Đã cập nhật email nhận lỗi.'
+    } else {
+      await createNotificationRecipient(payload)
+      message.value = 'Đã thêm email nhận lỗi.'
+    }
+    recipientModal.open = false
+    await loadRecipients()
+  } catch (err) {
+    error.value = errorText(err, 'Không lưu được email nhận lỗi.')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function deactivateRecipient(id: number) {
+  clearNotice()
+  await deactivateNotificationRecipient(id)
+  message.value = 'Đã ngừng gửi email cho dòng này.'
+  await loadRecipients()
+}
+
+watch(activeTab, async () => {
+  clearNotice()
+  if (activeTab.value === 'sessions') await loadSessions()
+  if (activeTab.value === 'users') await loadUsers()
+  if (activeTab.value === 'recipients') await loadRecipients()
+})
+
+watch(isAdmin, (value) => {
+  if (!value && (activeTab.value === 'users' || activeTab.value === 'recipients')) {
+    activeTab.value = 'profile'
+  }
+})
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    await loadProfile()
+    await loadPreferences().catch(() => undefined)
+  } catch (err) {
+    error.value = errorText(err, 'Không tải được cài đặt tài khoản.')
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
-  <PageHeader title="Cấu hình hệ thống" subtitle="Quản lý tài khoản, giao diện, thông báo và phân quyền truy cập" />
+  <PageHeader title="Cấu hình hệ thống" subtitle="Quản lý tài khoản, giao diện, thiết bị, người dùng và email nhận lỗi đồng bộ" />
 
   <div class="sys-tabs">
     <button
@@ -160,48 +437,55 @@ function confirmDelete() {
       type="button"
       @click="activeTab = tab.id"
     >
-      <span>{{ tab.icon }}</span>
       {{ tab.label }}
     </button>
   </div>
 
-  <section v-if="activeTab === 's1'" class="card">
+  <div v-if="message" class="notice notice-indigo" style="margin-bottom: 16px">{{ message }}</div>
+  <div v-if="error" class="notice notice-blue" style="margin-bottom: 16px">{{ error }}</div>
+
+  <section v-if="activeTab === 'profile'" class="card">
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Ảnh đại diện</label>
-        <div class="avatar-lg" @click="openAvatarPicker">
-          <img v-if="avatarUrl" :src="avatarUrl" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover" />
-          <span v-else>AT</span>
+        <div class="avatar-lg" @click="avatarInput?.click()">
+          <img
+            v-if="authState.user?.avatarPath"
+            :src="authState.user.avatarPath"
+            alt=""
+            style="position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover"
+          />
+          <span v-else>{{ initials(profile.fullName) }}</span>
         </div>
-        <input ref="avatarInput" type="file" accept="image/png,image/jpeg" style="display: none" @change="onAvatarChange" />
+        <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" style="display: none" @change="handleAvatarChange" />
       </div>
       <div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Họ và tên</label>
-            <input class="form-input" value="Nguyễn Anh Thảo" />
+            <input v-model="profile.fullName" class="form-input" />
           </div>
           <div class="form-group">
             <label class="form-label">Số điện thoại</label>
-            <input class="form-input" value="0912 345 678" />
+            <input v-model="profile.phoneNumber" class="form-input" />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Email</label>
-            <input class="form-input" value="admin@ezcloud.vn" />
+            <input v-model="profile.email" class="form-input" readonly />
           </div>
           <div class="form-group">
             <label class="form-label">Vai trò</label>
-            <input class="form-input" value="Admin" readonly />
+            <input class="form-input" :value="userRoleLabel(profile.role)" readonly />
           </div>
         </div>
-        <button class="btn-primary" type="button">Lưu thay đổi</button>
+        <button class="btn-primary" type="button" :disabled="loading" @click="saveProfile">Lưu thay đổi</button>
       </div>
     </div>
   </section>
 
-  <section v-if="activeTab === 's2'" class="card">
+  <section v-if="activeTab === 'theme'" class="card">
     <div class="theme-btns">
       <button
         v-for="theme in themeOptions"
@@ -209,7 +493,7 @@ function confirmDelete() {
         class="theme-opt"
         :class="{ selected: mode === theme.id }"
         type="button"
-        @click="selectTheme(theme.id)"
+        @click="saveTheme(theme.id)"
       >
         <div class="theme-preview" :class="theme.preview">
           <div class="tp-sidebar"></div>
@@ -219,7 +503,6 @@ function confirmDelete() {
           </div>
         </div>
         <div class="theme-opt-label">
-          <span>{{ theme.icon }}</span>
           {{ theme.label }}
           <span v-if="mode === theme.id" class="theme-check">✓</span>
         </div>
@@ -227,208 +510,232 @@ function confirmDelete() {
     </div>
   </section>
 
-  <section v-if="activeTab === 's3'" class="card">
-    <table>
-      <thead>
-        <tr><th>Loại thông báo</th><th>Email</th><th>Trong ứng dụng</th><th>Âm thanh</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in ['Nạp tiền KVC', 'Hoàn tiền', 'Đối soát lệch', 'Tài khoản đăng nhập']" :key="item">
-          <td class="cell-strong">{{ item }}</td>
-          <td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td>
-          <td><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></td>
-          <td><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section v-if="activeTab === 's4'" class="card">
+  <section v-if="activeTab === 'password'" class="card">
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Mật khẩu hiện tại</label>
-        <div class="pw-input-wrap">
-          <input class="form-input" :type="showPassword ? 'text' : 'password'" placeholder="Nhập mật khẩu hiện tại" />
-          <button class="pw-toggle" type="button" @click="showPassword = !showPassword">👁️</button>
-        </div>
+        <input v-model="passwordForm.currentPassword" class="form-input" type="password" autocomplete="current-password" />
       </div>
       <div class="form-group">
         <label class="form-label">Mật khẩu mới</label>
-        <input v-model="newPassword" class="form-input" type="password" placeholder="Nhập mật khẩu mới" />
-        <div class="strength-bar">
-          <span
-            v-for="index in 5"
-            :key="index"
-            class="strength-seg"
-            :style="{ background: index <= passwordScore ? ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'][passwordScore - 1] : '' }"
-          ></span>
-        </div>
-        <div class="pw-criteria">
-          <div v-for="item in criteria" :key="item.label" class="pw-criterion" :class="{ met: item.ok }">
-            <span class="pw-criterion-dot"></span>{{ item.label }}
-          </div>
-        </div>
+        <input v-model="passwordForm.newPassword" class="form-input" type="password" autocomplete="new-password" />
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Nhập lại mật khẩu mới</label>
-      <input class="form-input" type="password" placeholder="Nhập lại mật khẩu mới" />
+      <input v-model="passwordForm.confirmPassword" class="form-input" type="password" autocomplete="new-password" />
     </div>
-    <button class="btn-primary" type="button">Cập nhật mật khẩu</button>
+    <button class="btn-primary" type="button" :disabled="loading" @click="savePassword">Cập nhật mật khẩu</button>
   </section>
 
-  <section v-if="activeTab === 's5'" class="device-list">
-    <div v-for="device in ['Chrome trên Windows · hiện tại', 'Safari trên iPhone · 22/06/2026', 'Edge trên Windows · 18/06/2026']" :key="device" class="device-item">
-      <div class="device-icon">💻</div>
+  <section v-if="activeTab === 'sessions'" class="device-list">
+    <div class="toolbar">
+      <button class="btn-secondary" type="button" @click="loadSessions">Tải lại</button>
+      <button class="btn-danger" type="button" @click="revokeAllDevices">Đăng xuất tất cả thiết bị</button>
+    </div>
+    <div v-for="session in sessions" :key="session.id" class="device-item">
+      <div class="device-icon">PC</div>
       <div>
-        <div class="device-name">{{ device.split(' · ')[0] }}</div>
-        <div class="device-meta">{{ device.split(' · ')[1] }}</div>
+        <div class="device-name">
+          {{ session.deviceName || 'Thiết bị đăng nhập' }}
+          <span v-if="session.isCurrent" class="badge badge-green" style="margin-left: 6px">Hiện tại</span>
+        </div>
+        <div class="device-meta">
+          IP {{ session.lastUsedIp || session.createdByIp || '-' }} - tạo {{ formatDateTime(session.createdAtUtc) }} - hết hạn {{ formatDateTime(session.expiresAtUtc) }}
+        </div>
       </div>
-      <button class="btn-secondary" type="button" style="margin-left: auto">Đăng xuất</button>
+      <button v-if="session.isActive" class="btn-secondary" type="button" style="margin-left: auto" @click="revokeDevice(session)">
+        Đăng xuất
+      </button>
+    </div>
+    <div v-if="sessions.length === 0" class="notice notice-indigo">Chưa có phiên đăng nhập.</div>
+  </section>
+
+  <section v-if="activeTab === 'users' && isAdmin" class="card">
+    <div class="toolbar">
+      <input v-model="userKeyword" class="tb-input" placeholder="Tìm tên, email, số điện thoại..." @keyup.enter="loadUsers" />
+      <button class="btn-secondary" type="button" @click="loadUsers">Tìm</button>
+      <button class="add-btn" type="button" @click="openUserModal()">Thêm người dùng</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Họ tên</th>
+            <th>Email</th>
+            <th>SĐT</th>
+            <th>Vai trò</th>
+            <th>Trạng thái</th>
+            <th>Sai mật khẩu</th>
+            <th>Đăng nhập gần nhất</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="user in users" :key="user.id">
+            <td class="cell-strong">{{ user.fullName }}</td>
+            <td class="cell-muted">{{ user.email }}</td>
+            <td>{{ user.phoneNumber || '-' }}</td>
+            <td>{{ userRoleLabel(user.role) }}</td>
+            <td><span class="badge" :class="badgeClassForStatus(user.status)">{{ userStatusLabel(user.status) }}</span></td>
+            <td>{{ user.failedLoginCount }}</td>
+            <td>{{ formatDateTime(user.lastLoginAtUtc) }}</td>
+            <td>
+              <button class="act-btn" type="button" @click="openUserModal(user)">Sửa</button>
+              <button class="act-btn" type="button" @click="openPasswordModal(user)">Reset pass</button>
+              <button v-if="user.status === 'Locked'" class="act-btn" type="button" @click="unlock(user)">Mở khóa</button>
+              <button class="act-btn" type="button" @click="toggleUserStatus(user)">
+                {{ user.status === 'Inactive' ? 'Kích hoạt' : 'Vô hiệu' }}
+              </button>
+            </td>
+          </tr>
+          <tr v-if="users.length === 0">
+            <td colspan="8" class="cell-muted" style="text-align: center">Chưa có người dùng phù hợp</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
-  <section v-if="activeTab === 's6'">
-    <div class="role-cards">
-      <div class="role-card">
-        <div class="role-card-title">Admin</div>
-        <div class="role-card-desc">Toàn quyền cấu hình hệ thống và quản lý người dùng.</div>
-      </div>
-      <div class="role-card">
-        <div class="role-card-title">Member</div>
-        <div class="role-card-desc">Truy cập nghiệp vụ, không được sửa phân quyền người dùng.</div>
-      </div>
+  <section v-if="activeTab === 'recipients' && isAdmin" class="card">
+    <div class="toolbar">
+      <button class="btn-secondary" type="button" @click="loadRecipients">Tải lại</button>
+      <button class="add-btn" type="button" @click="openRecipientModal()">Thêm email</button>
     </div>
-    <div class="card">
-      <div class="toolbar">
-        <input v-model="userSearch" class="tb-input" placeholder="🔍  Tìm tên, email, SĐT..." />
-        <select v-model="roleFilter" class="tb-select">
-          <option value="">Tất cả vai trò</option>
-          <option value="Admin">Admin</option>
-          <option value="Member">Member</option>
-        </select>
-        <select v-model="statusFilter" class="tb-select">
-          <option value="">Tất cả trạng thái</option>
-          <option value="active">Hoạt động</option>
-          <option value="inactive">Vô hiệu hoá</option>
-        </select>
-        <button class="tb-btn" type="button" @click="openUserModal()">+ Thêm Member</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Họ tên</th><th>SĐT</th><th>Email</th><th>Bộ phận</th><th>Vai trò</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-          <tbody>
-            <tr v-for="user in filteredUsers" :key="user.id">
-              <td class="cell-strong">{{ user.name }}</td>
-              <td>{{ user.phone }}</td>
-              <td class="cell-muted">{{ user.email }}</td>
-              <td>{{ user.dept }}</td>
-              <td><span class="badge" :class="user.role === 'Admin' ? 'badge-blue' : 'badge-indigo'">{{ user.role === 'Admin' ? '👑' : '👤' }} {{ user.role }}</span></td>
-              <td><span class="badge" :class="user.status === 'active' ? 'badge-green' : 'badge-gray'">● {{ user.status === 'active' ? 'Hoạt động' : 'Vô hiệu hoá' }}</span></td>
-              <td>
-                <span v-if="user.role === 'Admin'" class="cell-muted" style="font-size: 11px; font-style: italic">Không thể sửa/xoá</span>
-                <template v-else>
-                  <button class="act-btn" type="button" @click="openUserModal(user)">✏️</button>
-                  <button class="act-btn" type="button" @click="askDelete(user.id)">🗑️</button>
-                </template>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Loại thông báo</th>
+            <th>Email</th>
+            <th>Tên hiển thị</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="recipient in recipients" :key="recipient.id">
+            <td>{{ notificationTypeLabel(recipient.notificationType) }}</td>
+            <td class="cell-strong">{{ recipient.email }}</td>
+            <td>{{ recipient.displayName || '-' }}</td>
+            <td><span class="badge" :class="recipient.isActive ? 'badge-green' : 'badge-gray'">{{ recipient.isActive ? 'Đang nhận' : 'Ngừng nhận' }}</span></td>
+            <td>
+              <button class="act-btn" type="button" @click="openRecipientModal(recipient)">Sửa</button>
+              <button v-if="recipient.isActive" class="act-btn" type="button" @click="deactivateRecipient(recipient.id)">Ngừng</button>
+            </td>
+          </tr>
+          <tr v-if="recipients.length === 0">
+            <td colspan="5" class="cell-muted" style="text-align: center">Chưa có email nhận lỗi</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
-  <section v-if="activeTab === 's7'">
-    <div class="notice notice-indigo">🏨 Tài khoản khách hàng cho phép khách sạn truy cập cổng thông tin để xem báo cáo và theo dõi thanh toán.</div>
-    <div class="stat-grid" style="margin-top: 16px">
-      <div class="stat-card"><div class="stat-label">Tổng tài khoản</div><div class="stat-value">6</div></div>
-      <div class="stat-card"><div class="stat-label">Đang online</div><div class="stat-value green">2</div></div>
-      <div class="stat-card"><div class="stat-label">Bị khoá</div><div class="stat-value red">1</div></div>
-    </div>
-    <div class="card">
-      <div class="toolbar">
-        <input class="tb-input" placeholder="🔍  Tìm tài khoản..." />
-        <button class="tb-btn" type="button">+ Thêm tài khoản</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Khách hàng</th><th>Khách sạn</th><th>Tài khoản</th><th>SĐT</th><th>Đăng nhập gần nhất</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-          <tbody>
-            <tr v-for="account in ['Nguyễn Văn A|Bình Minh|binhminh@portal.vn|0901 234 567|22/06/2026 08:30|Online', 'Trần Thị B|Resort Sao Biển|saobien@portal.vn|0902 345 678|22/06/2026 07:15|Online', 'Hoàng Lan E|Phố Cổ Boutique|phoco@portal.vn|0905 678 901|15/06/2026 16:45|Bị khoá']" :key="account">
-              <td class="cell-strong">{{ account.split('|')[0] }}</td>
-              <td>{{ account.split('|')[1] }}</td>
-              <td class="cell-muted">{{ account.split('|')[2] }}</td>
-              <td>{{ account.split('|')[3] }}</td>
-              <td>{{ account.split('|')[4] }}</td>
-              <td><span class="badge" :class="account.includes('Bị khoá') ? 'badge-red' : 'badge-green'">● {{ account.split('|')[5] }}</span></td>
-              <td><button class="act-btn" type="button">🔑</button><button class="act-btn" type="button">🔒</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <div v-if="showUserModal" class="modal-overlay" @click.self="showUserModal = false">
+  <div v-if="userModal.open" class="modal-overlay" @click.self="userModal.open = false">
     <div class="modal">
       <div class="modal-header">
-        <span class="modal-title">{{ editingUserId ? 'Sửa tài khoản Member' : 'Thêm tài khoản Member' }}</span>
-        <button class="modal-close" type="button" @click="showUserModal = false">✕</button>
+        <span class="modal-title">{{ userModal.id ? 'Sửa người dùng' : 'Thêm người dùng' }}</span>
+        <button class="modal-close" type="button" @click="userModal.open = false">x</button>
       </div>
       <div class="modal-body">
-        <div class="notice notice-indigo" style="margin-bottom: 14px">👤 Tài khoản được tạo sẽ có role Member.</div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Họ và tên</label>
-            <input v-model="userForm.name" class="form-input" placeholder="Nguyễn Văn A" />
+            <label class="form-label">Họ tên</label>
+            <input v-model="userModal.fullName" class="form-input" />
           </div>
           <div class="form-group">
             <label class="form-label">Số điện thoại</label>
-            <input v-model="userForm.phone" class="form-input" placeholder="09xx xxx xxx" />
+            <input v-model="userModal.phoneNumber" class="form-input" />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Email</label>
-            <input v-model="userForm.email" class="form-input" type="email" placeholder="ten@ezcloud.vn" />
+            <input v-model="userModal.email" class="form-input" type="email" :readonly="Boolean(userModal.id)" />
           </div>
           <div class="form-group">
-            <label class="form-label">Bộ phận</label>
-            <input v-model="userForm.dept" class="form-input" placeholder="Kinh doanh, Kế toán..." />
+            <label class="form-label">Vai trò</label>
+            <select v-model="userModal.role" class="form-select">
+              <option value="Admin">Quản trị</option>
+              <option value="Member">Thành viên</option>
+              <option value="Accountant">Kế toán</option>
+            </select>
           </div>
         </div>
         <div class="form-row">
-          <div class="form-group">
+          <div v-if="!userModal.id" class="form-group">
             <label class="form-label">Mật khẩu</label>
-            <input v-model="userForm.password" class="form-input" type="password" placeholder="Tối thiểu 8 ký tự" />
+            <input v-model="userModal.password" class="form-input" type="password" />
           </div>
           <div class="form-group">
             <label class="form-label">Trạng thái</label>
-            <select v-model="userForm.status" class="form-select">
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Vô hiệu hoá</option>
+            <select v-model="userModal.status" class="form-select">
+              <option value="Active">Hoạt động</option>
+              <option value="Inactive">Vô hiệu hóa</option>
+              <option value="Locked">Bị khóa</option>
             </select>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" @click="showUserModal = false">Hủy</button>
-        <button class="btn-primary" type="button" @click="saveUser">Lưu</button>
+        <button class="btn-secondary" type="button" @click="userModal.open = false">Hủy</button>
+        <button class="btn-primary" type="button" :disabled="loading" @click="saveUser">Lưu</button>
       </div>
     </div>
   </div>
 
-  <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
-    <div class="modal" style="width: 380px">
+  <div v-if="passwordModal.open" class="modal-overlay" @click.self="passwordModal.open = false">
+    <div class="modal" style="width: 420px">
       <div class="modal-header">
-        <span class="modal-title">Xác nhận xoá tài khoản</span>
-        <button class="modal-close" type="button" @click="showDeleteModal = false">✕</button>
+        <span class="modal-title">Reset mật khẩu</span>
+        <button class="modal-close" type="button" @click="passwordModal.open = false">x</button>
       </div>
-      <div class="modal-body">Bạn có chắc muốn xoá tài khoản này?</div>
+      <div class="modal-body">
+        <div class="notice notice-indigo" style="margin-bottom: 14px">{{ passwordModal.fullName }}</div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu mới</label>
+          <input v-model="passwordModal.newPassword" class="form-input" type="password" />
+        </div>
+      </div>
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" @click="showDeleteModal = false">Hủy</button>
-        <button class="btn-danger" type="button" @click="confirmDelete">Xoá</button>
+        <button class="btn-secondary" type="button" @click="passwordModal.open = false">Hủy</button>
+        <button class="btn-primary" type="button" :disabled="loading" @click="saveResetPassword">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="recipientModal.open" class="modal-overlay" @click.self="recipientModal.open = false">
+    <div class="modal" style="width: 460px">
+      <div class="modal-header">
+        <span class="modal-title">{{ recipientModal.id ? 'Sửa email nhận lỗi' : 'Thêm email nhận lỗi' }}</span>
+        <button class="modal-close" type="button" @click="recipientModal.open = false">x</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Loại thông báo</label>
+          <select v-model="recipientModal.notificationType" class="form-select">
+            <option value="SyncErrorSummary">Tổng hợp lỗi đồng bộ</option>
+            <option value="DailyReport">Báo cáo ngày</option>
+            <option value="ReconciliationVarianceAlert">Cảnh báo lệch đối soát</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input v-model="recipientModal.email" class="form-input" type="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên hiển thị</label>
+          <input v-model="recipientModal.displayName" class="form-input" />
+        </div>
+        <label class="toggle">
+          <input v-model="recipientModal.isActive" type="checkbox" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" @click="recipientModal.open = false">Hủy</button>
+        <button class="btn-primary" type="button" :disabled="loading" @click="saveRecipient">Lưu</button>
       </div>
     </div>
   </div>
