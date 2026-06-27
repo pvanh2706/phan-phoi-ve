@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Application.Common;
 using PpvRecon.Application.Jobs;
+using PpvRecon.Api.Services;
 using PpvRecon.Domain.Enums;
 using PpvRecon.Infrastructure.Persistence;
 
@@ -13,7 +14,8 @@ namespace PpvRecon.Api.Controllers;
 [Route("api/jobs")]
 public sealed class JobsController(
     PpvReconDbContext dbContext,
-    IJobRunner jobRunner) : PpvControllerBase
+    IJobRunner jobRunner,
+    IMaintenanceJobService maintenanceJobService) : PpvControllerBase
 {
     [HttpGet("runs")]
     public async Task<ActionResult<ApiResponse<PagedResult<JobRunListItemDto>>>> ListRuns(
@@ -166,6 +168,25 @@ public sealed class JobsController(
     public Task<ActionResult<ApiResponse<JobRunDetailDto>>> RunBankTransactions(RunJobRequest request, CancellationToken cancellationToken)
     {
         return RunExternalSyncAsync(ExternalApiSource.BankTransaction, request, cancellationToken);
+    }
+
+    [Authorize(Roles = "Admin,Accountant")]
+    [HttpPost("send-sync-error-summary/run")]
+    public async Task<ActionResult<ApiResponse<SendSyncErrorSummaryResultDto>>> SendSyncErrorSummary(
+        RunJobRequest request,
+        CancellationToken cancellationToken)
+    {
+        var businessDate = request.BusinessDate ?? GetVietnamToday();
+        var result = await maintenanceJobService.SendSyncErrorSummaryAsync(businessDate, CurrentUserId, cancellationToken);
+        return Ok(ApiResponse<SendSyncErrorSummaryResultDto>.Ok(result, "Đã chạy job gửi tổng hợp lỗi đồng bộ."));
+    }
+
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    [HttpPost("cleanup-audit-logs/run")]
+    public async Task<ActionResult<ApiResponse<CleanupAuditLogsResultDto>>> CleanupAuditLogs(CancellationToken cancellationToken)
+    {
+        var result = await maintenanceJobService.CleanupAuditLogsAsync(CurrentUserId, cancellationToken);
+        return Ok(ApiResponse<CleanupAuditLogsResultDto>.Ok(result, "Đã chạy job dọn audit log."));
     }
 
     private async Task<ActionResult<ApiResponse<JobRunDetailDto>>> RunExternalSyncAsync(

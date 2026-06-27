@@ -62,6 +62,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IJobRunner, JobRunner>();
 builder.Services.AddScoped<IReconciliationBuilder, ReconciliationBuilder>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IMaintenanceJobService, MaintenanceJobService>();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
