@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableCell, TableColumn, TableRow } from '../../data/reports'
+import AppIcon from './AppIcon.vue'
 
 defineProps<{
   columns: TableColumn[]
@@ -25,6 +26,12 @@ function cellClass(cell: TableCell) {
 
   return ''
 }
+
+function actionIcon(label: string) {
+  if (label.includes('Sửa')) return 'edit'
+  if (label.includes('Xoá') || label.includes('Xóa')) return 'trash'
+  return 'eye'
+}
 </script>
 
 <template>
@@ -44,7 +51,7 @@ function cellClass(cell: TableCell) {
             <span v-else-if="cell.kind === 'badge'" class="badge" :class="`badge-${cell.tone}`">{{ cell.text }}</span>
             <span v-else-if="cell.kind === 'actions'">
               <button v-for="action in cell.actions" :key="action.label" class="act-btn" type="button" :title="action.label">
-                {{ action.icon }}
+                <AppIcon :name="actionIcon(action.label)" :size="14" />
               </button>
             </span>
             <span v-else :class="cellClass(cell)">{{ cell.text }}</span>

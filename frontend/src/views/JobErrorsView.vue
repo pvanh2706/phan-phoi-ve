@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState } from '../services/authStore'
@@ -240,10 +241,10 @@ onMounted(async () => {
         <option value="ManualResolved">Đã nhập tay</option>
       </select>
       <button class="btn-secondary" type="button" @click="load">Lọc</button>
-      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('ParkBalance')">Chạy số dư</button>
-      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('TicketCost')">Chạy giá vốn</button>
-      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('BankTransaction')">Chạy ngân hàng</button>
-      <button v-if="canManual" class="add-btn" type="button" :disabled="actionLoading" @click="sendEmailSummary">Gửi email lỗi</button>
+      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('ParkBalance')"><AppIcon name="play" :size="14" /> Chạy số dư</button>
+      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('TicketCost')"><AppIcon name="play" :size="14" /> Chạy giá vốn</button>
+      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('BankTransaction')"><AppIcon name="play" :size="14" /> Chạy ngân hàng</button>
+      <button v-if="canManual" class="add-btn" type="button" :disabled="actionLoading" @click="sendEmailSummary"><AppIcon name="mail" :size="14" /> Gửi email lỗi</button>
     </div>
 
     <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
@@ -282,6 +283,7 @@ onMounted(async () => {
                 type="button"
                 @click="openManual(item)"
               >
+                <AppIcon name="keyboard" :size="14" />
                 Nhập tay
               </button>
             </td>

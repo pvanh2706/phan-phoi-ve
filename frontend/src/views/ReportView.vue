@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError, type PagedResult } from '../services/apiClient'
 import { authState } from '../services/authStore'
@@ -342,6 +343,7 @@ onMounted(async () => {
       <button class="btn-secondary" type="button" @click="load">Tải lại</button>
       <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
       <button v-if="props.pageKey === 'reconciliation'" class="add-btn" type="button" @click="runBuild">
+        <AppIcon name="play" :size="14" />
         Build đối soát
       </button>
     </div>
@@ -475,6 +477,7 @@ onMounted(async () => {
                 type="button"
                 @click="openResolve(asReconciliation(row))"
               >
+                <AppIcon name="edit" :size="14" />
                 Xử lý
               </button>
             </td>

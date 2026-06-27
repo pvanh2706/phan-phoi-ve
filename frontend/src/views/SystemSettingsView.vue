@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState, logout, setCurrentUser } from '../services/authStore'
@@ -103,24 +104,24 @@ const recipientModal = reactive({
 const isAdmin = computed(() => authState.user?.role === 'Admin')
 const tabs = computed(() => {
   const base = [
-    { id: 'profile', label: 'Thông tin tài khoản' },
-    { id: 'theme', label: 'Giao diện' },
-    { id: 'password', label: 'Đổi mật khẩu' },
-    { id: 'sessions', label: 'Quản lý thiết bị' },
-  ] as { id: TabKey; label: string }[]
+    { id: 'profile', label: 'Thông tin tài khoản', icon: 'user' },
+    { id: 'theme', label: 'Giao diện', icon: 'palette' },
+    { id: 'password', label: 'Đổi mật khẩu', icon: 'lock' },
+    { id: 'sessions', label: 'Quản lý thiết bị', icon: 'monitor' },
+  ] as { id: TabKey; label: string; icon: string }[]
 
   if (isAdmin.value) {
-    base.push({ id: 'users', label: 'Quản lý người dùng' })
-    base.push({ id: 'recipients', label: 'Email nhận lỗi' })
+    base.push({ id: 'users', label: 'Quản lý người dùng', icon: 'users' })
+    base.push({ id: 'recipients', label: 'Email nhận lỗi', icon: 'mail' })
   }
 
   return base
 })
 
-const themeOptions: { id: ThemeMode; label: string; preview: string }[] = [
-  { id: 'dark', label: 'Tối', preview: 'theme-preview-dark' },
-  { id: 'light', label: 'Sáng', preview: 'theme-preview-light' },
-  { id: 'system', label: 'Hệ thống', preview: 'theme-preview-system' },
+const themeOptions: { id: ThemeMode; label: string; preview: string; icon: string }[] = [
+  { id: 'dark', label: 'Tối', preview: 'theme-preview-dark', icon: 'palette' },
+  { id: 'light', label: 'Sáng', preview: 'theme-preview-light', icon: 'palette' },
+  { id: 'system', label: 'Hệ thống', preview: 'theme-preview-system', icon: 'monitor' },
 ]
 
 function errorText(err: unknown, fallback: string) {
@@ -437,6 +438,7 @@ onMounted(async () => {
       type="button"
       @click="activeTab = tab.id"
     >
+      <span class="sys-tab-icon"><AppIcon :name="tab.icon" :size="15" /></span>
       {{ tab.label }}
     </button>
   </div>
@@ -503,6 +505,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="theme-opt-label">
+          <AppIcon :name="theme.icon" :size="14" />
           {{ theme.label }}
           <span v-if="mode === theme.id" class="theme-check">✓</span>
         </div>
@@ -534,7 +537,7 @@ onMounted(async () => {
       <button class="btn-danger" type="button" @click="revokeAllDevices">Đăng xuất tất cả thiết bị</button>
     </div>
     <div v-for="session in sessions" :key="session.id" class="device-item">
-      <div class="device-icon">PC</div>
+      <div class="device-icon"><AppIcon name="monitor" :size="28" /></div>
       <div>
         <div class="device-name">
           {{ session.deviceName || 'Thiết bị đăng nhập' }}
@@ -581,10 +584,11 @@ onMounted(async () => {
             <td>{{ user.failedLoginCount }}</td>
             <td>{{ formatDateTime(user.lastLoginAtUtc) }}</td>
             <td>
-              <button class="act-btn" type="button" @click="openUserModal(user)">Sửa</button>
-              <button class="act-btn" type="button" @click="openPasswordModal(user)">Reset pass</button>
-              <button v-if="user.status === 'Locked'" class="act-btn" type="button" @click="unlock(user)">Mở khóa</button>
+              <button class="act-btn" type="button" @click="openUserModal(user)"><AppIcon name="edit" :size="14" /> Sửa</button>
+              <button class="act-btn" type="button" @click="openPasswordModal(user)"><AppIcon name="lock" :size="14" /> Reset pass</button>
+              <button v-if="user.status === 'Locked'" class="act-btn" type="button" @click="unlock(user)"><AppIcon name="play" :size="14" /> Mở khóa</button>
               <button class="act-btn" type="button" @click="toggleUserStatus(user)">
+                <AppIcon :name="user.status === 'Inactive' ? 'play' : 'pause'" :size="14" />
                 {{ user.status === 'Inactive' ? 'Kích hoạt' : 'Vô hiệu' }}
               </button>
             </td>
@@ -620,8 +624,8 @@ onMounted(async () => {
             <td>{{ recipient.displayName || '-' }}</td>
             <td><span class="badge" :class="recipient.isActive ? 'badge-green' : 'badge-gray'">{{ recipient.isActive ? 'Đang nhận' : 'Ngừng nhận' }}</span></td>
             <td>
-              <button class="act-btn" type="button" @click="openRecipientModal(recipient)">Sửa</button>
-              <button v-if="recipient.isActive" class="act-btn" type="button" @click="deactivateRecipient(recipient.id)">Ngừng</button>
+              <button class="act-btn" type="button" @click="openRecipientModal(recipient)"><AppIcon name="edit" :size="14" /> Sửa</button>
+              <button v-if="recipient.isActive" class="act-btn" type="button" @click="deactivateRecipient(recipient.id)"><AppIcon name="pause" :size="14" /> Ngừng</button>
             </td>
           </tr>
           <tr v-if="recipients.length === 0">

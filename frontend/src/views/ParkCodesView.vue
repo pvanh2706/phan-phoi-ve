@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState } from '../services/authStore'
@@ -380,6 +381,7 @@ onMounted(async () => {
       </select>
       <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
       <button class="add-btn" type="button" @click="activeTab === 'parks' ? openAddPark() : openAddTicket()">
+        <AppIcon name="plus" :size="14" />
         {{ activeTab === 'parks' ? 'Thêm KVC' : 'Thêm loại vé' }}
       </button>
     </div>
@@ -414,9 +416,9 @@ onMounted(async () => {
             <td class="cell-muted">{{ park.apiSiteId || '-' }} {{ park.apiProfileId ? `/ ${park.apiProfileId}` : '' }}</td>
             <td><span class="badge" :class="badgeClassForStatus(park.status)">{{ recordStatusLabel(park.status) }}</span></td>
             <td>
-              <button class="act-btn" type="button" @click="openEditPark(park)">Sửa</button>
-              <button class="act-btn" type="button" @click="inactivePark(park.id)">Ngừng</button>
-              <button v-if="isAdmin" class="act-btn" type="button" @click="softDeletePark(park.id)">Xóa</button>
+              <button class="act-btn" type="button" @click="openEditPark(park)"><AppIcon name="edit" :size="14" /> Sửa</button>
+              <button class="act-btn" type="button" @click="inactivePark(park.id)"><AppIcon name="pause" :size="14" /> Ngừng</button>
+              <button v-if="isAdmin" class="act-btn" type="button" @click="softDeletePark(park.id)"><AppIcon name="trash" :size="14" /> Xóa</button>
             </td>
           </tr>
           <tr v-if="!loading && parks.length === 0">
@@ -453,9 +455,9 @@ onMounted(async () => {
             <td class="amount">{{ formatMoney(ticket.costPrice) }}</td>
             <td><span class="badge" :class="badgeClassForStatus(ticket.status)">{{ recordStatusLabel(ticket.status) }}</span></td>
             <td>
-              <button class="act-btn" type="button" @click="openEditTicket(ticket)">Sửa</button>
-              <button class="act-btn" type="button" @click="inactiveTicket(ticket.id)">Ngừng</button>
-              <button v-if="isAdmin" class="act-btn" type="button" @click="softDeleteTicket(ticket.id)">Xóa</button>
+              <button class="act-btn" type="button" @click="openEditTicket(ticket)"><AppIcon name="edit" :size="14" /> Sửa</button>
+              <button class="act-btn" type="button" @click="inactiveTicket(ticket.id)"><AppIcon name="pause" :size="14" /> Ngừng</button>
+              <button v-if="isAdmin" class="act-btn" type="button" @click="softDeleteTicket(ticket.id)"><AppIcon name="trash" :size="14" /> Xóa</button>
             </td>
           </tr>
           <tr v-if="!loading && ticketTypes.length === 0">

@@ -37,7 +37,7 @@ export const topUpWorkflow: KanbanColumn[] = [
   {
     id: 'request',
     title: 'Tạo yêu cầu',
-    icon: '📝',
+    icon: 'clipboard',
     tasks: [
       {
         id: 'tu-1',
@@ -74,7 +74,7 @@ export const topUpWorkflow: KanbanColumn[] = [
   {
     id: 'approval',
     title: 'Kế toán duyệt',
-    icon: '✅',
+    icon: 'check',
     tasks: [
       {
         id: 'tu-3',
@@ -96,7 +96,7 @@ export const topUpWorkflow: KanbanColumn[] = [
   {
     id: 'transfer',
     title: 'Chuyển khoản',
-    icon: '🏦',
+    icon: 'bank',
     tasks: [
       {
         id: 'tu-4',
@@ -118,7 +118,7 @@ export const topUpWorkflow: KanbanColumn[] = [
   {
     id: 'confirm',
     title: 'Xác nhận KVC',
-    icon: '📩',
+    icon: 'mail',
     tasks: [
       {
         id: 'tu-5',
@@ -140,7 +140,7 @@ export const topUpWorkflow: KanbanColumn[] = [
   {
     id: 'done',
     title: 'Hoàn tất',
-    icon: '🎯',
+    icon: 'target',
     tasks: [
       {
         id: 'tu-6',
@@ -165,7 +165,7 @@ export const refundWorkflow: KanbanColumn[] = [
   {
     id: 'new',
     title: 'Tiếp nhận',
-    icon: '📥',
+    icon: 'inbox',
     tasks: [
       {
         id: 'rw-1',
@@ -183,7 +183,7 @@ export const refundWorkflow: KanbanColumn[] = [
   {
     id: 'check',
     title: 'Kiểm tra điều kiện',
-    icon: '🔎',
+    icon: 'search',
     tasks: [
       {
         id: 'rw-2',
@@ -201,7 +201,7 @@ export const refundWorkflow: KanbanColumn[] = [
   {
     id: 'approve',
     title: 'Duyệt hoàn',
-    icon: '✅',
+    icon: 'check',
     tasks: [
       {
         id: 'rw-3',
@@ -219,7 +219,7 @@ export const refundWorkflow: KanbanColumn[] = [
   {
     id: 'payment',
     title: 'Chi hoàn tiền',
-    icon: '💳',
+    icon: 'card',
     tasks: [
       {
         id: 'rw-4',
@@ -237,7 +237,7 @@ export const refundWorkflow: KanbanColumn[] = [
   {
     id: 'complete',
     title: 'Hoàn tất',
-    icon: '🎯',
+    icon: 'target',
     tasks: [
       {
         id: 'rw-5',

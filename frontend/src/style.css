@@ -247,9 +247,29 @@ a {
 }
 
 .nav-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   font-size: 15px;
   line-height: 1;
+}
+
+.nav-icon svg,
+.user-btn svg,
+.icon-btn svg,
+.act-btn svg,
+.sys-tab-icon svg,
+.theme-toggle svg,
+.theme-opt-label svg,
+.device-icon svg,
+.add-btn svg,
+.kanban-title-icon svg,
+.btn-secondary svg,
+.btn-primary svg {
+  display: block;
 }
 
 .nav-label {
@@ -582,6 +602,15 @@ a {
   font-weight: 500;
   white-space: nowrap;
   transition: all 0.15s;
+}
+
+.sys-tab-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .tab-btn:hover,
@@ -949,11 +978,18 @@ tbody tr:hover td {
 }
 
 .act-btn {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   padding: 4px 8px;
   border-radius: 6px;
   background: transparent;
+  color: inherit;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  white-space: nowrap;
   transition: background 0.15s;
 }
 
@@ -1022,6 +1058,9 @@ tbody tr:hover td {
   right: 24px;
   bottom: 24px;
   z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
@@ -1254,6 +1293,15 @@ tbody tr:hover td {
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 700;
+}
+
+.kanban-title-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .kanban-count {
@@ -1563,8 +1611,15 @@ tbody tr:hover td {
 }
 
 .device-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  font-size: 28px;
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--primary-text);
 }
 
 .pw-input-wrap {
