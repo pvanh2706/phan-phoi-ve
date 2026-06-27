@@ -1,14 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AuditLogView from '../views/AuditLogView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
+import JobErrorsView from '../views/JobErrorsView.vue'
+import LoginView from '../views/LoginView.vue'
 import ParkCodesView from '../views/ParkCodesView.vue'
 import RefundProcessView from '../views/RefundProcessView.vue'
 import ReportView from '../views/ReportView.vue'
 import SystemSettingsView from '../views/SystemSettingsView.vue'
 import TopUpWorkflowView from '../views/TopUpWorkflowView.vue'
+import { authState, initializeAuth } from '../services/authStore'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/login',
+      component: LoginView,
+      meta: { title: 'Đăng nhập', public: true },
+    },
     { path: '/', redirect: '/khu-vui-choi/danh-sach' },
     {
       path: '/khu-vui-choi/danh-sach',
@@ -51,6 +60,16 @@ const router = createRouter({
       meta: { title: 'Khu vui chơi / KVC hoàn tiền' },
     },
     {
+      path: '/khu-vui-choi/nhat-ky',
+      component: AuditLogView,
+      meta: { title: 'Khu vui chơi / Nhật ký thay đổi' },
+    },
+    {
+      path: '/khu-vui-choi/loi-dong-bo',
+      component: JobErrorsView,
+      meta: { title: 'Khu vui chơi / Lỗi đồng bộ cần xử lý' },
+    },
+    {
       path: '/hoan-tien/quy-trinh',
       component: RefundProcessView,
       meta: { title: 'Hoàn tiền / Quy trình hoàn tiền' },
@@ -72,6 +91,22 @@ const router = createRouter({
       meta: { title: 'Tính năng đang phát triển' },
     },
   ],
+})
+
+router.beforeEach(async (to) => {
+  if (!authState.ready) {
+    await initializeAuth()
+  }
+
+  if (to.meta.public) {
+    return authState.user && to.path === '/login' ? '/' : true
+  }
+
+  if (!authState.user) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+
+  return true
 })
 
 export default router

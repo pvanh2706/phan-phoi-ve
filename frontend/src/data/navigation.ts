@@ -24,6 +24,8 @@ export const navigation: NavItem[] = [
       { label: 'Chi tiết giá vốn vé bán', path: '/khu-vui-choi/gia-von-ve-ban' },
       { label: 'Đối soát Khu vui chơi', path: '/khu-vui-choi/doi-soat' },
       { label: 'KVC hoàn tiền', path: '/khu-vui-choi/kvc-hoan-tien' },
+      { label: 'Nhật ký thay đổi', path: '/khu-vui-choi/nhat-ky' },
+      { label: 'Lỗi đồng bộ cần xử lý', path: '/khu-vui-choi/loi-dong-bo' },
     ],
   },
   { key: 'agency', label: 'Đại lý', icon: '🤝', path: '/dang-phat-trien/dai-ly' },

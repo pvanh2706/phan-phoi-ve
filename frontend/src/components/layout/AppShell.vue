@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { navigation } from '../../data/navigation'
 import { useTheme } from '../../composables/useTheme'
+import { authState, logout } from '../../services/authStore'
 
 const route = useRoute()
+const router = useRouter()
 const collapsed = ref(false)
 const openMenus = reactive<Record<string, boolean>>({
   park: true,
@@ -13,6 +15,20 @@ const openMenus = reactive<Record<string, boolean>>({
 const { toggleTheme } = useTheme()
 
 const title = computed(() => String(route.meta.title ?? 'ezCloud PPV'))
+const user = computed(() => authState.user)
+const initials = computed(() => {
+  const name = user.value?.fullName?.trim() || user.value?.email || 'U'
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+})
+const roleLabel = computed(() => {
+  if (user.value?.role === 'Admin') return 'Quản trị'
+  if (user.value?.role === 'Accountant') return 'Kế toán'
+  return 'Thành viên'
+})
 
 function isChildActive(path: string) {
   return route.path === path
@@ -24,6 +40,11 @@ function isGroupActive(paths: string[]) {
 
 function toggleMenu(key: string) {
   openMenus[key] = !openMenus[key]
+}
+
+async function handleLogout() {
+  await logout()
+  await router.replace('/login')
 }
 
 watch(
@@ -46,7 +67,7 @@ watch(
         <div class="brand-logo">ez</div>
         <div class="brand-text">
           <div class="brand-name">ezCloud PPV</div>
-          <div class="brand-role">admin</div>
+          <div class="brand-role">{{ roleLabel }}</div>
         </div>
       </div>
 
@@ -95,10 +116,10 @@ watch(
       <div class="sidebar-user">
         <div class="user-card">
           <div class="user-info">
-            <div class="avatar">AT<span class="avatar-dot"></span></div>
+            <div class="avatar">{{ initials }}<span class="avatar-dot"></span></div>
             <div style="min-width: 0">
-              <div class="user-name">Anh Thảo</div>
-              <div class="user-email">admin@ezcloud.vn</div>
+              <div class="user-name">{{ user?.fullName }}</div>
+              <div class="user-email">{{ user?.email }}</div>
             </div>
           </div>
           <div class="user-actions">
@@ -113,7 +134,7 @@ watch(
               </svg>
               Cài đặt
             </RouterLink>
-            <button class="user-btn logout" type="button">
+            <button class="user-btn logout" type="button" @click="handleLogout">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
