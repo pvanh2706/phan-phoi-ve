@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { KanbanColumn, KanbanTask } from '../../data/workflows'
-import AppIcon from './AppIcon.vue'
 
 const props = defineProps<{
   columns: KanbanColumn[]
@@ -41,7 +40,6 @@ function count(column: KanbanColumn) {
       >
         <div class="kanban-head">
           <div class="kanban-title">
-            <span class="kanban-title-icon"><AppIcon :name="column.icon" :size="15" /></span>
             {{ column.title }}
           </div>
           <span class="kanban-count">{{ count(column) }}</span>
