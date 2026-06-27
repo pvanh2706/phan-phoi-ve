@@ -375,10 +375,25 @@ a {
 }
 
 .avatar-lg {
-  width: 82px;
-  height: 82px;
+  width: 72px;
+  height: 72px;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 22px;
+}
+
+.avatar-camera {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #12172b;
+  border-radius: 50%;
+  background: #6366f1;
+  font-size: 12px;
 }
 
 .avatar-dot {
@@ -598,6 +613,10 @@ a {
   flex-wrap: wrap;
 }
 
+.sys-tabs {
+  padding: 6px;
+}
+
 [data-theme='light'] .tabs-bar,
 [data-theme='light'] .sys-tabs {
   background: rgba(0, 0, 0, 0.05);
@@ -622,12 +641,32 @@ a {
 }
 
 .sys-tab-icon {
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.sys-tab {
+  min-height: auto;
+  padding: 8px 16px;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+}
+
+.sys-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.sys-tab.active {
+  border-color: transparent;
+  background: rgba(99, 102, 241, 0.20);
+  color: #a5b4fc;
+}
+
+[data-theme='light'] .sys-tab.active {
+  color: #4338ca;
 }
 
 .tab-btn:hover,
@@ -654,6 +693,33 @@ a {
 [data-theme='light'] .sys-tab:hover {
   background: rgba(0, 0, 0, 0.06);
   color: #111827;
+}
+
+.sys-tab {
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+}
+
+.sys-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.sys-tab.active {
+  border-color: transparent;
+  background: rgba(99, 102, 241, 0.20);
+  color: #a5b4fc;
+}
+
+[data-theme='light'] .sys-tab {
+  background: transparent;
+  color: #6b7280;
+}
+
+[data-theme='light'] .sys-tab.active {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
 }
 
 .tab-panel {
@@ -1718,6 +1784,11 @@ tbody tr:hover td {
   font-weight: 500;
 }
 
+.theme-opt-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
 .theme-check {
   display: flex;
   width: 18px;
@@ -1814,15 +1885,9 @@ tbody tr:hover td {
 }
 
 .device-icon {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  border-radius: 10px;
-  background: var(--surface-soft);
-  color: var(--primary-text);
+  font-size: 28px;
+  line-height: 1;
 }
 
 .pw-input-wrap {

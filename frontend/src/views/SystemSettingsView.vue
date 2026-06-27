@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState, logout, setCurrentUser } from '../services/authStore'
@@ -104,24 +103,24 @@ const recipientModal = reactive({
 const isAdmin = computed(() => authState.user?.role === 'Admin')
 const tabs = computed(() => {
   const base = [
-    { id: 'profile', label: 'Thông tin tài khoản', icon: 'user' },
-    { id: 'theme', label: 'Giao diện', icon: 'palette' },
-    { id: 'password', label: 'Đổi mật khẩu', icon: 'lock' },
-    { id: 'sessions', label: 'Quản lý thiết bị', icon: 'monitor' },
+    { id: 'profile', label: 'Thông tin tài khoản', icon: '👤' },
+    { id: 'theme', label: 'Giao diện', icon: '🎨' },
+    { id: 'password', label: 'Đổi mật khẩu', icon: '🔒' },
+    { id: 'sessions', label: 'Quản lý thiết bị', icon: '💻' },
   ] as { id: TabKey; label: string; icon: string }[]
 
   if (isAdmin.value) {
-    base.push({ id: 'users', label: 'Quản lý người dùng', icon: 'users' })
-    base.push({ id: 'recipients', label: 'Email nhận lỗi', icon: 'mail' })
+    base.push({ id: 'users', label: 'Quản lý người dùng', icon: '👥' })
+    base.push({ id: 'recipients', label: 'Email nhận lỗi', icon: '🔔' })
   }
 
   return base
 })
 
 const themeOptions: { id: ThemeMode; label: string; preview: string; icon: string }[] = [
-  { id: 'dark', label: 'Tối', preview: 'theme-preview-dark', icon: 'palette' },
-  { id: 'light', label: 'Sáng', preview: 'theme-preview-light', icon: 'palette' },
-  { id: 'system', label: 'Hệ thống', preview: 'theme-preview-system', icon: 'monitor' },
+  { id: 'dark', label: 'Tối', preview: 'theme-preview-dark', icon: '🌙' },
+  { id: 'light', label: 'Sáng', preview: 'theme-preview-light', icon: '☀️' },
+  { id: 'system', label: 'Hệ thống', preview: 'theme-preview-system', icon: '💻' },
 ]
 
 function errorText(err: unknown, fallback: string) {
@@ -438,7 +437,7 @@ onMounted(async () => {
       type="button"
       @click="activeTab = tab.id"
     >
-      <span class="sys-tab-icon"><AppIcon :name="tab.icon" :size="15" /></span>
+      <span class="sys-tab-icon">{{ tab.icon }}</span>
       {{ tab.label }}
     </button>
   </div>
@@ -458,6 +457,7 @@ onMounted(async () => {
             style="position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover"
           />
           <span v-else>{{ initials(profile.fullName) }}</span>
+          <span class="avatar-camera">📷</span>
         </div>
         <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" style="display: none" @change="handleAvatarChange" />
       </div>
@@ -505,7 +505,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="theme-opt-label">
-          <AppIcon :name="theme.icon" :size="14" />
+          <span class="theme-opt-icon">{{ theme.icon }}</span>
           {{ theme.label }}
           <span v-if="mode === theme.id" class="theme-check">✓</span>
         </div>
@@ -537,7 +537,7 @@ onMounted(async () => {
       <button class="btn-danger" type="button" @click="revokeAllDevices">Đăng xuất tất cả thiết bị</button>
     </div>
     <div v-for="session in sessions" :key="session.id" class="device-item">
-      <div class="device-icon"><AppIcon name="monitor" :size="28" /></div>
+      <div class="device-icon">🖥️</div>
       <div>
         <div class="device-name">
           {{ session.deviceName || 'Thiết bị đăng nhập' }}
@@ -560,7 +560,7 @@ onMounted(async () => {
       <button class="btn-secondary" type="button" @click="loadUsers">Tìm</button>
       <button class="add-btn" type="button" @click="openUserModal()">Thêm người dùng</button>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap report-table-wrap">
       <table>
         <thead>
           <tr>
@@ -584,11 +584,11 @@ onMounted(async () => {
             <td>{{ user.failedLoginCount }}</td>
             <td>{{ formatDateTime(user.lastLoginAtUtc) }}</td>
             <td>
-              <button class="act-btn" type="button" @click="openUserModal(user)"><AppIcon name="edit" :size="14" /> Sửa</button>
-              <button class="act-btn" type="button" @click="openPasswordModal(user)"><AppIcon name="lock" :size="14" /> Reset pass</button>
-              <button v-if="user.status === 'Locked'" class="act-btn" type="button" @click="unlock(user)"><AppIcon name="play" :size="14" /> Mở khóa</button>
+              <button class="act-btn" type="button" @click="openUserModal(user)">✏️ Sửa</button>
+              <button class="act-btn" type="button" @click="openPasswordModal(user)">🔑 Reset pass</button>
+              <button v-if="user.status === 'Locked'" class="act-btn" type="button" @click="unlock(user)">🔓 Mở khóa</button>
               <button class="act-btn" type="button" @click="toggleUserStatus(user)">
-                <AppIcon :name="user.status === 'Inactive' ? 'play' : 'pause'" :size="14" />
+                {{ user.status === 'Inactive' ? '▶️' : '⏸️' }}
                 {{ user.status === 'Inactive' ? 'Kích hoạt' : 'Vô hiệu' }}
               </button>
             </td>
@@ -606,7 +606,7 @@ onMounted(async () => {
       <button class="btn-secondary" type="button" @click="loadRecipients">Tải lại</button>
       <button class="add-btn" type="button" @click="openRecipientModal()">Thêm email</button>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap report-table-wrap">
       <table>
         <thead>
           <tr>
@@ -624,8 +624,8 @@ onMounted(async () => {
             <td>{{ recipient.displayName || '-' }}</td>
             <td><span class="badge" :class="recipient.isActive ? 'badge-green' : 'badge-gray'">{{ recipient.isActive ? 'Đang nhận' : 'Ngừng nhận' }}</span></td>
             <td>
-              <button class="act-btn" type="button" @click="openRecipientModal(recipient)"><AppIcon name="edit" :size="14" /> Sửa</button>
-              <button v-if="recipient.isActive" class="act-btn" type="button" @click="deactivateRecipient(recipient.id)"><AppIcon name="pause" :size="14" /> Ngừng</button>
+              <button class="act-btn" type="button" @click="openRecipientModal(recipient)">✏️ Sửa</button>
+              <button v-if="recipient.isActive" class="act-btn" type="button" @click="deactivateRecipient(recipient.id)">⏸️ Ngừng</button>
             </td>
           </tr>
           <tr v-if="recipients.length === 0">
@@ -640,7 +640,7 @@ onMounted(async () => {
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">{{ userModal.id ? 'Sửa người dùng' : 'Thêm người dùng' }}</span>
-        <button class="modal-close" type="button" @click="userModal.open = false">x</button>
+        <button class="modal-close" type="button" @click="userModal.open = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-row">
@@ -693,7 +693,7 @@ onMounted(async () => {
     <div class="modal" style="width: 420px">
       <div class="modal-header">
         <span class="modal-title">Reset mật khẩu</span>
-        <button class="modal-close" type="button" @click="passwordModal.open = false">x</button>
+        <button class="modal-close" type="button" @click="passwordModal.open = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="notice notice-indigo" style="margin-bottom: 14px">{{ passwordModal.fullName }}</div>
@@ -713,7 +713,7 @@ onMounted(async () => {
     <div class="modal" style="width: 460px">
       <div class="modal-header">
         <span class="modal-title">{{ recipientModal.id ? 'Sửa email nhận lỗi' : 'Thêm email nhận lỗi' }}</span>
-        <button class="modal-close" type="button" @click="recipientModal.open = false">x</button>
+        <button class="modal-close" type="button" @click="recipientModal.open = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
