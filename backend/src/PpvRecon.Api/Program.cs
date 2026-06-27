@@ -1,4 +1,5 @@
 using Serilog;
+using PpvRecon.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddAuthorization();
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
 
 builder.Services.AddCors(options =>
 {
