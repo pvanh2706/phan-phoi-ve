@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState } from '../services/authStore'
@@ -241,16 +240,37 @@ onMounted(async () => {
         <option value="ManualResolved">Đã nhập tay</option>
       </select>
       <button class="btn-secondary" type="button" @click="load">Lọc</button>
-      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('ParkBalance')"><AppIcon name="play" :size="14" /> Chạy số dư</button>
-      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('TicketCost')"><AppIcon name="play" :size="14" /> Chạy giá vốn</button>
-      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('BankTransaction')"><AppIcon name="play" :size="14" /> Chạy ngân hàng</button>
-      <button v-if="canManual" class="add-btn" type="button" :disabled="actionLoading" @click="sendEmailSummary"><AppIcon name="mail" :size="14" /> Gửi email lỗi</button>
+      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('ParkBalance')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
+        </svg>
+        Chạy số dư
+      </button>
+      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('TicketCost')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
+        </svg>
+        Chạy giá vốn
+      </button>
+      <button class="btn-secondary" type="button" :disabled="actionLoading" @click="runJob('BankTransaction')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
+        </svg>
+        Chạy ngân hàng
+      </button>
+      <button v-if="canManual" class="add-btn" type="button" :disabled="actionLoading" @click="sendEmailSummary">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9 6 9-6" />
+        </svg>
+        Gửi email lỗi
+      </button>
     </div>
 
     <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
     <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
-    <div class="table-wrap">
+    <div class="table-wrap report-table-wrap">
       <table>
         <thead>
           <tr>
@@ -283,7 +303,10 @@ onMounted(async () => {
                 type="button"
                 @click="openManual(item)"
               >
-                <AppIcon name="keyboard" :size="14" />
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path stroke-linecap="round" d="M7 9h.01M11 9h.01M15 9h.01M7 13h10" />
+                </svg>
                 Nhập tay
               </button>
             </td>
@@ -300,7 +323,7 @@ onMounted(async () => {
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Nhập tay {{ sourceLabel(manualModal.source || null) }}</span>
-        <button class="modal-close" type="button" @click="manualModal.open = false">x</button>
+        <button class="modal-close" type="button" @click="manualModal.open = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-row">
