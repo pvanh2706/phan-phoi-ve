@@ -14,11 +14,13 @@ public interface IMaintenanceJobService
     Task<SendSyncErrorSummaryResultDto> SendSyncErrorSummaryAsync(
         DateOnly businessDate,
         int? triggeredByUserId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        JobTriggerType triggeredBy = JobTriggerType.Manual);
 
     Task<CleanupAuditLogsResultDto> CleanupAuditLogsAsync(
         int? triggeredByUserId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        JobTriggerType triggeredBy = JobTriggerType.Manual);
 }
 
 public sealed class MaintenanceJobService(
@@ -29,14 +31,15 @@ public sealed class MaintenanceJobService(
     public async Task<SendSyncErrorSummaryResultDto> SendSyncErrorSummaryAsync(
         DateOnly businessDate,
         int? triggeredByUserId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        JobTriggerType triggeredBy = JobTriggerType.Manual)
     {
         var nowUtc = DateTime.UtcNow;
         var jobRun = new JobRun
         {
             JobName = "SendDailySyncErrorSummary",
             BusinessDate = businessDate,
-            TriggeredBy = JobTriggerType.Manual,
+            TriggeredBy = triggeredBy,
             TriggeredByUserId = triggeredByUserId,
             StartedAtUtc = nowUtc,
             Status = JobRunStatus.Running,
@@ -123,7 +126,8 @@ public sealed class MaintenanceJobService(
 
     public async Task<CleanupAuditLogsResultDto> CleanupAuditLogsAsync(
         int? triggeredByUserId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        JobTriggerType triggeredBy = JobTriggerType.Manual)
     {
         var retentionDaysText = await dbContext.SystemSettings
             .AsNoTracking()
@@ -139,7 +143,7 @@ public sealed class MaintenanceJobService(
         var jobRun = new JobRun
         {
             JobName = "CleanupAuditLogs",
-            TriggeredBy = JobTriggerType.Manual,
+            TriggeredBy = triggeredBy,
             TriggeredByUserId = triggeredByUserId,
             StartedAtUtc = DateTime.UtcNow,
             Status = JobRunStatus.Running,

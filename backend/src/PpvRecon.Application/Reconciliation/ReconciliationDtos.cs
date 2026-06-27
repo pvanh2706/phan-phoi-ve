@@ -66,5 +66,6 @@ public interface IReconciliationBuilder
     Task<BuildReconciliationResultDto> BuildAsync(
         DateOnly businessDate,
         int? triggeredByUserId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        JobTriggerType triggeredBy = JobTriggerType.Manual);
 }

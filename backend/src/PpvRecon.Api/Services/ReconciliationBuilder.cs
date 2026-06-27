@@ -20,7 +20,8 @@ public sealed class ReconciliationBuilder(
     public async Task<BuildReconciliationResultDto> BuildAsync(
         DateOnly businessDate,
         int? triggeredByUserId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        JobTriggerType triggeredBy = JobTriggerType.Manual)
     {
         var nowUtc = DateTime.UtcNow;
         var previousBusinessDate = businessDate.AddDays(-1);
@@ -34,7 +35,7 @@ public sealed class ReconciliationBuilder(
         {
             JobName = "BuildParkReconciliation",
             BusinessDate = businessDate,
-            TriggeredBy = JobTriggerType.Manual,
+            TriggeredBy = triggeredBy,
             TriggeredByUserId = triggeredByUserId,
             StartedAtUtc = nowUtc,
             Status = JobRunStatus.Running,
