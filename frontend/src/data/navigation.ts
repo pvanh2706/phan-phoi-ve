@@ -15,7 +15,7 @@ export const navigation: NavItem[] = [
   {
     key: 'park',
     label: 'Khu vui chơi',
-    icon: 'park',
+    icon: '🎢',
     children: [
       { label: 'Danh sách khu vui chơi', path: '/khu-vui-choi/danh-sach' },
       { label: 'Mã khu vui chơi', path: '/khu-vui-choi/ma-kvc' },
@@ -28,18 +28,18 @@ export const navigation: NavItem[] = [
       { label: 'Lỗi đồng bộ cần xử lý', path: '/khu-vui-choi/loi-dong-bo' },
     ],
   },
-  { key: 'agency', label: 'Đại lý', icon: 'handshake', path: '/dang-phat-trien/dai-ly' },
-  { key: 'retail', label: 'Khách lẻ', icon: 'user', path: '/dang-phat-trien/khach-le' },
-  { key: 'vin', label: 'Đối soát Vin', icon: 'scale', path: '/dang-phat-trien/doi-soat-vin' },
-  { key: 'ota', label: 'Các đại lý OTA', icon: 'globe', path: '/dang-phat-trien/ota' },
+  { key: 'agency', label: 'Đại lý', icon: '🤝', path: '/dang-phat-trien/dai-ly' },
+  { key: 'retail', label: 'Khách lẻ', icon: '👤', path: '/dang-phat-trien/khach-le' },
+  { key: 'vin', label: 'Đối soát Vin', icon: '⚖️', path: '/dang-phat-trien/doi-soat-vin' },
+  { key: 'ota', label: 'Các đại lý OTA', icon: '🌐', path: '/dang-phat-trien/ota' },
   {
     key: 'refund',
     label: 'Hoàn tiền',
-    icon: 'refresh',
+    icon: '🔄',
     children: [
       { label: 'Quy trình hoàn tiền', path: '/hoan-tien/quy-trinh' },
       { label: 'Trạng thái hoàn tiền cho khách hàng', path: '/hoan-tien/trang-thai-khach-hang' },
     ],
   },
-  { key: 'process', label: 'Quy trình đối soát', icon: 'clipboard', path: '/dang-phat-trien/quy-trinh-doi-soat' },
+  { key: 'process', label: 'Quy trình đối soát', icon: '📋', path: '/dang-phat-trien/quy-trinh-doi-soat' },
 ]

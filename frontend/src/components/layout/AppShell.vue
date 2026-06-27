@@ -62,9 +62,9 @@ watch(
   <div class="app-shell">
     <aside class="sidebar" :class="{ collapsed }" id="sidebar">
       <div class="sidebar-brand">
-        <div class="brand-logo">PPV</div>
+        <div class="brand-logo">ez</div>
         <div class="brand-text">
-          <div class="brand-name">Đối soát vé</div>
+          <div class="brand-name">ezCloud PPV</div>
           <div class="brand-role">{{ roleLabel }}</div>
         </div>
       </div>
@@ -74,11 +74,11 @@ watch(
           <button
             v-if="item.children"
             class="nav-item has-children"
-            :class="{ open: openMenus[item.key], active: isGroupActive(item.children.map((child) => child.path)) }"
+            :class="{ open: openMenus[item.key] }"
             type="button"
             @click="toggleMenu(item.key)"
           >
-            <span class="nav-icon"><AppIcon :name="item.icon" :size="16" /></span>
+            <span class="nav-icon">{{ item.icon }}</span>
             <span class="nav-label">{{ item.label }}</span>
             <span class="nav-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -92,7 +92,7 @@ watch(
             :class="{ active: route.path === item.path }"
             :to="item.path ?? '/'"
           >
-            <span class="nav-icon"><AppIcon :name="item.icon" :size="16" /></span>
+            <span class="nav-icon">{{ item.icon }}</span>
             <span class="nav-label">{{ item.label }}</span>
           </RouterLink>
 
