@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import AppIcon from '../components/ui/AppIcon.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState } from '../services/authStore'
@@ -349,9 +348,10 @@ onMounted(async () => {
 </script>
 
 <template>
+  <div class="park-codes-page">
   <PageHeader title="Mã khu vui chơi" subtitle="Quản lý KVC cha và loại vé/KVC con dùng cho đồng bộ, đối soát và báo cáo" />
 
-  <div class="tabs-bar">
+  <div class="tabs-bar park-code-tabs">
     <button class="tab-btn" :class="{ active: activeTab === 'parks' }" type="button" @click="switchTab('parks')">
       KVC cha
     </button>
@@ -362,7 +362,12 @@ onMounted(async () => {
 
   <div class="card">
     <div class="toolbar">
-      <input v-model="filters.keyword" class="tb-input" placeholder="Tìm mã, tên, tài khoản..." @keyup.enter="load" />
+      <input
+        v-model="filters.keyword"
+        class="tb-input"
+        :placeholder="activeTab === 'parks' ? '🔍  Tìm mã hoặc tên KVC...' : '🔍  Tìm mã hoặc tên KVC con...'"
+        @keyup.enter="load"
+      />
       <select v-model="filters.paymentType" class="tb-select" @change="load">
         <option value="">Tất cả loại thanh toán</option>
         <option value="Prepaid">Nạp trước</option>
@@ -381,16 +386,18 @@ onMounted(async () => {
       </select>
       <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
       <button class="add-btn" type="button" @click="activeTab === 'parks' ? openAddPark() : openAddTicket()">
-        <AppIcon name="plus" :size="14" />
-        {{ activeTab === 'parks' ? 'Thêm KVC' : 'Thêm loại vé' }}
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+        {{ activeTab === 'parks' ? 'Thêm KVC' : 'Thêm KVC con' }}
       </button>
     </div>
 
     <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
     <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
-    <div v-if="activeTab === 'parks'" class="table-wrap">
-      <table>
+    <div v-if="activeTab === 'parks'" class="table-wrap park-code-table-wrap">
+      <table class="park-code-table">
         <thead>
           <tr>
             <th>Mã KVC</th>
@@ -416,9 +423,21 @@ onMounted(async () => {
             <td class="cell-muted">{{ park.apiSiteId || '-' }} {{ park.apiProfileId ? `/ ${park.apiProfileId}` : '' }}</td>
             <td><span class="badge" :class="badgeClassForStatus(park.status)">{{ recordStatusLabel(park.status) }}</span></td>
             <td>
-              <button class="act-btn" type="button" @click="openEditPark(park)"><AppIcon name="edit" :size="14" /> Sửa</button>
-              <button class="act-btn" type="button" @click="inactivePark(park.id)"><AppIcon name="pause" :size="14" /> Ngừng</button>
-              <button v-if="isAdmin" class="act-btn" type="button" @click="softDeletePark(park.id)"><AppIcon name="trash" :size="14" /> Xóa</button>
+              <button class="edit-btn" type="button" title="Sửa" @click="openEditPark(park)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button class="inactive-btn" type="button" title="Ngừng sử dụng" @click="inactivePark(park.id)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 5v14M14 5v14" />
+                </svg>
+              </button>
+              <button v-if="isAdmin" class="delete-btn" type="button" title="Xóa" @click="softDeletePark(park.id)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
             </td>
           </tr>
           <tr v-if="!loading && parks.length === 0">
@@ -428,8 +447,8 @@ onMounted(async () => {
       </table>
     </div>
 
-    <div v-else class="table-wrap">
-      <table>
+    <div v-else class="table-wrap park-code-table-wrap">
+      <table class="park-code-table">
         <thead>
           <tr>
             <th>KVC cha</th>
@@ -455,9 +474,21 @@ onMounted(async () => {
             <td class="amount">{{ formatMoney(ticket.costPrice) }}</td>
             <td><span class="badge" :class="badgeClassForStatus(ticket.status)">{{ recordStatusLabel(ticket.status) }}</span></td>
             <td>
-              <button class="act-btn" type="button" @click="openEditTicket(ticket)"><AppIcon name="edit" :size="14" /> Sửa</button>
-              <button class="act-btn" type="button" @click="inactiveTicket(ticket.id)"><AppIcon name="pause" :size="14" /> Ngừng</button>
-              <button v-if="isAdmin" class="act-btn" type="button" @click="softDeleteTicket(ticket.id)"><AppIcon name="trash" :size="14" /> Xóa</button>
+              <button class="edit-btn" type="button" title="Sửa" @click="openEditTicket(ticket)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button class="inactive-btn" type="button" title="Ngừng sử dụng" @click="inactiveTicket(ticket.id)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 5v14M14 5v14" />
+                </svg>
+              </button>
+              <button v-if="isAdmin" class="delete-btn" type="button" title="Xóa" @click="softDeleteTicket(ticket.id)">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
             </td>
           </tr>
           <tr v-if="!loading && ticketTypes.length === 0">
@@ -475,11 +506,11 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div v-if="showParkModal" class="modal-overlay" @click.self="showParkModal = false">
-    <div class="modal">
+  <div v-if="showParkModal" class="modal-overlay park-code-modal-overlay" @click.self="showParkModal = false">
+    <div class="modal park-code-modal">
       <div class="modal-header">
         <span class="modal-title">{{ editingParkId ? 'Sửa khu vui chơi' : 'Thêm khu vui chơi' }}</span>
-        <button class="modal-close" type="button" @click="showParkModal = false">x</button>
+        <button class="modal-close" type="button" @click="showParkModal = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-row">
@@ -554,17 +585,17 @@ onMounted(async () => {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" @click="showParkModal = false">Hủy</button>
-        <button class="btn-primary" type="button" :disabled="saving" @click="savePark">Lưu</button>
+        <button class="btn-cancel" type="button" @click="showParkModal = false">Hủy</button>
+        <button class="btn-save" type="button" :disabled="saving" @click="savePark">Lưu thay đổi</button>
       </div>
     </div>
   </div>
 
-  <div v-if="showTicketModal" class="modal-overlay" @click.self="showTicketModal = false">
-    <div class="modal">
+  <div v-if="showTicketModal" class="modal-overlay park-code-modal-overlay" @click.self="showTicketModal = false">
+    <div class="modal park-code-modal">
       <div class="modal-header">
         <span class="modal-title">{{ editingTicketId ? 'Sửa loại vé' : 'Thêm loại vé' }}</span>
-        <button class="modal-close" type="button" @click="showTicketModal = false">x</button>
+        <button class="modal-close" type="button" @click="showTicketModal = false">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -609,9 +640,10 @@ onMounted(async () => {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" type="button" @click="showTicketModal = false">Hủy</button>
-        <button class="btn-primary" type="button" :disabled="saving" @click="saveTicket">Lưu</button>
+        <button class="btn-cancel" type="button" @click="showTicketModal = false">Hủy</button>
+        <button class="btn-save" type="button" :disabled="saving" @click="saveTicket">Lưu thay đổi</button>
       </div>
     </div>
+  </div>
   </div>
 </template>
