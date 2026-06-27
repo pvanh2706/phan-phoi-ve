@@ -1,0 +1,6 @@
+@PpvRecon.Api_HostAddress = http://localhost:5052
+
+GET {{PpvRecon.Api_HostAddress}}/health
+Accept: application/json
+
+###

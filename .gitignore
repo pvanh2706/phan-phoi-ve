@@ -8,6 +8,8 @@ frontend/node_modules/
 dist/
 dist-ssr/
 frontend/dist/
+bin/
+obj/
 
 # Logs
 logs/
@@ -23,8 +25,15 @@ lerna-debug.log*
 !.env.example
 
 # Editor / OS
+.vs/
 .vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
 Thumbs.db
+
+# .NET local data
+*.user
+*.suo
+TestResults/
+backend/src/PpvRecon.Api/App_Data/
