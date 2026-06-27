@@ -495,13 +495,32 @@ Không commit nếu:
 
 ## 10. Ghi chú cho AI tiếp theo
 
-- Repo hiện tại sau commit `0a87e3d` có `AppIcon.vue`. Đừng xóa ngay component này nếu chưa audit xong, vì nhiều màn đang dùng nó.
 - Người dùng muốn giống thiết kế HTML gốc theo từng phần giao diện, không chỉ muốn có icon.
 - Khi làm tiếp, phải audit cả layout, spacing, màu, bảng, form, modal, responsive và icon.
 - Hãy đọc HTML trước khi sửa.
-- Nếu phát hiện HTML gốc dùng emoji/ký tự icon, cần cân nhắc giữ đúng visual đó thay vì thay bằng SVG line icon.
-- Nếu phát hiện HTML gốc dùng SVG, hãy đưa SVG vào component chung để dễ bảo trì.
+- Sau phase 8, `AppIcon.vue` đã được xóa vì không còn chỗ dùng. Icon menu/sidebar và các action quan trọng đang bám theo HTML gốc: HTML dùng emoji/ký tự thì giữ emoji/ký tự, HTML dùng SVG thì dùng SVG inline.
+- Nếu sau này thêm màn mới, không khôi phục `AppIcon.vue` theo quán tính. Chỉ tạo component icon chung khi có nhiều SVG giống nhau cần tái sử dụng thật sự.
 - Không sửa backend logic.
 - Không sửa DB.
 - Không sửa text tiếng Việt nếu không liên quan đến icon.
 - Sau mỗi nhóm sửa lớn nên commit hoặc ít nhất build để tránh dồn lỗi.
+
+## 11. Trạng thái thực hiện
+
+Cập nhật ngày 2026-06-28:
+
+- Phase 1 đã hoàn thành: sidebar và menu chính đã bám thiết kế HTML gốc. Commit: `dad235a Match original sidebar design`.
+- Phase 2 đã hoàn thành: header, user actions, thông báo và theme toggle đã bám HTML. Commit: `0f0be6c Match original shell header`.
+- Phase 3 đã hoàn thành: màn mã KVC, tab, toolbar, bảng, action và modal đã chỉnh theo `HTML/ma-kvc.html`. Commit: `ac761aa Match park code screen design`.
+- Phase 4 đã hoàn thành: bảng báo cáo, nút thêm/build và action xem/sửa/xóa đã dùng icon đúng kiểu HTML. Commit: `c35fe25 Match report table controls`.
+- Phase 5 đã hoàn thành: màn lỗi đồng bộ, action chạy job/gửi mail/nhập tay và modal đã chỉnh theo thiết kế. Commit: `300c713 Match sync error controls`.
+- Phase 6 đã hoàn thành: cài đặt hệ thống, tab, theme option, thiết bị, bảng user/email và action đã bám `HTML/system.html`. Commit: `3f8ca74 Match system settings design`.
+- Phase 7 đã hoàn thành: Kanban quy trình hoàn tiền đã đổi về header màu theo trạng thái, cột 260px và bỏ icon header cột lệch HTML. Commit: `1ea9304 Match refund workflow board`.
+- Phase 8 đã hoàn thành trong commit cuối của đợt chỉnh này: xóa `AppIcon.vue`, thay nút menu bằng SVG inline đúng HTML và dọn CSS selector icon không còn dùng.
+
+Build nghiệm thu đã chạy:
+
+```powershell
+npm run build
+dotnet build backend\PpvRecon.sln
+```

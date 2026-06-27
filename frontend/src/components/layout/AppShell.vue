@@ -5,7 +5,6 @@ import { navigation } from '../../data/navigation'
 import { useTheme } from '../../composables/useTheme'
 import { authState, logout } from '../../services/authStore'
 import { userRoleLabel } from '../../services/formatters'
-import AppIcon from '../ui/AppIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,7 +146,9 @@ watch(
       <header class="header">
         <div class="header-left">
           <button class="icon-btn" type="button" aria-label="Thu gọn menu" @click="collapsed = !collapsed">
-            <AppIcon name="menu" :size="20" />
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" d="M4 6h16M4 12h10M4 18h16" />
+            </svg>
           </button>
           <span class="page-title">{{ title }}</span>
         </div>
