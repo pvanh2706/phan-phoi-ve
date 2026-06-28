@@ -15,7 +15,6 @@ import {
 import { listParks, type ParkDto } from '../services/parksApi'
 import {
   saveManualBankTransactionSummary,
-  saveManualParkBalance,
   saveManualTicketCostSummary,
 } from '../services/summariesApi'
 import {
@@ -43,8 +42,6 @@ const manualModal = reactive({
   source: '' as ExternalApiSource | '',
   businessDate: '',
   parkId: '' as number | '',
-  availableBalance: '',
-  currentDebt: '',
   totalTicketCost: '',
   totalSalesAmount: '',
   totalQuantity: '',
@@ -146,8 +143,6 @@ function openManual(item: JobRunItemDto) {
   manualModal.source = item.source ?? ''
   manualModal.businessDate = (item.businessDate ?? businessDate.value) || todayIso()
   manualModal.parkId = item.parkId ?? ''
-  manualModal.availableBalance = ''
-  manualModal.currentDebt = ''
   manualModal.totalTicketCost = ''
   manualModal.totalSalesAmount = ''
   manualModal.totalQuantity = ''
@@ -166,17 +161,6 @@ async function saveManual() {
   message.value = ''
 
   try {
-    if (manualModal.source === 'ParkBalance') {
-      await saveManualParkBalance({
-        businessDate: manualModal.businessDate,
-        parkId: Number(manualModal.parkId),
-        availableBalance: toNumber(manualModal.availableBalance),
-        currentDebt: toNullableNumber(manualModal.currentDebt),
-        manualReason: manualModal.manualReason,
-        jobRunItemId: manualModal.itemId,
-      })
-    }
-
     if (manualModal.source === 'TicketCost') {
       await saveManualTicketCostSummary({
         businessDate: manualModal.businessDate,
@@ -298,7 +282,7 @@ onMounted(async () => {
             <td>{{ item.errorMessage || item.errorCode || '-' }}</td>
             <td>
               <button
-                v-if="canManual && item.status === 'Failed' && item.source"
+                v-if="canManual && item.status === 'Failed' && item.source && item.source !== 'ParkBalance'"
                 class="act-btn"
                 type="button"
                 @click="openManual(item)"
@@ -341,20 +325,6 @@ onMounted(async () => {
             </select>
           </div>
         </div>
-
-        <template v-if="manualModal.source === 'ParkBalance'">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Số dư khả dụng</label>
-              <input v-model="manualModal.availableBalance" class="form-input" inputmode="numeric" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Công nợ hiện tại</label>
-              <input v-model="manualModal.currentDebt" class="form-input" inputmode="numeric" />
-            </div>
-          </div>
-        </template>
-
         <template v-if="manualModal.source === 'TicketCost'">
           <div class="form-row">
             <div class="form-group">

@@ -101,7 +101,7 @@ public sealed class DailyScheduledJobHostedService(
                 continue;
             }
 
-            await jobRunner.RunExternalSyncPlaceholderAsync(
+            await jobRunner.RunExternalSyncAsync(
                 source,
                 businessDate,
                 JobTriggerType.Schedule,

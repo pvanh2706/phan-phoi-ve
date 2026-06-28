@@ -27,6 +27,7 @@ public sealed class ParkReconciliationDto
     public int ParkId { get; set; }
     public string ParkCode { get; set; } = string.Empty;
     public string ParkName { get; set; } = string.Empty;
+    public string? BankAccount { get; set; }
     public ParkPaymentType PaymentType { get; set; }
     public long? PreviousBalance { get; set; }
     public long? AdditionalAmount { get; set; }

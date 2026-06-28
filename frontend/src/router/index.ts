@@ -5,8 +5,10 @@ import JobErrorsView from '../views/JobErrorsView.vue'
 import LoginView from '../views/LoginView.vue'
 import ParkCodesView from '../views/ParkCodesView.vue'
 import RefundProcessView from '../views/RefundProcessView.vue'
+import ReconciliationView from '../views/ReconciliationView.vue'
 import ReportView from '../views/ReportView.vue'
 import SystemSettingsView from '../views/SystemSettingsView.vue'
+import TicketCostDetailView from '../views/TicketCostDetailView.vue'
 import TopUpWorkflowView from '../views/TopUpWorkflowView.vue'
 import { authState, initializeAuth } from '../services/authStore'
 
@@ -43,14 +45,12 @@ const router = createRouter({
     },
     {
       path: '/khu-vui-choi/gia-von-ve-ban',
-      component: ReportView,
-      props: { pageKey: 'ticketCosts' },
+      component: TicketCostDetailView,
       meta: { title: 'Khu vui chơi / Chi tiết giá vốn vé bán' },
     },
     {
       path: '/khu-vui-choi/doi-soat',
-      component: ReportView,
-      props: { pageKey: 'reconciliation' },
+      component: ReconciliationView,
       meta: { title: 'Khu vui chơi / Đối soát Khu vui chơi' },
     },
     {

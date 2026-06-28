@@ -15,9 +15,7 @@ namespace PpvRecon.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/park-balances")]
-public sealed class ParkBalancesController(
-    PpvReconDbContext dbContext,
-    IAuditService auditService) : PpvControllerBase
+public sealed class ParkBalancesController(PpvReconDbContext dbContext) : PpvControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResult<DailyParkBalanceSnapshotDto>>>> List(
@@ -70,13 +68,11 @@ public sealed class ParkBalancesController(
                 ParkName = x.park.Name,
                 PaymentType = x.summary.PaymentType,
                 AvailableBalance = x.summary.AvailableBalance,
-                CurrentDebt = x.summary.CurrentDebt,
                 BankAccountSnapshot = x.summary.BankAccountSnapshot,
                 SourceType = x.summary.SourceType,
                 SourceJobRunId = x.summary.SourceJobRunId,
                 SourceJobRunItemId = x.summary.SourceJobRunItemId,
                 RawResponseId = x.summary.RawResponseId,
-                ManualReason = x.summary.ManualReason,
                 CreatedAtUtc = x.summary.CreatedAtUtc,
                 UpdatedAtUtc = x.summary.UpdatedAtUtc,
             })
@@ -89,150 +85,6 @@ public sealed class ParkBalancesController(
             TotalItems = totalItems,
             TotalPages = (int)Math.Ceiling(totalItems / (double)PagedResult<DailyParkBalanceSnapshotDto>.FixedPageSize),
         }));
-    }
-
-    [Authorize(Roles = "Admin,Accountant")]
-    [HttpPost("manual")]
-    public async Task<ActionResult<ApiResponse<DailyParkBalanceSnapshotDto>>> Manual(
-        ManualParkBalanceRequest request,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(request.ManualReason))
-        {
-            return BadRequest(ApiResponse<DailyParkBalanceSnapshotDto>.Fail("Lý do nhập tay là bắt buộc."));
-        }
-
-        var park = await dbContext.Parks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.ParkId && !x.IsDeleted, cancellationToken);
-        if (park is null)
-        {
-            return BadRequest(ApiResponse<DailyParkBalanceSnapshotDto>.Fail("Khu vui chơi không tồn tại."));
-        }
-
-        var jobInfo = await ResolveJobItemAsync(request.JobRunItemId, ExternalApiSource.ParkBalance, cancellationToken);
-        if (jobInfo.ErrorMessage is not null)
-        {
-            return BadRequest(ApiResponse<DailyParkBalanceSnapshotDto>.Fail(jobInfo.ErrorMessage));
-        }
-
-        var nowUtc = DateTime.UtcNow;
-        var existing = await dbContext.DailyParkBalanceSnapshots
-            .FirstOrDefaultAsync(x => x.BusinessDate == request.BusinessDate && x.ParkId == request.ParkId, cancellationToken);
-        var before = existing is null ? null : ToDto(existing, park);
-
-        if (existing is null)
-        {
-            existing = new DailyParkBalanceSnapshot
-            {
-                BusinessDate = request.BusinessDate,
-                ParkId = request.ParkId,
-                CreatedAtUtc = nowUtc,
-                CreatedByUserId = CurrentUserId,
-            };
-            dbContext.DailyParkBalanceSnapshots.Add(existing);
-        }
-        else
-        {
-            existing.UpdatedAtUtc = nowUtc;
-            existing.UpdatedByUserId = CurrentUserId;
-        }
-
-        existing.PaymentType = park.PaymentType;
-        existing.AvailableBalance = request.AvailableBalance;
-        existing.CurrentDebt = request.CurrentDebt;
-        existing.BankAccountSnapshot = string.IsNullOrWhiteSpace(request.BankAccountSnapshot)
-            ? park.BankAccount
-            : request.BankAccountSnapshot.Trim();
-        existing.SourceType = SourceType.Manual;
-        existing.SourceJobRunId = jobInfo.JobRunId;
-        existing.SourceJobRunItemId = request.JobRunItemId;
-        existing.RawResponseId = jobInfo.RawResponseId;
-        existing.ManualReason = request.ManualReason.Trim();
-
-        MarkJobItemResolved(jobInfo.JobRunItem, nowUtc, request.ManualReason);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        var after = ToDto(existing, park);
-        await auditService.LogAsync(new AuditLogEntry
-        {
-            Module = "Park",
-            EntityName = "DailyParkBalanceSnapshot",
-            EntityId = existing.Id.ToString(),
-            Action = AuditAction.ManualEntry,
-            Before = before,
-            After = after,
-        }, cancellationToken);
-
-        return Ok(ApiResponse<DailyParkBalanceSnapshotDto>.Ok(after, "Nhập tay số dư KVC thành công."));
-    }
-
-    private async Task<JobItemResolution> ResolveJobItemAsync(int? jobRunItemId, ExternalApiSource expectedSource, CancellationToken cancellationToken)
-    {
-        if (jobRunItemId is null)
-        {
-            return new JobItemResolution();
-        }
-
-        var item = await dbContext.JobRunItems.FirstOrDefaultAsync(x => x.Id == jobRunItemId, cancellationToken);
-        if (item is null)
-        {
-            return new JobItemResolution { ErrorMessage = "Không tìm thấy lỗi job cần xử lý." };
-        }
-
-        if (item.Source != expectedSource)
-        {
-            return new JobItemResolution { ErrorMessage = "Loại lỗi job không khớp với dữ liệu nhập tay." };
-        }
-
-        return new JobItemResolution
-        {
-            JobRunId = item.JobRunId,
-            RawResponseId = item.RawResponseId,
-            JobRunItem = item,
-        };
-    }
-
-    private void MarkJobItemResolved(JobRunItem? item, DateTime nowUtc, string note)
-    {
-        if (item is null || item.Status != JobRunItemStatus.Failed)
-        {
-            return;
-        }
-
-        item.Status = JobRunItemStatus.ManualResolved;
-        item.ResolvedByUserId = CurrentUserId;
-        item.ResolvedAtUtc = nowUtc;
-        item.ManualResolutionNote = note.Trim();
-    }
-
-    private static DailyParkBalanceSnapshotDto ToDto(DailyParkBalanceSnapshot summary, Park park)
-    {
-        return new DailyParkBalanceSnapshotDto
-        {
-            Id = summary.Id,
-            BusinessDate = summary.BusinessDate,
-            ParkId = summary.ParkId,
-            ParkCode = park.Code,
-            ParkName = park.Name,
-            PaymentType = summary.PaymentType,
-            AvailableBalance = summary.AvailableBalance,
-            CurrentDebt = summary.CurrentDebt,
-            BankAccountSnapshot = summary.BankAccountSnapshot,
-            SourceType = summary.SourceType,
-            SourceJobRunId = summary.SourceJobRunId,
-            SourceJobRunItemId = summary.SourceJobRunItemId,
-            RawResponseId = summary.RawResponseId,
-            ManualReason = summary.ManualReason,
-            CreatedAtUtc = summary.CreatedAtUtc,
-            UpdatedAtUtc = summary.UpdatedAtUtc,
-        };
-    }
-
-    private sealed class JobItemResolution
-    {
-        public int? JobRunId { get; init; }
-        public int? RawResponseId { get; init; }
-        public JobRunItem? JobRunItem { get; init; }
-        public string? ErrorMessage { get; init; }
     }
 }
 
@@ -416,14 +268,6 @@ public sealed class TicketCostSummariesController(
             CreatedAtUtc = summary.CreatedAtUtc,
             UpdatedAtUtc = summary.UpdatedAtUtc,
         };
-    }
-
-    private sealed class JobItemResolution
-    {
-        public int? JobRunId { get; init; }
-        public int? RawResponseId { get; init; }
-        public JobRunItem? JobRunItem { get; init; }
-        public string? ErrorMessage { get; init; }
     }
 }
 
@@ -616,12 +460,12 @@ public sealed class BankTransactionSummariesController(
             UpdatedAtUtc = summary.UpdatedAtUtc,
         };
     }
+}
 
-    private sealed class JobItemResolution
-    {
-        public int? JobRunId { get; init; }
-        public int? RawResponseId { get; init; }
-        public JobRunItem? JobRunItem { get; init; }
-        public string? ErrorMessage { get; init; }
-    }
+internal sealed class JobItemResolution
+{
+    public int? JobRunId { get; init; }
+    public int? RawResponseId { get; init; }
+    public JobRunItem? JobRunItem { get; init; }
+    public string? ErrorMessage { get; init; }
 }

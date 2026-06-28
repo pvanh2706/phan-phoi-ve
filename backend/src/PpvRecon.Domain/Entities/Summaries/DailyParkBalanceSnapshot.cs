@@ -10,13 +10,11 @@ public sealed class DailyParkBalanceSnapshot : IAuditableEntity
     public int ParkId { get; set; }
     public ParkPaymentType PaymentType { get; set; }
     public long AvailableBalance { get; set; }
-    public long? CurrentDebt { get; set; }
     public string? BankAccountSnapshot { get; set; }
     public SourceType SourceType { get; set; }
     public int? SourceJobRunId { get; set; }
     public int? SourceJobRunItemId { get; set; }
     public int? RawResponseId { get; set; }
-    public string? ManualReason { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public int? CreatedByUserId { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }

@@ -60,6 +60,14 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.Configure<ParkBalanceApiOptions>(builder.Configuration.GetSection("ExternalApis:ParkBalance"));
+builder.Services.AddHttpClient<IParkBalanceApiClient, ParkBalanceApiClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<ParkBalanceApiOptions>>()
+        .Value;
+    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 300));
+});
 builder.Services.AddScoped<IJobRunner, JobRunner>();
 builder.Services.AddScoped<IReconciliationBuilder, ReconciliationBuilder>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));

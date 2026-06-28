@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PpvRecon.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using PpvRecon.Infrastructure.Persistence;
 namespace PpvRecon.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PpvReconDbContext))]
-    partial class PpvReconDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627193758_AddBankTransactionDetails")]
+    partial class AddBankTransactionDetails
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -1902,6 +1905,13 @@ namespace PpvRecon.Infrastructure.Persistence.Migrations
 
                     b.Property<int?>("CreatedByUserId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<long?>("CurrentDebt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ManualReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("ParkId")
                         .HasColumnType("INTEGER");

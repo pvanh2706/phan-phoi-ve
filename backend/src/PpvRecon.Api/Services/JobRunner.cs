@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Jobs;
 using PpvRecon.Domain.Entities.Jobs;
+using PpvRecon.Domain.Entities.Parks;
+using PpvRecon.Domain.Entities.Summaries;
 using PpvRecon.Domain.Enums;
 using PpvRecon.Infrastructure.Persistence;
 
@@ -10,14 +12,186 @@ namespace PpvRecon.Api.Services;
 
 public sealed class JobRunner(
     PpvReconDbContext dbContext,
+    IParkBalanceApiClient parkBalanceApiClient,
     IAuditService auditService) : IJobRunner
 {
-    public async Task<JobRunDetailDto> RunExternalSyncPlaceholderAsync(
+    public Task<JobRunDetailDto> RunExternalSyncAsync(
         ExternalApiSource source,
         DateOnly businessDate,
         JobTriggerType triggeredBy,
         int? triggeredByUserId,
         CancellationToken cancellationToken = default)
+    {
+        return source == ExternalApiSource.ParkBalance
+            ? RunParkBalanceSyncAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken)
+            : RunExternalSyncPlaceholderAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken);
+    }
+
+    private async Task<JobRunDetailDto> RunParkBalanceSyncAsync(
+        ExternalApiSource source,
+        DateOnly businessDate,
+        JobTriggerType triggeredBy,
+        int? triggeredByUserId,
+        CancellationToken cancellationToken)
+    {
+        var jobRun = new JobRun
+        {
+            JobName = GetJobName(source),
+            BusinessDate = businessDate,
+            TriggeredBy = triggeredBy,
+            TriggeredByUserId = triggeredByUserId,
+            StartedAtUtc = DateTime.UtcNow,
+            Status = JobRunStatus.Running,
+        };
+
+        dbContext.JobRuns.Add(jobRun);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var parks = await dbContext.Parks
+            .Where(x => !x.IsDeleted && x.Status == RecordStatus.Active)
+            .OrderBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+
+        jobRun.TotalItems = parks.Count;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (var park in parks)
+        {
+            var itemStartedAtUtc = DateTime.UtcNow;
+            var item = new JobRunItem
+            {
+                JobRunId = jobRun.Id,
+                BusinessDate = businessDate,
+                ParkId = park.Id,
+                Source = source,
+                Status = JobRunItemStatus.Running,
+                AttemptCount = 1,
+                StartedAtUtc = itemStartedAtUtc,
+            };
+
+            dbContext.JobRunItems.Add(item);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var apiResult = await parkBalanceApiClient.FetchAsync(park, businessDate, cancellationToken);
+            var finishedAtUtc = DateTime.UtcNow;
+            var rawResponse = new ExternalApiRawResponse
+            {
+                Source = source,
+                BusinessDate = businessDate,
+                ParkId = park.Id,
+                JobRunId = jobRun.Id,
+                JobRunItemId = item.Id,
+                RequestUrl = apiResult.RequestUrl,
+                RequestPayloadJson = apiResult.RequestPayloadJson,
+                ResponseStatusCode = apiResult.ResponseStatusCode,
+                ResponseBodyJson = apiResult.ResponseBodyJson,
+                IsSuccess = apiResult.IsSuccess,
+                ErrorMessage = apiResult.ErrorMessage,
+                DurationMs = apiResult.DurationMs,
+                ReceivedAtUtc = finishedAtUtc,
+            };
+
+            dbContext.ExternalApiRawResponses.Add(rawResponse);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            item.RawResponseId = rawResponse.Id;
+            item.FinishedAtUtc = finishedAtUtc;
+            item.DurationMs = apiResult.DurationMs;
+
+            if (apiResult.IsSuccess && apiResult.AvailableBalance is not null)
+            {
+                item.Status = JobRunItemStatus.Succeeded;
+                await UpsertParkBalanceSnapshotAsync(
+                    park,
+                    businessDate,
+                    apiResult.AvailableBalance.Value,
+                    jobRun.Id,
+                    item.Id,
+                    rawResponse.Id,
+                    triggeredByUserId,
+                    finishedAtUtc,
+                    cancellationToken);
+                jobRun.SuccessItems++;
+            }
+            else
+            {
+                item.Status = JobRunItemStatus.Failed;
+                item.ErrorCode = apiResult.ErrorCode;
+                item.ErrorMessage = apiResult.ErrorMessage;
+                jobRun.FailedItems++;
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        jobRun.FinishedAtUtc = DateTime.UtcNow;
+        jobRun.SkippedItems = 0;
+        jobRun.Status = jobRun.FailedItems == 0 ? JobRunStatus.Succeeded : JobRunStatus.CompletedWithErrors;
+        jobRun.ErrorMessage = jobRun.FailedItems == 0
+            ? null
+            : $"Có {jobRun.FailedItems}/{jobRun.TotalItems} KVC không lấy được số dư.";
+        jobRun.SummaryJson = JsonSerializer.Serialize(new
+        {
+            source = source.ToString(),
+            businessDate,
+            activeParkCount = parks.Count,
+            successItems = jobRun.SuccessItems,
+            failedItems = jobRun.FailedItems,
+            externalApiConfigured = true,
+        });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await LogJobRunAsync(jobRun, triggeredByUserId, cancellationToken);
+
+        return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
+    }
+
+    private async Task UpsertParkBalanceSnapshotAsync(
+        Park park,
+        DateOnly businessDate,
+        long availableBalance,
+        int jobRunId,
+        int jobRunItemId,
+        int rawResponseId,
+        int? triggeredByUserId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var snapshot = await dbContext.DailyParkBalanceSnapshots
+            .FirstOrDefaultAsync(x => x.BusinessDate == businessDate && x.ParkId == park.Id, cancellationToken);
+
+        if (snapshot is null)
+        {
+            snapshot = new DailyParkBalanceSnapshot
+            {
+                BusinessDate = businessDate,
+                ParkId = park.Id,
+                CreatedAtUtc = nowUtc,
+                CreatedByUserId = triggeredByUserId,
+            };
+            dbContext.DailyParkBalanceSnapshots.Add(snapshot);
+        }
+        else
+        {
+            snapshot.UpdatedAtUtc = nowUtc;
+            snapshot.UpdatedByUserId = triggeredByUserId;
+        }
+
+        snapshot.PaymentType = park.PaymentType;
+        snapshot.AvailableBalance = availableBalance;
+        snapshot.BankAccountSnapshot = park.BankAccount;
+        snapshot.SourceType = SourceType.Api;
+        snapshot.SourceJobRunId = jobRunId;
+        snapshot.SourceJobRunItemId = jobRunItemId;
+        snapshot.RawResponseId = rawResponseId;
+    }
+
+    private async Task<JobRunDetailDto> RunExternalSyncPlaceholderAsync(
+        ExternalApiSource source,
+        DateOnly businessDate,
+        JobTriggerType triggeredBy,
+        int? triggeredByUserId,
+        CancellationToken cancellationToken)
     {
         var nowUtc = DateTime.UtcNow;
         var jobRun = new JobRun
@@ -69,7 +243,6 @@ public sealed class JobRunner(
                 ParkId = park.Id,
                 JobRunId = jobRun.Id,
                 JobRunItemId = item.Id,
-                RequestUrl = null,
                 RequestPayloadJson = JsonSerializer.Serialize(new
                 {
                     park.Id,
@@ -78,7 +251,6 @@ public sealed class JobRunner(
                     source = source.ToString(),
                     message = "External API is not configured.",
                 }),
-                ResponseStatusCode = null,
                 ResponseBodyJson = JsonSerializer.Serialize(new
                 {
                     success = false,
@@ -114,7 +286,14 @@ public sealed class JobRunner(
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        await auditService.LogAsync(new AuditLogEntry
+        await LogJobRunAsync(jobRun, triggeredByUserId, cancellationToken);
+
+        return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
+    }
+
+    private Task LogJobRunAsync(JobRun jobRun, int? triggeredByUserId, CancellationToken cancellationToken)
+    {
+        return auditService.LogAsync(new AuditLogEntry
         {
             UserId = triggeredByUserId,
             Module = "Jobs",
@@ -128,11 +307,11 @@ public sealed class JobRunner(
                 jobRun.BusinessDate,
                 jobRun.Status,
                 jobRun.TotalItems,
+                jobRun.SuccessItems,
                 jobRun.FailedItems,
+                jobRun.SkippedItems,
             },
         }, cancellationToken);
-
-        return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
     }
 
     private async Task<JobRunDetailDto> BuildJobRunDetailAsync(int jobRunId, CancellationToken cancellationToken)

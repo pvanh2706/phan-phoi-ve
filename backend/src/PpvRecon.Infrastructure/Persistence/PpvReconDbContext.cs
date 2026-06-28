@@ -29,6 +29,8 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
     public DbSet<ExternalApiRawResponse> ExternalApiRawResponses => Set<ExternalApiRawResponse>();
     public DbSet<DailyParkBalanceSnapshot> DailyParkBalanceSnapshots => Set<DailyParkBalanceSnapshot>();
     public DbSet<DailyTicketCostSummary> DailyTicketCostSummaries => Set<DailyTicketCostSummary>();
+    public DbSet<TicketSaleCostDetail> TicketSaleCostDetails => Set<TicketSaleCostDetail>();
+    public DbSet<BankTransactionDetail> BankTransactionDetails => Set<BankTransactionDetail>();
     public DbSet<DailyBankTransactionSummary> DailyBankTransactionSummaries => Set<DailyBankTransactionSummary>();
     public DbSet<ParkReconciliation> ParkReconciliations => Set<ParkReconciliation>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -68,6 +70,9 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
         ConfigureReconciliation(modelBuilder);
         ConfigureAudit(modelBuilder);
         SeedSystemSettings(modelBuilder);
+        SeedTicketSaleCostDetails(modelBuilder);
+        SeedReconciliationDemo(modelBuilder);
+        SeedBankTransactionDetails(modelBuilder);
     }
 
     private static void ConfigureIdentity(ModelBuilder modelBuilder)
@@ -292,7 +297,6 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedOnAdd();
             entity.Property(x => x.BankAccountSnapshot).HasMaxLength(100);
-            entity.Property(x => x.ManualReason).HasMaxLength(1000);
             entity.HasIndex(x => new { x.BusinessDate, x.ParkId }).IsUnique();
             entity.HasIndex(x => x.PaymentType);
             entity.HasIndex(x => x.SourceType);
@@ -321,6 +325,56 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
             entity.HasIndex(x => x.PaymentType);
             entity.HasIndex(x => x.SourceType);
             ConfigureSummaryRelationships(entity);
+        });
+
+        modelBuilder.Entity<TicketSaleCostDetail>(entity =>
+        {
+            entity.ToTable("TicketSaleCostDetails");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.BookingCode).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.TicketTypeName).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.TicketGroupName).HasMaxLength(500);
+            entity.Property(x => x.SellingAgentCode).HasMaxLength(100);
+            entity.Property(x => x.BuyingAgentCode).HasMaxLength(100);
+            entity.Property(x => x.BuyingAgentName).HasMaxLength(500);
+            entity.Property(x => x.ParkCodeSnapshot).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.ParkNameSnapshot).HasMaxLength(300).IsRequired();
+            entity.Property(x => x.ExternalLineId).HasMaxLength(100);
+            entity.Property(x => x.SellingAgentName).HasMaxLength(500);
+            entity.Property(x => x.TicketTypeCode).HasMaxLength(100);
+            entity.Property(x => x.ParentBuyingAgentName).HasMaxLength(500);
+            entity.Property(x => x.ParentBuyingAgentCode).HasMaxLength(100);
+            entity.HasIndex(x => x.BusinessDate);
+            entity.HasIndex(x => x.PaymentType);
+            entity.HasIndex(x => x.BookingCode);
+            entity.HasIndex(x => x.ParkId);
+            entity.HasIndex(x => x.SourceType);
+            entity.HasOne<Park>().WithMany().HasForeignKey(x => x.ParkId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRun>().WithMany().HasForeignKey(x => x.SourceJobRunId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRunItem>().WithMany().HasForeignKey(x => x.SourceJobRunItemId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ExternalApiRawResponse>().WithMany().HasForeignKey(x => x.RawResponseId).OnDelete(DeleteBehavior.Restrict);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
+        });
+
+        modelBuilder.Entity<BankTransactionDetail>(entity =>
+        {
+            entity.ToTable("BankTransactionDetails");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.Content).HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.BankAccount).HasMaxLength(100);
+            entity.HasIndex(x => x.BusinessDate);
+            entity.HasIndex(x => x.PaymentType);
+            entity.HasIndex(x => x.ParkId);
+            entity.HasIndex(x => x.SourceType);
+            entity.HasOne<Park>().WithMany().HasForeignKey(x => x.ParkId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRun>().WithMany().HasForeignKey(x => x.SourceJobRunId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRunItem>().WithMany().HasForeignKey(x => x.SourceJobRunItemId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ExternalApiRawResponse>().WithMany().HasForeignKey(x => x.RawResponseId).OnDelete(DeleteBehavior.Restrict);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
         });
     }
 
@@ -427,6 +481,158 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
                 IsSensitive = false,
                 CreatedAtUtc = SeedCreatedAtUtc,
             });
+    }
+
+    private static void SeedTicketSaleCostDetails(ModelBuilder modelBuilder)
+    {
+        static TicketSaleCostDetail D(int id, ParkPaymentType pay, string date, string booking, long unit,
+            string ticketName, string groupName, long sales, long cost, string sellCode, int qty,
+            string buyCode, string buyName, string parkCode, string parkName, long subtotal,
+            string extId, string sellName, string typeCode)
+            => new()
+            {
+                Id = id,
+                BusinessDate = DateOnly.ParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                PaymentType = pay,
+                BookingCode = booking,
+                UnitPrice = unit,
+                TicketTypeName = ticketName,
+                TicketGroupName = groupName,
+                SalesAmount = sales,
+                CostAmount = cost,
+                SellingAgentCode = sellCode,
+                Quantity = qty,
+                BuyingAgentCode = buyCode,
+                BuyingAgentName = buyName,
+                ParkCodeSnapshot = parkCode,
+                ParkNameSnapshot = parkName,
+                Subtotal = subtotal,
+                ExternalLineId = extId,
+                SellingAgentName = sellName,
+                TicketTypeCode = typeCode,
+                ParentBuyingAgentName = "Oneinventory_Q R_ezCloud Mua_PL",
+                ParentBuyingAgentCode = "5129",
+                SourceType = SourceType.Api,
+                CreatedAtUtc = SeedCreatedAtUtc,
+            };
+
+        modelBuilder.Entity<TicketSaleCostDetail>().HasData(
+            D(1, ParkPaymentType.Prepaid, "2025-09-01", "60023151211", 177200, "Người lớn (Trên 1.4m)-Cuối tuần T7-CN", "SJC- Thủy cung Timescity", 886000, 875000, "7310", 5, "7034", "Oneinventory_SJC Thủy cung Lotte", "11810", "VinKE & Aquarium Times City ezCMT", 886000, "14409473", "Thủy cung VINKE-EZCMT", "347015"),
+            D(2, ParkPaymentType.Prepaid, "2025-09-01", "60023151212", 120000, "Trẻ em (1.0–1.4m)-Cuối tuần T7-CN", "SJC- Thủy cung Timescity", 480000, 468000, "7310", 4, "7034", "Oneinventory_SJC Thủy cung Lotte", "11810", "VinKE & Aquarium Times City ezCMT", 480000, "14409474", "Thủy cung VINKE-EZCMT", "347016"),
+            D(3, ParkPaymentType.Prepaid, "2025-09-02", "60023158801", 245000, "Người lớn-Ngày thường", "Sun Group - Sunworld", 1225000, 1200000, "6935", 5, "8012", "Oneinventory_SunWorld HN", "6935", "Sunworld Hà Nội", 1225000, "14510230", "Sun Group - ezCloud", "198432"),
+            D(4, ParkPaymentType.Prepaid, "2025-09-02", "60023158802", 185000, "Trẻ em-Ngày thường", "Sun Group - Sunworld", 555000, 540000, "6935", 3, "8012", "Oneinventory_SunWorld HN", "6935", "Sunworld Hà Nội", 555000, "14510231", "Sun Group - ezCloud", "198433"),
+            D(5, ParkPaymentType.Prepaid, "2025-09-03", "60023165411", 320000, "Người lớn-Cuối tuần", "Vinpearl - Cửa Hội", 960000, 945000, "9012", 3, "9034", "Oneinventory_VIN CUA HOI", "11682", "Vinpearl Cửa Hội", 960000, "14611020", "Vinpearl - ezCloud", "220110"),
+            D(6, ParkPaymentType.Prepaid, "2025-09-03", "60023165500", 280000, "Người lớn-Ngày thường", "Vinpearl - Nam Hội An", 1120000, 1100000, "9014", 4, "9035", "Oneinventory_VIN NAM HOI AN", "11684", "Vinpearl Nam Hội An", 1120000, "14611100", "Vinpearl - ezCloud", "220115"),
+            D(7, ParkPaymentType.Prepaid, "2025-09-04", "60023172011", 420000, "Người lớn-Ngày thường", "Vinpearl - Phú Quốc", 2100000, 2070000, "9016", 5, "9036", "Oneinventory_VIN PHU QUOC", "11686", "Vinpearl Phú Quốc", 2100000, "14712300", "Vinpearl - ezCloud", "220200"),
+            D(8, ParkPaymentType.Prepaid, "2025-09-04", "60023172500", 195000, "Người lớn-Ngày thường", "Thủy cung Lotte", 975000, 956250, "7310", 5, "7034", "Oneinventory_SJC Thủy cung Lotte", "11810", "Thủy cung Lotte Hà Nội", 975000, "14712400", "Thủy cung VINKE-EZCMT", "347020"),
+            D(9, ParkPaymentType.Prepaid, "2025-09-05", "60023179001", 177200, "Người lớn (Trên 1.4m)-Ngày thường", "SJC- Thủy cung Timescity", 708800, 695000, "7310", 4, "7034", "Oneinventory_SJC Thủy cung Lotte", "11810", "VinKE & Aquarium Times City ezCMT", 708800, "14813000", "Thủy cung VINKE-EZCMT", "347030"),
+            D(10, ParkPaymentType.Debt, "2025-09-16", "60023199001", 85000, "Người lớn-Ngày thường", "Sơn Tiên - Công nợ", 425000, 415000, "5020", 5, "5034", "Oneinventory_Son Tien", "10360", "Sơn Tiên", 425000, "14300001", "Sơn Tiên - ezCloud", "180001"),
+            D(11, ParkPaymentType.Debt, "2025-09-16", "60023199002", 120000, "Người lớn-Cuối tuần", "Mikazuki - Công nợ", 480000, 468000, "5022", 4, "5036", "Oneinventory_Mikazuki", "11423", "Mikazuki", 480000, "14300002", "Mikazuki - ezCloud", "180010"),
+            D(12, ParkPaymentType.Debt, "2025-09-16", "60023199003", 95000, "Người lớn-Ngày thường", "Mekong - Công nợ", 285000, 278000, "5024", 3, "5038", "Oneinventory_Mekong", "11588", "Mekong", 285000, "14300003", "Mekong - ezCloud", "180020"),
+            D(13, ParkPaymentType.Debt, "2025-09-17", "60023205001", 150000, "Người lớn-Cuối tuần", "Hồ Tràm - Công nợ", 600000, 585000, "5030", 4, "5044", "Oneinventory_Ho Tram", "11483", "Hồ Tràm", 600000, "14400010", "Hồ Tràm - ezCloud", "180050"),
+            D(14, ParkPaymentType.Debt, "2025-09-17", "60023205002", 180000, "Người lớn-Ngày thường", "Nova Phan Thiết - Công nợ", 900000, 880000, "5032", 5, "5046", "Oneinventory_Nova", "11480", "Nova Phan Thiết", 900000, "14400011", "Nova - ezCloud", "180055"),
+            D(15, ParkPaymentType.Debt, "2025-09-18", "60023211001", 110000, "Người lớn-Ngày thường", "Sealinks - Công nợ", 330000, 322000, "5040", 3, "5054", "Oneinventory_Sealinks", "11807", "Sealinks", 330000, "14500020", "Sealinks - ezCloud", "180090"));
+    }
+
+    private static void SeedReconciliationDemo(ModelBuilder modelBuilder)
+    {
+        static Park P(int id, string code, string name, ParkPaymentType pay, string bank)
+            => new()
+            {
+                Id = id,
+                Code = code,
+                Name = name,
+                PaymentType = pay,
+                BankAccount = bank,
+                Status = RecordStatus.Active,
+                IsDeleted = false,
+                CreatedAtUtc = SeedCreatedAtUtc,
+            };
+
+        modelBuilder.Entity<Park>().HasData(
+            P(9001, "11681", "Bản Mòng", ParkPaymentType.Prepaid, "1SB2B24"),
+            P(9002, "11682", "Vin Nam Hội An", ParkPaymentType.Prepaid, "1029876329"),
+            P(9003, "11683", "Vin Phú Quốc", ParkPaymentType.Prepaid, "0091000593278"),
+            P(9004, "11684", "Thủy Cung Lotte", ParkPaymentType.Prepaid, "700029610000"),
+            P(9005, "11685", "Vin Cửa Hội", ParkPaymentType.Prepaid, "19139932758899"),
+            P(9006, "11686", "Sealinks", ParkPaymentType.Prepaid, "1100030038237"),
+            P(9007, "21001", "Sơn Tiên", ParkPaymentType.Debt, "57457"),
+            P(9008, "21002", "Mikazuki", ParkPaymentType.Debt, "200077779999"),
+            P(9009, "21003", "Mekong", ParkPaymentType.Debt, "60300641396"),
+            P(9010, "21004", "Hồ Tràm", ParkPaymentType.Debt, "1027882298"),
+            P(9011, "21005", "Nova Phan Thiết", ParkPaymentType.Debt, "3336333979"),
+            P(9012, "21006", "Công viên nước Hồ Tây", ParkPaymentType.Debt, "11004009888"),
+            P(9013, "21007", "Sightseeing HN", ParkPaymentType.Debt, "1100030038237"));
+
+        static ParkReconciliation R(int id, int parkId, ParkPaymentType pay, string dateT, string dateT1,
+            long prev, long add, long used, long expected, long actual, long variance)
+            => new()
+            {
+                Id = id,
+                ParkId = parkId,
+                PaymentType = pay,
+                BusinessDate = DateOnly.ParseExact(dateT, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                PreviousBusinessDate = DateOnly.ParseExact(dateT1, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                PreviousBalance = prev,
+                AdditionalAmount = add,
+                UsedAmount = used,
+                ExpectedBalance = expected,
+                ActualBalance = actual,
+                VarianceAmount = variance,
+                Status = variance == 0 ? ReconciliationStatus.Matched : ReconciliationStatus.Variance,
+                RebuildCount = 0,
+                CreatedAtUtc = SeedCreatedAtUtc,
+            };
+
+        modelBuilder.Entity<ParkReconciliation>().HasData(
+            R(9001, 9001, ParkPaymentType.Prepaid, "2025-09-17", "2025-09-16", 0, 490000000, 0, 490000000, 490000000, 0),
+            R(9002, 9002, ParkPaymentType.Prepaid, "2025-09-17", "2025-09-16", 150000000, 50000000, 35000000, 165000000, 165000000, 0),
+            R(9003, 9003, ParkPaymentType.Prepaid, "2025-09-17", "2025-09-16", 200000000, 100000000, 45000000, 255000000, 250000000, -5000000),
+            R(9004, 9004, ParkPaymentType.Prepaid, "2025-09-17", "2025-09-16", 80000000, 365625000, 120000000, 325625000, 327625000, 2000000),
+            R(9005, 9005, ParkPaymentType.Prepaid, "2026-04-29", "2026-04-28", 0, 50000000, 12500000, 37500000, 37500000, 0),
+            R(9006, 9006, ParkPaymentType.Prepaid, "2026-04-29", "2026-04-28", 25000000, 0, 8110000, 16890000, 16890000, 0),
+            R(9007, 9007, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 120000000, 0, 42495000, 77505000, 77505000, 0),
+            R(9008, 9008, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 95000000, 0, 35953000, 59047000, 59047000, 0),
+            R(9009, 9009, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 150000000, 0, 49833500, 100166500, 99666500, -500000),
+            R(9010, 9010, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 55000000, 0, 22850000, 32150000, 32150000, 0),
+            R(9011, 9011, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 250000000, 0, 119995000, 130005000, 130005000, 0),
+            R(9012, 9012, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 80000000, 0, 32082500, 47917500, 48917500, 1000000),
+            R(9013, 9013, ParkPaymentType.Debt, "2025-09-17", "2025-09-16", 500000000, 0, 9996172999, -9496172999, -9496172999, 0));
+    }
+
+    private static void SeedBankTransactionDetails(ModelBuilder modelBuilder)
+    {
+        static BankTransactionDetail B(int id, ParkPaymentType pay, int y, int mo, int d, int hh, int mi, int ss,
+            long debit, string content)
+            => new()
+            {
+                Id = id,
+                BusinessDate = new DateOnly(y, mo, d),
+                TransactionAtUtc = new DateTime(y, mo, d, hh, mi, ss, DateTimeKind.Utc),
+                PaymentType = pay,
+                DebitAmount = debit,
+                CreditAmount = 0,
+                Content = content,
+                SourceType = SourceType.Api,
+                CreatedAtUtc = SeedCreatedAtUtc,
+            };
+
+        modelBuilder.Entity<BankTransactionDetail>().HasData(
+            B(1, ParkPaymentType.Prepaid, 2025, 9, 17, 17, 33, 32, 490000000, "HBK-TKThe :1SB2B24, tại NCB. ND Top up Sunworld - ezCloud 17.09.2025 -CTLNHIDO000012817233009-1/1-PMT-002"),
+            B(2, ParkPaymentType.Prepaid, 2026, 4, 28, 0, 0, 0, 50000000, "HBK-TKThe :19139932758899, tại Techcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN CUA HOI ngay 28 04 2026 -CTLNHIDO000015124913428-1/1-PMT-002 244"),
+            B(3, ParkPaymentType.Prepaid, 2026, 4, 28, 0, 0, 0, 50000000, "HBK-TKThe :1029876329, tại Vietcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN NAM HOI AN ngay 28 04 2026 -CTLNHIDO000015124944210-1/1-PMT-002 245"),
+            B(4, ParkPaymentType.Prepaid, 2026, 4, 28, 0, 0, 0, 490000000, "HBK-TKThe :1SB2B24, tại NCB. ND Top-up SUNWORLD ezCloud ngay 28 04 2026 -CTLNHIDO000015124947382-1/1-PMT-002 246"),
+            B(5, ParkPaymentType.Prepaid, 2026, 4, 28, 0, 0, 0, 100000000, "HBK-TKThe :0091000593278, tại Vietcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN PHU QUOC ngay 28 04 2026 -CTLNHIDO000015124982897-1/1-PMT-002 248"),
+            B(6, ParkPaymentType.Prepaid, 2026, 4, 29, 0, 0, 0, 365625000, "HBK-TKThe :700029610000, tại Shinhan Bank V. ND ezCloud thanh toan nhap lo cho THUY CUNG LOTTE ngay 29 04 2026 lan 1 -CTLNHIDO000015134693760-1/1-PMT-002 243"),
+            B(7, ParkPaymentType.Prepaid, 2026, 4, 29, 0, 0, 0, 237375000, "HBK-TKThe :700029610000, tại Shinhan Bank V. ND ezCloud thanh toan nhap lo cho THUY CUNG LOTTE ngay 29 04 2026 lan 2 -CTLNHIDO000015134727960-1/1-PMT-002 246"),
+            B(8, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 42495000, "HBK-TKThe :57457, tại Techcombank. ND ezCloud thanh toan cong no cho Son Tien ngay 16 09 2025 -CTLNHIDO-PMT-001"),
+            B(9, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 35953000, "HBK-TKThe :200077779999, tại Vietcombank. ND ezCloud thanh toan cong no cho Mikazuki ngay 16 09 2025 -CTLNHIDO-PMT-002"),
+            B(10, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 49833500, "HBK-TKThe :60300641396, tại Vietcombank. ND ezCloud thanh toan cong no cho Mekong ngay 16 09 2025 -CTLNHIDO-PMT-003"),
+            B(11, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 22850000, "HBK-TKThe :1027882298, tại Vietcombank. ND ezCloud thanh toan cong no cho Ho Tram ngay 16 09 2025 -CTLNHIDO-PMT-004"),
+            B(12, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 119995000, "HBK-TKThe :3336333979, tại Vietcombank. ND ezCloud thanh toan cong no cho Nova Phan Thiet ngay 16 09 2025 -CTLNHIDO-PMT-005"),
+            B(13, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 32082500, "HBK-TKThe :11004009888, tại Vietcombank. ND ezCloud thanh toan cong no cho Cong Vien Nuoc Ho Tay ngay 16 09 2025 -CTLNHIDO-PMT-006"),
+            B(14, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 8110000, "HBK-TKThe :1100030038237, tại Vietcombank. ND ezCloud thanh toan cong no cho Sealinks ngay 16 09 2025 -CTLNHIDO-PMT-007"),
+            B(15, ParkPaymentType.Debt, 2025, 9, 16, 0, 0, 0, 9996172999, "HBK-TKThe :sightseeing, tại Vietcombank. ND ezCloud thanh toan cong no cho Sightseeing HN ngay 16 09 2025 -CTLNHIDO-PMT-008"));
     }
 
     private static void ConfigureSummaryRelationships<TEntity>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> entity)

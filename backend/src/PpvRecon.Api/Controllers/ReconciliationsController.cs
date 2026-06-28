@@ -22,9 +22,13 @@ public sealed class ReconciliationsController(
     public async Task<ActionResult<ApiResponse<PagedResult<ParkReconciliationDto>>>> List(
         [FromQuery] int page = 1,
         [FromQuery] DateOnly? businessDate = null,
+        [FromQuery] DateOnly? dateFrom = null,
+        [FromQuery] DateOnly? dateTo = null,
         [FromQuery] int? parkId = null,
         [FromQuery] ParkPaymentType? paymentType = null,
         [FromQuery] ReconciliationStatus? status = null,
+        [FromQuery] bool? hasVariance = null,
+        [FromQuery] string? keyword = null,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(page, 1);
@@ -35,9 +39,22 @@ public sealed class ReconciliationsController(
             select new { reconciliation, park };
 
         if (businessDate is not null) query = query.Where(x => x.reconciliation.BusinessDate == businessDate);
+        if (dateFrom is not null) query = query.Where(x => x.reconciliation.BusinessDate >= dateFrom);
+        if (dateTo is not null) query = query.Where(x => x.reconciliation.BusinessDate <= dateTo);
         if (parkId is not null) query = query.Where(x => x.reconciliation.ParkId == parkId);
         if (paymentType is not null) query = query.Where(x => x.reconciliation.PaymentType == paymentType);
         if (status is not null) query = query.Where(x => x.reconciliation.Status == status);
+        if (hasVariance is true) query = query.Where(x => (x.reconciliation.VarianceAmount ?? 0) != 0);
+        if (hasVariance is false) query = query.Where(x => (x.reconciliation.VarianceAmount ?? 0) == 0);
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim();
+            query = query.Where(x =>
+                EF.Functions.Like(x.park.Code, $"%{kw}%")
+                || EF.Functions.Like(x.park.Name, $"%{kw}%")
+                || (x.park.BankAccount != null && EF.Functions.Like(x.park.BankAccount, $"%{kw}%")));
+        }
 
         var totalItems = await query.CountAsync(cancellationToken);
         var items = await query
@@ -45,7 +62,7 @@ public sealed class ReconciliationsController(
             .ThenBy(x => x.park.Name)
             .Skip((page - 1) * PagedResult<ParkReconciliationDto>.FixedPageSize)
             .Take(PagedResult<ParkReconciliationDto>.FixedPageSize)
-            .Select(x => ToDto(x.reconciliation, x.park.Code, x.park.Name))
+            .Select(x => ToDto(x.reconciliation, x.park.Code, x.park.Name, x.park.BankAccount))
             .ToListAsync(cancellationToken);
 
         return Ok(ApiResponse<PagedResult<ParkReconciliationDto>>.Ok(new PagedResult<ParkReconciliationDto>
@@ -64,7 +81,7 @@ public sealed class ReconciliationsController(
             from reconciliation in dbContext.ParkReconciliations.AsNoTracking()
             join park in dbContext.Parks.AsNoTracking() on reconciliation.ParkId equals park.Id
             where reconciliation.Id == id && !park.IsDeleted
-            select ToDto(reconciliation, park.Code, park.Name))
+            select ToDto(reconciliation, park.Code, park.Name, park.BankAccount))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (dto is null)
@@ -106,7 +123,7 @@ public sealed class ReconciliationsController(
 
         var park = await dbContext.Parks.AsNoTracking()
             .FirstAsync(x => x.Id == reconciliation.ParkId, cancellationToken);
-        var before = ToDto(reconciliation, park.Code, park.Name);
+        var before = ToDto(reconciliation, park.Code, park.Name, park.BankAccount);
 
         reconciliation.AdjustmentAmount = request.AdjustmentAmount;
         reconciliation.AdjustmentNote = request.AdjustmentNote.Trim();
@@ -120,7 +137,7 @@ public sealed class ReconciliationsController(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var after = ToDto(reconciliation, park.Code, park.Name);
+        var after = ToDto(reconciliation, park.Code, park.Name, park.BankAccount);
         await auditService.LogAsync(new AuditLogEntry
         {
             Module = "Park",
@@ -134,7 +151,7 @@ public sealed class ReconciliationsController(
         return Ok(ApiResponse<ParkReconciliationDto>.Ok(after, "Đã xử lý dòng đối soát."));
     }
 
-    private static ParkReconciliationDto ToDto(ParkReconciliation reconciliation, string parkCode, string parkName)
+    private static ParkReconciliationDto ToDto(ParkReconciliation reconciliation, string parkCode, string parkName, string? bankAccount)
     {
         return new ParkReconciliationDto
         {
@@ -144,6 +161,7 @@ public sealed class ReconciliationsController(
             ParkId = reconciliation.ParkId,
             ParkCode = parkCode,
             ParkName = parkName,
+            BankAccount = bankAccount,
             PaymentType = reconciliation.PaymentType,
             PreviousBalance = reconciliation.PreviousBalance,
             AdditionalAmount = reconciliation.AdditionalAmount,

@@ -26,7 +26,7 @@ import {
   type RecordStatus,
 } from '../services/formatters'
 
-type TabKey = 'parks' | 'tickets'
+type TabKey = 'parks' | 'nap' | 'cn'
 
 const activeTab = ref<TabKey>('parks')
 const loading = ref(false)
@@ -81,6 +81,9 @@ const ticketForm = reactive({
 })
 
 const isAdmin = computed(() => authState.user?.role === 'Admin')
+const napParkOptions = computed(() => parkOptions.value.filter(p => p.paymentType === 'Prepaid'))
+const cnParkOptions = computed(() => parkOptions.value.filter(p => p.paymentType === 'Debt'))
+const currentParkOptions = computed(() => activeTab.value === 'nap' ? napParkOptions.value : cnParkOptions.value)
 const currentPage = computed(() => activeTab.value === 'parks' ? parkPage.value : ticketPage.value)
 const currentTotal = computed(() => activeTab.value === 'parks' ? parkTotal.value : ticketTotal.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(currentTotal.value / 100)))
@@ -116,10 +119,11 @@ async function loadParks() {
 }
 
 async function loadTicketTypes() {
+  const tabPaymentType: PaymentType = activeTab.value === 'nap' ? 'Prepaid' : 'Debt'
   const result = await listParkTicketTypes({
     page: ticketPage.value,
     keyword: filters.keyword,
-    paymentType: filters.paymentType,
+    paymentType: tabPaymentType,
     status: filters.status,
     parkId: filters.parkId,
   })
@@ -353,44 +357,52 @@ onMounted(async () => {
 
   <div class="tabs-bar park-code-tabs">
     <button class="tab-btn" :class="{ active: activeTab === 'parks' }" type="button" @click="switchTab('parks')">
-      KVC cha
+      Mã KVC
     </button>
-    <button class="tab-btn" :class="{ active: activeTab === 'tickets' }" type="button" @click="switchTab('tickets')">
-      Loại vé / KVC con
+    <button class="tab-btn" :class="{ active: activeTab === 'nap' }" type="button" @click="switchTab('nap')">
+      Danh mục KVC con nạp trước
+    </button>
+    <button class="tab-btn" :class="{ active: activeTab === 'cn' }" type="button" @click="switchTab('cn')">
+      Danh mục KVC con công nợ
     </button>
   </div>
 
   <div class="card">
     <div class="toolbar">
-      <input
-        v-model="filters.keyword"
-        class="tb-input"
-        :placeholder="activeTab === 'parks' ? '🔍  Tìm mã hoặc tên KVC...' : '🔍  Tìm mã hoặc tên KVC con...'"
-        @keyup.enter="load"
-      />
-      <select v-model="filters.paymentType" class="tb-select" @change="load">
-        <option value="">Tất cả loại thanh toán</option>
-        <option value="Prepaid">Nạp trước</option>
-        <option value="Debt">Công nợ</option>
-      </select>
-      <select v-model="filters.status" class="tb-select" @change="load">
-        <option value="">Tất cả trạng thái</option>
-        <option value="Active">Hoạt động</option>
-        <option value="Inactive">Ngừng sử dụng</option>
-      </select>
-      <select v-if="activeTab === 'tickets'" v-model="filters.parkId" class="tb-select" @change="load">
-        <option value="">Tất cả KVC cha</option>
-        <option v-for="park in parkOptions" :key="park.id" :value="park.id">
-          {{ park.code }} - {{ park.name }}
-        </option>
-      </select>
-      <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
-      <button class="add-btn" type="button" @click="activeTab === 'parks' ? openAddPark() : openAddTicket()">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" d="M12 5v14M5 12h14" />
-        </svg>
-        {{ activeTab === 'parks' ? 'Thêm KVC' : 'Thêm KVC con' }}
-      </button>
+      <template v-if="activeTab === 'parks'">
+        <input v-model="filters.keyword" class="tb-input" placeholder="🔍  Tìm mã hoặc tên KVC..." @keyup.enter="load" />
+        <select v-model="filters.paymentType" class="tb-select" @change="load">
+          <option value="">Tất cả loại</option>
+          <option value="Prepaid">Nạp trước</option>
+          <option value="Debt">Công nợ</option>
+        </select>
+        <select v-model="filters.status" class="tb-select" @change="load">
+          <option value="">Tất cả trạng thái</option>
+          <option value="Active">Đang hoạt động</option>
+          <option value="Inactive">Ngừng hoạt động</option>
+        </select>
+        <button class="add-btn" type="button" @click="openAddPark()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+          </svg>
+          Thêm KVC
+        </button>
+      </template>
+      <template v-else>
+        <input v-model="filters.keyword" class="tb-input" placeholder="🔍  Tìm mã hoặc tên KVC con..." @keyup.enter="load" />
+        <select v-model="filters.parkId" class="tb-select" @change="load">
+          <option value="">Tất cả KVC cha</option>
+          <option v-for="park in currentParkOptions" :key="park.id" :value="park.id">
+            {{ park.code }} - {{ park.name }}
+          </option>
+        </select>
+        <button class="add-btn" type="button" @click="openAddTicket()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+          </svg>
+          Thêm KVC con
+        </button>
+      </template>
     </div>
 
     <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
@@ -403,24 +415,22 @@ onMounted(async () => {
             <th>Mã KVC</th>
             <th>Tên khu vui chơi</th>
             <th>Loại</th>
-            <th>Địa điểm</th>
-            <th>Tài khoản</th>
-            <th>API</th>
+            <th>Mã định danh tìm kiếm</th>
+            <th>Mã ngân hàng / TK</th>
             <th>Trạng thái</th>
-            <th>Hành động</th>
+            <th style="width: 48px"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td colspan="8">Đang tải...</td>
+            <td colspan="7">Đang tải...</td>
           </tr>
           <tr v-for="park in parks" :key="park.id">
             <td class="cell-muted">{{ park.code }}</td>
             <td class="cell-strong">{{ park.name }}</td>
-            <td><span class="badge badge-indigo">{{ paymentTypeLabel(park.paymentType) }}</span></td>
-            <td>{{ park.location || '-' }}</td>
-            <td class="cell-muted">{{ park.bankName || '-' }} {{ park.bankAccount ? `- ${park.bankAccount}` : '' }}</td>
-            <td class="cell-muted">{{ park.apiSiteId || '-' }} {{ park.apiProfileId ? `/ ${park.apiProfileId}` : '' }}</td>
+            <td><span class="badge" :class="park.paymentType === 'Prepaid' ? 'badge-teal' : 'badge-indigo'">{{ paymentTypeLabel(park.paymentType) }}</span></td>
+            <td class="cell-muted">{{ park.searchCode || '-' }}</td>
+            <td class="cell-muted">{{ park.bankAccount || '-' }}</td>
             <td><span class="badge" :class="badgeClassForStatus(park.status)">{{ recordStatusLabel(park.status) }}</span></td>
             <td>
               <button class="edit-btn" type="button" title="Sửa" @click="openEditPark(park)">
@@ -441,7 +451,7 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="!loading && parks.length === 0">
-            <td colspan="8" class="cell-muted" style="text-align: center">Không có dữ liệu phù hợp</td>
+            <td colspan="7" class="cell-muted" style="text-align: center">Không có dữ liệu phù hợp</td>
           </tr>
         </tbody>
       </table>
@@ -451,25 +461,27 @@ onMounted(async () => {
       <table class="park-code-table">
         <thead>
           <tr>
-            <th>KVC cha</th>
-            <th>Mã dòng</th>
+            <th>Mã KVC con</th>
+            <th>Tên KVC con</th>
+            <th>Mã KVC cha</th>
+            <th>Tên KVC cha</th>
             <th>Mã loại vé</th>
-            <th>Tên loại vé</th>
-            <th>Nhóm vé</th>
-            <th>Giá vốn</th>
+            <th>Nhóm loại vé</th>
+            <th>Đơn giá vốn</th>
             <th>Trạng thái</th>
-            <th>Hành động</th>
+            <th style="width: 48px"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td colspan="8">Đang tải...</td>
+            <td colspan="9">Đang tải...</td>
           </tr>
           <tr v-for="ticket in ticketTypes" :key="ticket.id">
-            <td class="cell-strong">{{ ticket.parkCode }} - {{ ticket.parkName }}</td>
             <td class="cell-muted">{{ ticket.code }}</td>
-            <td>{{ ticket.ticketTypeCode }}</td>
             <td>{{ ticket.name }}</td>
+            <td class="cell-muted">{{ ticket.parkCode }}</td>
+            <td class="cell-strong">{{ ticket.parkName }}</td>
+            <td>{{ ticket.ticketTypeCode }}</td>
             <td>{{ ticket.ticketGroupName || '-' }}</td>
             <td class="amount">{{ formatMoney(ticket.costPrice) }}</td>
             <td><span class="badge" :class="badgeClassForStatus(ticket.status)">{{ recordStatusLabel(ticket.status) }}</span></td>
@@ -492,7 +504,7 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="!loading && ticketTypes.length === 0">
-            <td colspan="8" class="cell-muted" style="text-align: center">Không có dữ liệu phù hợp</td>
+            <td colspan="9" class="cell-muted" style="text-align: center">Không có dữ liệu phù hợp</td>
           </tr>
         </tbody>
       </table>

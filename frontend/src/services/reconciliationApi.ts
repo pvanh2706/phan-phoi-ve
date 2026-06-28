@@ -8,6 +8,7 @@ export interface ParkReconciliationDto {
   parkId: number
   parkCode: string
   parkName: string
+  bankAccount?: string | null
   paymentType: PaymentType
   previousBalance?: number | null
   additionalAmount?: number | null
@@ -42,9 +43,13 @@ export interface BuildReconciliationResultDto {
 export interface ReconciliationFilters {
   page?: number
   businessDate?: string
+  dateFrom?: string
+  dateTo?: string
   parkId?: number | ''
   paymentType?: PaymentType | ''
   status?: ReconciliationStatus | ''
+  hasVariance?: boolean | ''
+  keyword?: string
 }
 
 function buildQuery(filters: Record<string, string | number | undefined | null>) {
@@ -61,9 +66,13 @@ export function listReconciliations(filters: ReconciliationFilters = {}) {
   const query = buildQuery({
     page: filters.page ?? 1,
     businessDate: filters.businessDate,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
     parkId: filters.parkId,
     paymentType: filters.paymentType,
     status: filters.status,
+    hasVariance: typeof filters.hasVariance === 'boolean' ? String(filters.hasVariance) : undefined,
+    keyword: filters.keyword,
   })
   return apiRequest<PagedResult<ParkReconciliationDto>>(`/reconciliations?${query}`)
 }

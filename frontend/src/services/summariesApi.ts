@@ -21,13 +21,11 @@ export interface DailyParkBalanceSnapshotDto {
   parkName: string
   paymentType: PaymentType
   availableBalance: number
-  currentDebt?: number | null
   bankAccountSnapshot?: string | null
   sourceType: SourceType
   sourceJobRunId?: number | null
   sourceJobRunItemId?: number | null
   rawResponseId?: number | null
-  manualReason?: string | null
   createdAtUtc: string
   updatedAtUtc?: string | null
 }
@@ -51,6 +49,66 @@ export interface DailyTicketCostSummaryDto {
   updatedAtUtc?: string | null
 }
 
+export interface TicketSaleCostDetailDto {
+  id: number
+  businessDate: string
+  parkId?: number | null
+  paymentType: PaymentType
+  bookingCode: string
+  unitPrice: number
+  ticketTypeName: string
+  ticketGroupName?: string | null
+  salesAmount: number
+  costAmount: number
+  sellingAgentCode?: string | null
+  quantity: number
+  buyingAgentCode?: string | null
+  buyingAgentName?: string | null
+  parkCodeSnapshot: string
+  parkNameSnapshot: string
+  subtotal: number
+  externalLineId?: string | null
+  sellingAgentName?: string | null
+  ticketTypeCode?: string | null
+  parentBuyingAgentName?: string | null
+  parentBuyingAgentCode?: string | null
+  sourceType: SourceType
+  createdAtUtc: string
+  updatedAtUtc?: string | null
+}
+
+export interface TicketCostDetailFilters {
+  page?: number
+  dateFrom?: string
+  dateTo?: string
+  parkId?: number | ''
+  paymentType?: PaymentType | ''
+  keyword?: string
+}
+
+export interface BankTransactionDetailDto {
+  id: number
+  businessDate: string
+  transactionAtUtc: string
+  paymentType: PaymentType
+  debitAmount: number
+  creditAmount: number
+  content: string
+  bankAccount?: string | null
+  parkId?: number | null
+  sourceType: SourceType
+  createdAtUtc: string
+  updatedAtUtc?: string | null
+}
+
+export interface BankTransactionDetailFilters {
+  page?: number
+  dateFrom?: string
+  dateTo?: string
+  paymentType?: PaymentType | ''
+  keyword?: string
+}
+
 export interface DailyBankTransactionSummaryDto {
   id: number
   businessDate: string
@@ -69,16 +127,6 @@ export interface DailyBankTransactionSummaryDto {
   manualReason?: string | null
   createdAtUtc: string
   updatedAtUtc?: string | null
-}
-
-export interface ManualParkBalanceRequest {
-  businessDate: string
-  parkId: number
-  availableBalance: number
-  currentDebt?: number | null
-  bankAccountSnapshot?: string | null
-  manualReason: string
-  jobRunItemId?: number | null
 }
 
 export interface ManualTicketCostSummaryRequest {
@@ -123,13 +171,6 @@ export function listParkBalances(filters: SummaryFilters = {}) {
   return apiRequest<PagedResult<DailyParkBalanceSnapshotDto>>(`/park-balances?${query}`)
 }
 
-export function saveManualParkBalance(request: ManualParkBalanceRequest) {
-  return apiRequest<DailyParkBalanceSnapshotDto>('/park-balances/manual', {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
-}
-
 export function listTicketCostSummaries(filters: SummaryFilters = {}) {
   const query = buildQuery({
     page: filters.page ?? 1,
@@ -146,6 +187,29 @@ export function saveManualTicketCostSummary(request: ManualTicketCostSummaryRequ
     method: 'POST',
     body: JSON.stringify(request),
   })
+}
+
+export function listTicketCostDetails(filters: TicketCostDetailFilters = {}) {
+  const query = buildQuery({
+    page: filters.page ?? 1,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    parkId: filters.parkId,
+    paymentType: filters.paymentType,
+    keyword: filters.keyword,
+  })
+  return apiRequest<PagedResult<TicketSaleCostDetailDto>>(`/ticket-cost-details?${query}`)
+}
+
+export function listBankTransactionDetails(filters: BankTransactionDetailFilters = {}) {
+  const query = buildQuery({
+    page: filters.page ?? 1,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+    paymentType: filters.paymentType,
+    keyword: filters.keyword,
+  })
+  return apiRequest<PagedResult<BankTransactionDetailDto>>(`/bank-transaction-details?${query}`)
 }
 
 export function listBankTransactionSummaries(filters: BankSummaryFilters = {}) {

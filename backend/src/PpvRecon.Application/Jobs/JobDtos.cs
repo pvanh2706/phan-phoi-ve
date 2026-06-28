@@ -54,7 +54,7 @@ public sealed class JobRunItemDto
 
 public interface IJobRunner
 {
-    Task<JobRunDetailDto> RunExternalSyncPlaceholderAsync(
+    Task<JobRunDetailDto> RunExternalSyncAsync(
         ExternalApiSource source,
         DateOnly businessDate,
         JobTriggerType triggeredBy,

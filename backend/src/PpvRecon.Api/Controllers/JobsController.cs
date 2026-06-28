@@ -195,14 +195,14 @@ public sealed class JobsController(
         CancellationToken cancellationToken)
     {
         var businessDate = request.BusinessDate ?? GetVietnamToday();
-        var result = await jobRunner.RunExternalSyncPlaceholderAsync(
+        var result = await jobRunner.RunExternalSyncAsync(
             source,
             businessDate,
             JobTriggerType.Manual,
             CurrentUserId,
             cancellationToken);
 
-        return Ok(ApiResponse<JobRunDetailDto>.Ok(result, "Đã ghi nhận lần chạy job. API bên ngoài sẽ được cấu hình ở bước tích hợp sau."));
+        return Ok(ApiResponse<JobRunDetailDto>.Ok(result, "Đã chạy job đồng bộ."));
     }
 
     private IQueryable<JobRunItemDto> BuildJobRunItemsQuery()

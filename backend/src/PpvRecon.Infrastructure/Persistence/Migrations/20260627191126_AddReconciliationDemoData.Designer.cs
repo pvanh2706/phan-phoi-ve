@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PpvRecon.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using PpvRecon.Infrastructure.Persistence;
 namespace PpvRecon.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(PpvReconDbContext))]
-    partial class PpvReconDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627191126_AddReconciliationDemoData")]
+    partial class AddReconciliationDemoData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -1527,273 +1530,6 @@ namespace PpvRecon.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("PpvRecon.Domain.Entities.Summaries.BankTransactionDetail", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("BankAccount")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("BusinessDate")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("CreatedByUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("CreditAmount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("DebitAmount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("ParkId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PaymentType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("RawResponseId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("SourceJobRunId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("SourceJobRunItemId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("SourceType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("TransactionAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("UpdatedByUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BusinessDate");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("ParkId");
-
-                    b.HasIndex("PaymentType");
-
-                    b.HasIndex("RawResponseId");
-
-                    b.HasIndex("SourceJobRunId");
-
-                    b.HasIndex("SourceJobRunItemId");
-
-                    b.HasIndex("SourceType");
-
-                    b.HasIndex("UpdatedByUserId");
-
-                    b.ToTable("BankTransactionDetails", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            BusinessDate = "2025-09-17",
-                            Content = "HBK-TKThe :1SB2B24, tại NCB. ND Top up Sunworld - ezCloud 17.09.2025 -CTLNHIDO000012817233009-1/1-PMT-002",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 490000000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 17, 17, 33, 32, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 2,
-                            BusinessDate = "2026-04-28",
-                            Content = "HBK-TKThe :19139932758899, tại Techcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN CUA HOI ngay 28 04 2026 -CTLNHIDO000015124913428-1/1-PMT-002 244",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 50000000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2026, 4, 28, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 3,
-                            BusinessDate = "2026-04-28",
-                            Content = "HBK-TKThe :1029876329, tại Vietcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN NAM HOI AN ngay 28 04 2026 -CTLNHIDO000015124944210-1/1-PMT-002 245",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 50000000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2026, 4, 28, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 4,
-                            BusinessDate = "2026-04-28",
-                            Content = "HBK-TKThe :1SB2B24, tại NCB. ND Top-up SUNWORLD ezCloud ngay 28 04 2026 -CTLNHIDO000015124947382-1/1-PMT-002 246",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 490000000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2026, 4, 28, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 5,
-                            BusinessDate = "2026-04-28",
-                            Content = "HBK-TKThe :0091000593278, tại Vietcombank. ND ezCloud topup trien khai ban ve bang he thong API cho VIN PHU QUOC ngay 28 04 2026 -CTLNHIDO000015124982897-1/1-PMT-002 248",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 100000000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2026, 4, 28, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 6,
-                            BusinessDate = "2026-04-29",
-                            Content = "HBK-TKThe :700029610000, tại Shinhan Bank V. ND ezCloud thanh toan nhap lo cho THUY CUNG LOTTE ngay 29 04 2026 lan 1 -CTLNHIDO000015134693760-1/1-PMT-002 243",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 365625000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2026, 4, 29, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 7,
-                            BusinessDate = "2026-04-29",
-                            Content = "HBK-TKThe :700029610000, tại Shinhan Bank V. ND ezCloud thanh toan nhap lo cho THUY CUNG LOTTE ngay 29 04 2026 lan 2 -CTLNHIDO000015134727960-1/1-PMT-002 246",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 237375000L,
-                            PaymentType = "Prepaid",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2026, 4, 29, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 8,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :57457, tại Techcombank. ND ezCloud thanh toan cong no cho Son Tien ngay 16 09 2025 -CTLNHIDO-PMT-001",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 42495000L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 9,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :200077779999, tại Vietcombank. ND ezCloud thanh toan cong no cho Mikazuki ngay 16 09 2025 -CTLNHIDO-PMT-002",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 35953000L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 10,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :60300641396, tại Vietcombank. ND ezCloud thanh toan cong no cho Mekong ngay 16 09 2025 -CTLNHIDO-PMT-003",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 49833500L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 11,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :1027882298, tại Vietcombank. ND ezCloud thanh toan cong no cho Ho Tram ngay 16 09 2025 -CTLNHIDO-PMT-004",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 22850000L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 12,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :3336333979, tại Vietcombank. ND ezCloud thanh toan cong no cho Nova Phan Thiet ngay 16 09 2025 -CTLNHIDO-PMT-005",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 119995000L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 13,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :11004009888, tại Vietcombank. ND ezCloud thanh toan cong no cho Cong Vien Nuoc Ho Tay ngay 16 09 2025 -CTLNHIDO-PMT-006",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 32082500L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 14,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :1100030038237, tại Vietcombank. ND ezCloud thanh toan cong no cho Sealinks ngay 16 09 2025 -CTLNHIDO-PMT-007",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 8110000L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 15,
-                            BusinessDate = "2025-09-16",
-                            Content = "HBK-TKThe :sightseeing, tại Vietcombank. ND ezCloud thanh toan cong no cho Sightseeing HN ngay 16 09 2025 -CTLNHIDO-PMT-008",
-                            CreatedAtUtc = new DateTime(2026, 6, 27, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreditAmount = 0L,
-                            DebitAmount = 9996172999L,
-                            PaymentType = "Debt",
-                            SourceType = "Api",
-                            TransactionAtUtc = new DateTime(2025, 9, 16, 0, 0, 0, 0, DateTimeKind.Utc)
-                        });
-                });
-
             modelBuilder.Entity("PpvRecon.Domain.Entities.Summaries.DailyBankTransactionSummary", b =>
                 {
                     b.Property<int>("Id")
@@ -1902,6 +1638,13 @@ namespace PpvRecon.Infrastructure.Persistence.Migrations
 
                     b.Property<int?>("CreatedByUserId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<long?>("CurrentDebt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ManualReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("ParkId")
                         .HasColumnType("INTEGER");
@@ -2790,39 +2533,6 @@ namespace PpvRecon.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PpvRecon.Domain.Entities.Settings.SystemSetting", b =>
                 {
-                    b.HasOne("PpvRecon.Domain.Entities.Identity.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("PpvRecon.Domain.Entities.Summaries.BankTransactionDetail", b =>
-                {
-                    b.HasOne("PpvRecon.Domain.Entities.Identity.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PpvRecon.Domain.Entities.Parks.Park", null)
-                        .WithMany()
-                        .HasForeignKey("ParkId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PpvRecon.Domain.Entities.Jobs.ExternalApiRawResponse", null)
-                        .WithMany()
-                        .HasForeignKey("RawResponseId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PpvRecon.Domain.Entities.Jobs.JobRun", null)
-                        .WithMany()
-                        .HasForeignKey("SourceJobRunId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PpvRecon.Domain.Entities.Jobs.JobRunItem", null)
-                        .WithMany()
-                        .HasForeignKey("SourceJobRunItemId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("PpvRecon.Domain.Entities.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UpdatedByUserId")

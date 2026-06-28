@@ -19,6 +19,7 @@ import {
   resolveReconciliation,
   type ParkReconciliationDto,
 } from '../services/reconciliationApi'
+import { runParkBalances } from '../services/jobsApi'
 import {
   badgeClassForStatus,
   formatDate,
@@ -47,6 +48,20 @@ const error = ref('')
 const message = ref('')
 const rows = ref<ApiRow[]>([])
 const parkOptions = ref<ParkDto[]>([])
+const balanceTab = ref<'nap' | 'cn'>('nap')
+
+const balanceDisplayRows = computed(() => {
+  const out: { key: string; isSep: boolean; row: DailyParkBalanceSnapshotDto }[] = []
+  let lastDate: string | null = null
+  for (const row of rows.value as DailyParkBalanceSnapshotDto[]) {
+    if (row.businessDate !== lastDate) {
+      out.push({ key: `sep-${row.businessDate}`, isSep: true, row })
+      lastDate = row.businessDate
+    }
+    out.push({ key: `row-${row.id}`, isSep: false, row })
+  }
+  return out
+})
 
 const filters = reactive({
   keyword: '',
@@ -81,7 +96,7 @@ const config = computed(() => {
   if (props.pageKey === 'dailyBalances') {
     return {
       title: 'Số dư khu vui chơi hằng ngày',
-      subtitle: 'Snapshot số dư theo ngày + KVC, gồm dữ liệu API và dữ liệu kế toán nhập tay.',
+      subtitle: 'Theo dõi số dư và công nợ các khu vui chơi theo ngày',
       empty: 'Chưa có snapshot số dư phù hợp.',
     }
   }
@@ -111,7 +126,7 @@ const config = computed(() => {
 
 const isUnsupported = computed(() => !['parkList', 'dailyBalances', 'ticketCosts', 'reconciliation'].includes(props.pageKey))
 const needsDate = computed(() => ['dailyBalances', 'ticketCosts', 'reconciliation'].includes(props.pageKey))
-const needsSource = computed(() => ['dailyBalances', 'ticketCosts'].includes(props.pageKey))
+const needsSource = computed(() => props.pageKey === 'ticketCosts')
 const needsPayment = computed(() => ['parkList', 'dailyBalances', 'ticketCosts', 'reconciliation'].includes(props.pageKey))
 
 function todayIso() {
@@ -120,6 +135,19 @@ function todayIso() {
   const month = `${now.getMonth() + 1}`.padStart(2, '0')
   const day = `${now.getDate()}`.padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function formatTimeVn(value?: string | null) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleTimeString('vi-VN', { hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })
+}
+
+function selectBalanceTab(tab: 'nap' | 'cn') {
+  if (balanceTab.value === tab) return
+  balanceTab.value = tab
+  filters.paymentType = tab === 'nap' ? 'Prepaid' : 'Debt'
 }
 
 function errorText(err: unknown, fallback: string) {
@@ -225,6 +253,25 @@ async function runBuild() {
   }
 }
 
+async function runBalanceApiTest() {
+  const businessDate = filters.businessDate || todayIso()
+  filters.businessDate = businessDate
+  page.value = 1
+  loading.value = true
+  error.value = ''
+  message.value = ''
+
+  try {
+    const result = await runParkBalances({ businessDate })
+    message.value = `Đã gọi API số dư ${formatDate(result.businessDate)}: ${result.successItems}/${result.totalItems} KVC thành công, ${result.failedItems} lỗi. Dữ liệu cùng ngày đã được ghi đè.`
+    await load()
+  } catch (err) {
+    error.value = errorText(err, 'Không gọi được API số dư KVC.')
+  } finally {
+    loading.value = false
+  }
+}
+
 function openResolve(row: ParkReconciliationDto) {
   resolveModal.open = true
   resolveModal.id = row.id
@@ -254,10 +301,6 @@ function asPark(row: ApiRow) {
   return row as ParkDto
 }
 
-function asBalance(row: ApiRow) {
-  return row as DailyParkBalanceSnapshotDto
-}
-
 function asTicketCost(row: ApiRow) {
   return row as DailyTicketCostSummaryDto
 }
@@ -273,7 +316,11 @@ watch(
     totalItems.value = 0
     message.value = ''
     error.value = ''
+    balanceTab.value = 'nap'
     resetFilters()
+    if (props.pageKey === 'dailyBalances') {
+      filters.paymentType = 'Prepaid'
+    }
   },
 )
 
@@ -289,6 +336,9 @@ onMounted(async () => {
   if (needsDate.value && props.pageKey === 'reconciliation') {
     filters.businessDate = todayIso()
   }
+  if (props.pageKey === 'dailyBalances') {
+    filters.paymentType = 'Prepaid'
+  }
   await loadParkOptions().catch(() => undefined)
   await load()
 })
@@ -296,6 +346,15 @@ onMounted(async () => {
 
 <template>
   <PageHeader :title="config.title" :subtitle="config.subtitle" />
+
+  <div v-if="props.pageKey === 'dailyBalances'" class="tabs-bar">
+    <button class="tab-btn" :class="{ active: balanceTab === 'nap' }" type="button" @click="selectBalanceTab('nap')">
+      Số dư KVC nạp tiền
+    </button>
+    <button class="tab-btn" :class="{ active: balanceTab === 'cn' }" type="button" @click="selectBalanceTab('cn')">
+      Số dư KVC công nợ
+    </button>
+  </div>
 
   <div v-if="isUnsupported" class="notice notice-indigo">
     Màn này đang được giữ lại để nâng cấp sau. Backend hiện chưa có API cho nghiệp vụ này trong phạm vi Khu vui chơi v1.
@@ -311,7 +370,7 @@ onMounted(async () => {
         @keyup.enter="load"
       />
       <input v-if="needsDate" v-model="filters.businessDate" class="tb-date" type="date" @change="page = 1; load()" />
-      <select v-if="needsPayment" v-model="filters.paymentType" class="tb-select">
+      <select v-if="needsPayment && props.pageKey !== 'dailyBalances'" v-model="filters.paymentType" class="tb-select">
         <option value="">Tất cả loại thanh toán</option>
         <option value="Prepaid">Nạp trước</option>
         <option value="Debt">Công nợ</option>
@@ -341,6 +400,12 @@ onMounted(async () => {
       </select>
       <button class="btn-secondary" type="button" @click="load">Tải lại</button>
       <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
+      <button v-if="props.pageKey === 'dailyBalances'" class="add-btn" type="button" :disabled="loading" @click="runBalanceApiTest">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
+        </svg>
+        Gọi API test
+      </button>
       <button v-if="props.pageKey === 'reconciliation'" class="add-btn" type="button" @click="runBuild">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" d="M12 5v14M5 12h14" />
@@ -379,30 +444,64 @@ onMounted(async () => {
         </tbody>
       </table>
 
-      <table v-if="props.pageKey === 'dailyBalances'">
+      <table v-if="props.pageKey === 'dailyBalances' && balanceTab === 'nap'">
         <thead>
           <tr>
-            <th>Ngày</th>
-            <th>KVC</th>
-            <th>Loại</th>
+            <th>Ngày VN</th>
+            <th>Giờ VN</th>
+            <th>Loại topup</th>
+            <th>Tên KVC</th>
             <th>Số dư khả dụng</th>
-            <th>Công nợ</th>
-            <th>Tài khoản</th>
-            <th>Nguồn</th>
-            <th>Lý do nhập tay</th>
+            <th>Mã KVC</th>
+            <th>Mã Ngân hàng</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="8">Đang tải...</td></tr>
-          <tr v-for="row in rows" :key="asBalance(row).id">
-            <td>{{ formatDate(asBalance(row).businessDate) }}</td>
-            <td class="cell-strong">{{ asBalance(row).parkCode }} - {{ asBalance(row).parkName }}</td>
-            <td>{{ paymentTypeLabel(asBalance(row).paymentType) }}</td>
-            <td class="amount">{{ formatMoney(asBalance(row).availableBalance) }}</td>
-            <td class="amount">{{ formatMoney(asBalance(row).currentDebt) }}</td>
-            <td class="cell-muted">{{ asBalance(row).bankAccountSnapshot || '-' }}</td>
-            <td><span class="badge badge-blue">{{ sourceTypeLabel(asBalance(row).sourceType) }}</span></td>
-            <td class="cell-muted">{{ asBalance(row).manualReason || '-' }}</td>
+          <tr v-if="loading"><td colspan="7">Đang tải...</td></tr>
+          <tr v-for="item in balanceDisplayRows" :key="item.key" :class="{ 'date-separator': item.isSep }">
+            <td v-if="item.isSep" colspan="7">📅 {{ formatDate(item.row.businessDate) }}</td>
+            <template v-else>
+              <td>{{ formatDate(item.row.businessDate) }}</td>
+              <td class="cell-muted">{{ formatTimeVn(item.row.createdAtUtc) }}</td>
+              <td><span class="badge badge-teal">{{ paymentTypeLabel(item.row.paymentType) }}</span></td>
+              <td class="cell-strong">{{ item.row.parkName }}</td>
+              <td class="amount" :class="Number(item.row.availableBalance) < 0 ? 'amount-red' : 'amount-green'">
+                {{ formatMoney(item.row.availableBalance) }}
+              </td>
+              <td class="mono">{{ item.row.parkCode }}</td>
+              <td class="mono">{{ item.row.bankAccountSnapshot || '-' }}</td>
+            </template>
+          </tr>
+        </tbody>
+      </table>
+
+      <table v-if="props.pageKey === 'dailyBalances' && balanceTab === 'cn'">
+        <thead>
+          <tr>
+            <th>Ngày VN</th>
+            <th>Giờ VN</th>
+            <th>Loại topup</th>
+            <th>Tên KVC</th>
+            <th>Số dư khả dụng</th>
+            <th>Mã KVC</th>
+            <th>TK Ngân hàng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading"><td colspan="7">Đang tải...</td></tr>
+          <tr v-for="item in balanceDisplayRows" :key="item.key" :class="{ 'date-separator': item.isSep }">
+            <td v-if="item.isSep" colspan="7">📅 {{ formatDate(item.row.businessDate) }}</td>
+            <template v-else>
+              <td>{{ formatDate(item.row.businessDate) }}</td>
+              <td class="cell-muted">{{ formatTimeVn(item.row.createdAtUtc) }}</td>
+              <td><span class="badge badge-indigo">{{ paymentTypeLabel(item.row.paymentType) }}</span></td>
+              <td class="cell-strong">{{ item.row.parkName }}</td>
+              <td class="amount" :class="Number(item.row.availableBalance) < 0 ? 'amount-red' : 'amount-green'">
+                {{ formatMoney(item.row.availableBalance) }}
+              </td>
+              <td class="mono">{{ item.row.parkCode }}</td>
+              <td class="mono">{{ item.row.bankAccountSnapshot || '-' }}</td>
+            </template>
           </tr>
         </tbody>
       </table>
