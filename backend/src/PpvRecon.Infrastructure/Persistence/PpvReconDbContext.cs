@@ -6,6 +6,7 @@ using PpvRecon.Domain.Entities.Parks;
 using PpvRecon.Domain.Entities.Reconciliation;
 using PpvRecon.Domain.Entities.Settings;
 using PpvRecon.Domain.Entities.Summaries;
+using PpvRecon.Domain.Entities.Workflow;
 using PpvRecon.Domain.Enums;
 
 namespace PpvRecon.Infrastructure.Persistence;
@@ -34,6 +35,8 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
     public DbSet<DailyBankTransactionSummary> DailyBankTransactionSummaries => Set<DailyBankTransactionSummary>();
     public DbSet<ParkReconciliation> ParkReconciliations => Set<ParkReconciliation>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<WorkflowColumn> WorkflowColumns => Set<WorkflowColumn>();
+    public DbSet<WorkflowTask> WorkflowTasks => Set<WorkflowTask>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -69,10 +72,12 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
         ConfigureSummaries(modelBuilder);
         ConfigureReconciliation(modelBuilder);
         ConfigureAudit(modelBuilder);
+        ConfigureWorkflow(modelBuilder);
         SeedSystemSettings(modelBuilder);
         SeedTicketSaleCostDetails(modelBuilder);
         SeedReconciliationDemo(modelBuilder);
         SeedBankTransactionDetails(modelBuilder);
+        SeedWorkflowBoard(modelBuilder);
     }
 
     private static void ConfigureIdentity(ModelBuilder modelBuilder)
@@ -422,6 +427,101 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
             entity.HasIndex(x => x.Action);
             RestrictUser(entity, x => x.UserId);
         });
+    }
+
+    private static void ConfigureWorkflow(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<WorkflowColumn>(entity =>
+        {
+            entity.ToTable("WorkflowColumns");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.ColumnKey).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.HeadTone).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.CardStatusLabel).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.CardTone).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.VisibleFields).HasMaxLength(500);
+            entity.Property(x => x.PermittedUserIds).HasMaxLength(1000);
+            entity.HasIndex(x => x.ColumnKey).IsUnique();
+            entity.HasIndex(x => x.SortOrder);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
+        });
+
+        modelBuilder.Entity<WorkflowTask>(entity =>
+        {
+            entity.ToTable("WorkflowTasks");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.Title).HasMaxLength(300).IsRequired();
+            entity.Property(x => x.BankAccount).HasMaxLength(100);
+            entity.Property(x => x.BankName).HasMaxLength(200);
+            entity.Property(x => x.Note).HasMaxLength(2000);
+            entity.HasIndex(x => x.ColumnId);
+            entity.HasIndex(x => x.ParkId);
+            entity.HasIndex(x => x.PaymentType);
+            entity.HasOne<WorkflowColumn>().WithMany().HasForeignKey(x => x.ColumnId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Park>().WithMany().HasForeignKey(x => x.ParkId).OnDelete(DeleteBehavior.Restrict);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
+        });
+    }
+
+    private static void SeedWorkflowBoard(ModelBuilder modelBuilder)
+    {
+        static WorkflowColumn C(int id, string key, string title, string headTone,
+            string statusLabel, string cardTone, int order)
+            => new()
+            {
+                Id = id,
+                ColumnKey = key,
+                Title = title,
+                HeadTone = headTone,
+                CardStatusLabel = statusLabel,
+                CardTone = cardTone,
+                SortOrder = order,
+                VisibleFields = "title,desc,amount,date,tag",
+                PermittedUserIds = "",
+                CreatedAtUtc = SeedCreatedAtUtc,
+            };
+
+        modelBuilder.Entity<WorkflowColumn>().HasData(
+            C(1, "lap-phieu", "Kế toán / NVKD lập phiếu", "gray", "Lập phiếu", "gray", 1),
+            C(2, "truong-bo-phan-duyet", "Trưởng bộ phận duyệt", "sky", "Chờ duyệt", "blue", 2),
+            C(3, "kiem-tra-chuyen-khoan", "Kế toán kiểm tra & chuyển khoản", "indigo", "Chuyển khoản", "indigo", 3),
+            C(4, "hoan-thanh", "Hoàn thành", "green", "Hoàn thành", "green", 4),
+            C(5, "that-bai", "Thất bại", "red", "Thất bại", "red", 5));
+
+        static WorkflowTask T(int id, string title, ParkPaymentType pay, int? parkId, string? account,
+            string? bank, long amount, string date, string? note, int columnId, int order)
+            => new()
+            {
+                Id = id,
+                Title = title,
+                PaymentType = pay,
+                ParkId = parkId,
+                BankAccount = account,
+                BankName = bank,
+                Amount = amount,
+                ExecuteDate = DateOnly.ParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                Note = note,
+                ColumnId = columnId,
+                SortOrder = order,
+                CreatedAtUtc = SeedCreatedAtUtc,
+            };
+
+        modelBuilder.Entity<WorkflowTask>().HasData(
+            T(9001, "Nạp tiền - Vin Nha Trang", ParkPaymentType.Prepaid, null, "19139932758899", "Techcombank", 50000000, "2026-06-24", "Cần ezCloud Key tạy tiền trên hệ thống", 1, 1),
+            T(9002, "Nạp tiền - Vin Phú Quốc", ParkPaymentType.Prepaid, 9003, "0091000593278", "Vietcombank", 100000000, "2026-04-28", "Cần ezCloud Key tạy tiền trên hệ thống", 2, 1),
+            T(9003, "Nạp tiền - Vin Nam Hội An", ParkPaymentType.Prepaid, 9002, "1029876329", "Vietcombank", 50000000, "2026-04-28", "Cần ezCloud Key tạy tiền trên hệ thống", 2, 2),
+            T(9004, "Nạp tiền - Thủy Cung Lotte (Lần 1)", ParkPaymentType.Prepaid, 9004, "700029610000", "Shinhan Bank", 365625000, "2026-04-29", "Bộ phận công tác: Phân Phối Vé · Kế Toán", 3, 1),
+            T(9005, "Nạp tiền - Thủy Cung Lotte (Lần 2)", ParkPaymentType.Prepaid, 9004, "700029610000", "Shinhan Bank", 237375000, "2026-04-29", "Bộ phận công tác: Phân Phối Vé · Kế Toán", 3, 2),
+            T(9006, "Nạp tiền - Bản Mòng", ParkPaymentType.Prepaid, 9001, "1213776969", "NCB", 490000000, "2025-11-14", "Bộ phận công tác: Phân Phối Vé · Trưởng bộ", 4, 1),
+            T(9007, "Nạp tiền - Sunworld", ParkPaymentType.Prepaid, null, "1SB2B24", "NCB", 490000000, "2026-04-28", "Bộ phận công tác: Phân Phối Vé · Kế Toán", 4, 2),
+            T(9008, "Nạp tiền - Vin Cửa Hội", ParkPaymentType.Prepaid, 9005, "19139932758899", "Techcombank", 50000000, "2026-04-28", "Bộ phận công tác: Phân Phối Vé · Kế Toán", 4, 3),
+            T(9009, "Nạp tiền - Vin Vũ Yên (Lần 2)", ParkPaymentType.Prepaid, null, null, null, 50000000, "2026-06-15", "Sai số tài khoản, cần kiểm tra lại", 5, 1),
+            T(9010, "Thanh toán Công nợ - Sealinks", ParkPaymentType.Debt, 9006, "1100030038237", "Vietcombank", 8110000, "2025-09-16", "Sai thông tin tài khoản thụ hưởng", 5, 2));
     }
 
     private static void SeedSystemSettings(ModelBuilder modelBuilder)

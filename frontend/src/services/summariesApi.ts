@@ -96,9 +96,19 @@ export interface BankTransactionDetailDto {
   content: string
   bankAccount?: string | null
   parkId?: number | null
+  parkName?: string | null
   sourceType: SourceType
   createdAtUtc: string
   updatedAtUtc?: string | null
+}
+
+export interface BankStatementSyncResult {
+  mailsProcessed: number
+  transactionsParsed: number
+  imported: number
+  skippedUnmatched: number
+  overwrittenDates: number
+  unmatchedAccounts: string[]
 }
 
 export interface BankTransactionDetailFilters {
@@ -210,6 +220,12 @@ export function listBankTransactionDetails(filters: BankTransactionDetailFilters
     keyword: filters.keyword,
   })
   return apiRequest<PagedResult<BankTransactionDetailDto>>(`/bank-transaction-details?${query}`)
+}
+
+export function syncBankTransactions() {
+  return apiRequest<BankStatementSyncResult>('/bank-transaction-details/sync', {
+    method: 'POST',
+  })
 }
 
 export function listBankTransactionSummaries(filters: BankSummaryFilters = {}) {

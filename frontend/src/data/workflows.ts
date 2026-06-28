@@ -2,6 +2,8 @@ import type { ReportTabConfig, TableCell, TableColumn } from './reports'
 
 export interface KanbanTask {
   id: string
+  /** Id bản ghi trong DB (nếu card lấy từ API). */
+  dbId?: number
   title: string
   park: string
   owner: string
@@ -12,10 +14,37 @@ export interface KanbanTask {
   details: Record<string, string>
 }
 
+export type KanbanTone = 'gray' | 'sky' | 'amber' | 'indigo' | 'green' | 'red'
+
+export interface KanbanAvatar {
+  initials: string
+  name?: string
+  tone?: 'indigo' | 'teal' | 'amber' | 'rose' | 'gray'
+}
+
+export interface KanbanColumnStats {
+  done: number
+  total: number
+  overdue: number
+  avgHours?: number
+  workItems?: number
+  /** Màu cho chỉ số "NV": green ở cột Hoàn thành, red ở cột Thất bại. */
+  nvTone?: 'green' | 'red'
+}
+
 export interface KanbanColumn {
   id: string
+  /** Id cột trong DB (nếu cột lấy từ API). */
+  dbId?: number
   title: string
   icon: string
+  tone?: KanbanTone
+  avatars?: KanbanAvatar[]
+  stats?: KanbanColumnStats
+  /** Các id trường hiển thị trên card (cấu hình cột). */
+  visibleFields?: string[]
+  /** Các UserId được phép chuyển task khỏi cột. */
+  permittedUserIds?: number[]
   tasks: KanbanTask[]
 }
 
@@ -33,199 +62,54 @@ export function cloneColumns(columns: KanbanColumn[]) {
   }))
 }
 
-export const topUpWorkflow: KanbanColumn[] = [
-  {
-    id: 'lap-phieu',
-    title: 'Kế toán / NVKD lập phiếu',
-    icon: 'clipboard',
-    tasks: [
-      {
-        id: 'tu-1',
-        title: 'Nạp tiền - Vin Nha Trang',
-        park: 'Nạp tiền',
-        owner: 'Techcombank',
-        date: '24/06/2026',
-        amount: '50.000.000 ₫',
-        status: 'Lập phiếu',
-        tone: 'gray',
-        details: {
-          'Số tài khoản': '19139932758899',
-          'Ngân hàng': 'Techcombank',
-          'Ghi chú': 'Cần ezCloud Key tạy tiền trên hệ thống',
-        },
-      },
+/**
+ * Trang trí header cột (avatar người phụ trách + thống kê) theo columnKey.
+ * Đây là phần hiển thị tĩnh, được ghép vào dữ liệu cột lấy từ API.
+ */
+export const topUpColumnDecor: Record<string, { avatars: KanbanAvatar[]; stats: KanbanColumnStats }> = {
+  'lap-phieu': {
+    avatars: [
+      { initials: 'AT', name: 'Anh Thảo', tone: 'indigo' },
+      { initials: 'NH', name: 'Ngọc Hà', tone: 'teal' },
+      { initials: 'TL', name: 'Thu Lan', tone: 'gray' },
     ],
+    stats: { done: 0, total: 0, overdue: 0, avgHours: 2, workItems: 1 },
   },
-  {
-    id: 'truong-bo-phan-duyet',
-    title: 'Trưởng bộ phận duyệt',
-    icon: 'check',
-    tasks: [
-      {
-        id: 'tu-2',
-        title: 'Nạp tiền - Vin Phú Quốc',
-        park: 'Nạp tiền',
-        owner: 'Vietcombank',
-        date: '28/04/2026',
-        amount: '100.000.000 ₫',
-        status: 'Chờ duyệt',
-        tone: 'blue',
-        details: {
-          'Số tài khoản': '0091000593278',
-          'Ngân hàng': 'Vietcombank',
-          'Ghi chú': 'Cần ezCloud Key tạy tiền trên hệ thống',
-        },
-      },
-      {
-        id: 'tu-3',
-        title: 'Nạp tiền - Vin Nam Hội An',
-        park: 'Nạp tiền',
-        owner: 'Vietcombank',
-        date: '28/04/2026',
-        amount: '50.000.000 ₫',
-        status: 'Chờ duyệt',
-        tone: 'blue',
-        details: {
-          'Số tài khoản': '1029876329',
-          'Ngân hàng': 'Vietcombank',
-          'Ghi chú': 'Cần ezCloud Key tạy tiền trên hệ thống',
-        },
-      },
+  'truong-bo-phan-duyet': {
+    avatars: [
+      { initials: 'TM', name: 'Trung Minh', tone: 'amber' },
+      { initials: 'BH', name: 'Bảo Hân', tone: 'rose' },
     ],
+    stats: { done: 0, total: 0, overdue: 0, avgHours: 2, workItems: 2 },
   },
-  {
-    id: 'kiem-tra-chuyen-khoan',
-    title: 'Kế toán kiểm tra & chuyển khoản',
-    icon: 'bank',
-    tasks: [
-      {
-        id: 'tu-4',
-        title: 'Nạp tiền - Thủy Cung Lotte (Lần 1)',
-        park: 'Nạp tiền',
-        owner: 'Shinhan Bank',
-        date: '29/04/2026',
-        amount: '365.625.000 ₫',
-        status: 'Chuyển khoản',
-        tone: 'indigo',
-        details: {
-          'Số tài khoản': '700029610000',
-          'Ngân hàng': 'Shinhan Bank',
-          'Ghi chú': 'Bộ phận công tác: Phân Phối Vé · Kế Toán',
-        },
-      },
-      {
-        id: 'tu-5',
-        title: 'Nạp tiền - Thủy Cung Lotte (Lần 2)',
-        park: 'Nạp tiền',
-        owner: 'Shinhan Bank',
-        date: '29/04/2026',
-        amount: '237.375.000 ₫',
-        status: 'Chuyển khoản',
-        tone: 'indigo',
-        details: {
-          'Số tài khoản': '700029610000',
-          'Ngân hàng': 'Shinhan Bank',
-          'Ghi chú': 'Bộ phận công tác: Phân Phối Vé · Kế Toán',
-        },
-      },
+  'kiem-tra-chuyen-khoan': {
+    avatars: [
+      { initials: 'AT', name: 'Anh Thảo', tone: 'indigo' },
+      { initials: 'KT', name: 'Kế Toán', tone: 'teal' },
     ],
+    stats: { done: 987, total: 1489, overdue: 898, avgHours: 72, workItems: 2 },
   },
-  {
-    id: 'hoan-thanh',
-    title: 'Hoàn thành',
-    icon: 'target',
-    tasks: [
-      {
-        id: 'tu-6',
-        title: 'Nạp tiền - Bản Mòng',
-        park: 'Nạp tiền',
-        owner: 'NCB',
-        date: '14/11/2025',
-        amount: '490.000.000 ₫',
-        status: 'Hoàn thành',
-        tone: 'green',
-        details: {
-          'Số tài khoản': '1213776969',
-          'Ngân hàng': 'NCB',
-          'Ghi chú': 'Bộ phận công tác: Phân Phối Vé · Trưởng bộ',
-        },
-      },
-      {
-        id: 'tu-7',
-        title: 'Nạp tiền - Sunworld',
-        park: 'Nạp tiền',
-        owner: 'NCB',
-        date: '28/04/2026',
-        amount: '490.000.000 ₫',
-        status: 'Hoàn thành',
-        tone: 'green',
-        details: {
-          'Số tài khoản': '1SB2B24',
-          'Ngân hàng': 'NCB',
-          'Ghi chú': 'Bộ phận công tác: Phân Phối Vé · Kế Toán',
-        },
-      },
-      {
-        id: 'tu-8',
-        title: 'Nạp tiền - Vin Cửa Hội',
-        park: 'Nạp tiền',
-        owner: 'Techcombank',
-        date: '28/04/2026',
-        amount: '50.000.000 ₫',
-        status: 'Hoàn thành',
-        tone: 'green',
-        details: {
-          'Số tài khoản': '19139932758899',
-          'Ngân hàng': 'Techcombank',
-          'Ghi chú': 'Bộ phận công tác: Phân Phối Vé · Kế Toán',
-        },
-      },
+  'hoan-thanh': {
+    avatars: [
+      { initials: 'NH', name: 'Ngọc Hà', tone: 'teal' },
+      { initials: 'AT', name: 'Anh Thảo', tone: 'indigo' },
     ],
+    stats: { done: 6, total: 520, overdue: 0, nvTone: 'green' },
   },
-  {
-    id: 'that-bai',
-    title: 'Thất bại',
-    icon: 'alert',
-    tasks: [
-      {
-        id: 'tu-9',
-        title: 'Nạp tiền - Vin Vũ Yên (Lần 2)',
-        park: 'Nạp tiền',
-        owner: '—',
-        date: '15/06/2026',
-        amount: '50.000.000 ₫',
-        status: 'Thất bại',
-        tone: 'red',
-        details: {
-          'Số tài khoản': '—',
-          'Ngân hàng': '—',
-          'Ghi chú': 'Sai số tài khoản, cần kiểm tra lại',
-        },
-      },
-      {
-        id: 'tu-10',
-        title: 'Thanh toán Công nợ - Sealinks',
-        park: 'Công nợ',
-        owner: 'Vietcombank',
-        date: '16/09/2025',
-        amount: '8.110.000 ₫',
-        status: 'Thất bại',
-        tone: 'red',
-        details: {
-          'Số tài khoản': '1100030038237',
-          'Ngân hàng': 'Vietcombank',
-          'Ghi chú': 'Sai thông tin tài khoản thụ hưởng',
-        },
-      },
+  'that-bai': {
+    avatars: [
+      { initials: 'BH', name: 'Bảo Hân', tone: 'rose' },
     ],
+    stats: { done: 7, total: 18, overdue: 0, nvTone: 'red' },
   },
-]
+}
 
 export const refundWorkflow: KanbanColumn[] = [
   {
     id: 'new',
     title: 'Tiếp nhận',
     icon: 'inbox',
+    tone: 'gray',
     tasks: [
       {
         id: 'rw-1',
@@ -244,6 +128,7 @@ export const refundWorkflow: KanbanColumn[] = [
     id: 'check',
     title: 'Kiểm tra điều kiện',
     icon: 'search',
+    tone: 'sky',
     tasks: [
       {
         id: 'rw-2',
@@ -262,6 +147,7 @@ export const refundWorkflow: KanbanColumn[] = [
     id: 'approve',
     title: 'Duyệt hoàn',
     icon: 'check',
+    tone: 'amber',
     tasks: [
       {
         id: 'rw-3',
@@ -280,6 +166,7 @@ export const refundWorkflow: KanbanColumn[] = [
     id: 'payment',
     title: 'Chi hoàn tiền',
     icon: 'card',
+    tone: 'indigo',
     tasks: [
       {
         id: 'rw-4',
@@ -298,6 +185,7 @@ export const refundWorkflow: KanbanColumn[] = [
     id: 'complete',
     title: 'Hoàn tất',
     icon: 'target',
+    tone: 'green',
     tasks: [
       {
         id: 'rw-5',

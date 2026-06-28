@@ -7,6 +7,7 @@ using PpvRecon.Api.Auth;
 using PpvRecon.Api.Commands;
 using PpvRecon.Api.Middleware;
 using PpvRecon.Api.Services;
+using PpvRecon.Api.Services.BankStatement;
 using PpvRecon.Application.Auth;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
@@ -68,6 +69,9 @@ builder.Services.AddHttpClient<IParkBalanceApiClient, ParkBalanceApiClient>((ser
         .Value;
     client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 300));
 });
+builder.Services.Configure<BankStatementImportOptions>(builder.Configuration.GetSection("BankStatementImport"));
+builder.Services.AddScoped<IImapEmailReader, ImapEmailReader>();
+builder.Services.AddScoped<IBankStatementSyncService, BankStatementSyncService>();
 builder.Services.AddScoped<IJobRunner, JobRunner>();
 builder.Services.AddScoped<IReconciliationBuilder, ReconciliationBuilder>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));

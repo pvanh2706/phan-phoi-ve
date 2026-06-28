@@ -81,6 +81,7 @@ public sealed class BankTransactionDetailDto
     public string Content { get; set; } = string.Empty;
     public string? BankAccount { get; set; }
     public int? ParkId { get; set; }
+    public string? ParkName { get; set; }
     public SourceType SourceType { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PpvRecon.Api.Services.BankStatement;
 using PpvRecon.Application.Common;
 using PpvRecon.Application.Summaries;
 using PpvRecon.Domain.Enums;
@@ -11,7 +12,9 @@ namespace PpvRecon.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/bank-transaction-details")]
-public sealed class BankTransactionDetailsController(PpvReconDbContext dbContext) : PpvControllerBase
+public sealed class BankTransactionDetailsController(
+    PpvReconDbContext dbContext,
+    IBankStatementSyncService syncService) : PpvControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResult<BankTransactionDetailDto>>>> List(
@@ -55,6 +58,9 @@ public sealed class BankTransactionDetailsController(PpvReconDbContext dbContext
                 Content = x.Content,
                 BankAccount = x.BankAccount,
                 ParkId = x.ParkId,
+                ParkName = x.ParkId == null
+                    ? null
+                    : dbContext.Parks.Where(p => p.Id == x.ParkId).Select(p => p.Name).FirstOrDefault(),
                 SourceType = x.SourceType,
                 CreatedAtUtc = x.CreatedAtUtc,
                 UpdatedAtUtc = x.UpdatedAtUtc,
@@ -68,5 +74,32 @@ public sealed class BankTransactionDetailsController(PpvReconDbContext dbContext
             TotalItems = totalItems,
             TotalPages = (int)Math.Ceiling(totalItems / (double)PagedResult<BankTransactionDetailDto>.FixedPageSize),
         }));
+    }
+
+    /// <summary>
+    /// Lấy sao kê BIDV từ email → trích PDF → parse → map Park qua TKThe →
+    /// ghi đè theo ngày vào bảng BankTransactionDetails. (Nút "Get API")
+    /// </summary>
+    [HttpPost("sync")]
+    public async Task<ActionResult<ApiResponse<BankStatementSyncResult>>> Sync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await syncService.SyncAsync(CurrentUserId, cancellationToken);
+
+            var message = result.Imported == 0
+                ? "Không có giao dịch nào được nhập."
+                : $"Đã nhập {result.Imported} giao dịch từ {result.MailsProcessed} email.";
+            if (result.SkippedUnmatched > 0)
+                message += $" Bỏ qua {result.SkippedUnmatched} giao dịch không khớp KVC.";
+
+            return Ok(ApiResponse<BankStatementSyncResult>.Ok(result, message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<BankStatementSyncResult>.Fail(
+                $"Không lấy được sao kê từ email: {ex.Message}"));
+        }
     }
 }
