@@ -36,6 +36,8 @@ import {
 } from '../services/notificationsApi'
 import {
   badgeClassForStatus,
+  externalApiSourceLabel,
+  formatDate,
   formatDateTime,
   notificationTypeLabel,
   userRoleLabel,
@@ -45,8 +47,15 @@ import {
   type UserStatus,
 } from '../services/formatters'
 import { resetAllData, RESET_CONFIRM_PHRASE } from '../services/systemApi'
+import {
+  listExternalApiLogs,
+  getExternalApiLog,
+  type ExternalApiLogDto,
+  type ExternalApiLogDetailDto,
+  type ExternalApiLogFilters,
+} from '../services/externalApiLogsApi'
 
-type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipients' | 'reset'
+type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipients' | 'reset' | 'apilogs'
 
 const router = useRouter()
 const { mode, setMode } = useTheme()
@@ -113,6 +122,7 @@ const tabs = computed(() => {
   if (isAdmin.value) {
     base.push({ id: 'users', label: 'Quản lý người dùng', icon: '👥' })
     base.push({ id: 'recipients', label: 'Email nhận lỗi', icon: '🔔' })
+    base.push({ id: 'apilogs', label: 'Log gọi API', icon: '📡' })
     base.push({ id: 'reset', label: 'Xóa dữ liệu', icon: '🗑️' })
   }
 
@@ -401,6 +411,73 @@ async function deactivateRecipient(id: number) {
   await loadRecipients()
 }
 
+// ── Log gọi API ngoài (chỉ Admin) ──
+const apiLogs = ref<ExternalApiLogDto[]>([])
+const apiLogTotal = ref(0)
+const apiLogPage = ref(1)
+const apiLogDetail = ref<ExternalApiLogDetailDto | null>(null)
+const apiLogFilters = reactive<ExternalApiLogFilters>({
+  source: '',
+  isSuccess: '',
+  keyword: '',
+  fromDate: '',
+  toDate: '',
+})
+
+async function loadApiLogs() {
+  if (!isAdmin.value) return
+  loading.value = true
+  clearNotice()
+  try {
+    const result = await listExternalApiLogs({ ...apiLogFilters, page: apiLogPage.value })
+    apiLogs.value = result.items
+    apiLogTotal.value = result.totalItems
+  } catch (err) {
+    error.value = errorText(err, 'Không tải được log gọi API.')
+  } finally {
+    loading.value = false
+  }
+}
+
+function applyApiLogFilters() {
+  apiLogPage.value = 1
+  void loadApiLogs()
+}
+
+function resetApiLogFilters() {
+  apiLogFilters.source = ''
+  apiLogFilters.isSuccess = ''
+  apiLogFilters.keyword = ''
+  apiLogFilters.fromDate = ''
+  apiLogFilters.toDate = ''
+  apiLogPage.value = 1
+  void loadApiLogs()
+}
+
+function goApiLogPage(next: number) {
+  if (next < 1 || (next - 1) * 100 >= apiLogTotal.value) return
+  apiLogPage.value = next
+  void loadApiLogs()
+}
+
+async function openApiLogDetail(id: number) {
+  clearNotice()
+  try {
+    apiLogDetail.value = await getExternalApiLog(id)
+  } catch (err) {
+    error.value = errorText(err, 'Không tải được chi tiết log.')
+  }
+}
+
+function prettyJson(value?: string | null) {
+  if (!value) return '—'
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2)
+  } catch {
+    return value
+  }
+}
+
 // ── Xóa toàn bộ dữ liệu (chỉ Admin) ──
 const resetConfirmText = ref('')
 const resetting = ref(false)
@@ -432,10 +509,11 @@ watch(activeTab, async () => {
   if (activeTab.value === 'sessions') await loadSessions()
   if (activeTab.value === 'users') await loadUsers()
   if (activeTab.value === 'recipients') await loadRecipients()
+  if (activeTab.value === 'apilogs') await loadApiLogs()
 })
 
 watch(isAdmin, (value) => {
-  if (!value && (activeTab.value === 'users' || activeTab.value === 'recipients' || activeTab.value === 'reset')) {
+  if (!value && ['users', 'recipients', 'apilogs', 'reset'].includes(activeTab.value)) {
     activeTab.value = 'profile'
   }
 })
@@ -664,6 +742,71 @@ onMounted(async () => {
     </div>
   </section>
 
+  <section v-if="activeTab === 'apilogs' && isAdmin" class="card">
+    <div class="toolbar">
+      <input v-model="apiLogFilters.fromDate" class="tb-date" type="date" />
+      <input v-model="apiLogFilters.toDate" class="tb-date" type="date" />
+      <select v-model="apiLogFilters.source" class="tb-select">
+        <option value="">Tất cả nguồn</option>
+        <option value="ParkBalance">Số dư KVC</option>
+        <option value="TicketCost">Giá vốn vé</option>
+        <option value="BankTransaction">Giao dịch ngân hàng</option>
+      </select>
+      <select v-model="apiLogFilters.isSuccess" class="tb-select">
+        <option :value="''">Tất cả trạng thái</option>
+        <option :value="true">Thành công</option>
+        <option :value="false">Lỗi</option>
+      </select>
+      <input v-model="apiLogFilters.keyword" class="tb-input" placeholder="Tìm URL / lỗi..." @keyup.enter="applyApiLogFilters" />
+      <button class="btn-secondary" type="button" @click="applyApiLogFilters">Lọc</button>
+      <button class="btn-secondary" type="button" @click="resetApiLogFilters">Xóa lọc</button>
+    </div>
+
+    <div class="table-wrap report-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Thời điểm</th>
+            <th>Nguồn</th>
+            <th>Ngày DL</th>
+            <th>KVC</th>
+            <th>HTTP</th>
+            <th>Trạng thái</th>
+            <th class="td-num">Thời gian</th>
+            <th>Chi tiết</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading"><td colspan="8">Đang tải...</td></tr>
+          <tr v-for="log in apiLogs" :key="log.id">
+            <td class="cell-muted">{{ formatDateTime(log.receivedAtUtc) }}</td>
+            <td>{{ externalApiSourceLabel(log.source) }}</td>
+            <td>{{ log.businessDate ? formatDate(log.businessDate) : '—' }}</td>
+            <td>{{ log.parkName ?? '—' }}</td>
+            <td>{{ log.responseStatusCode ?? '—' }}</td>
+            <td>
+              <span class="badge" :class="log.isSuccess ? 'badge-green' : 'badge-red'">
+                {{ log.isSuccess ? 'Thành công' : 'Lỗi' }}
+              </span>
+            </td>
+            <td class="td-num cell-muted">{{ log.durationMs != null ? log.durationMs + ' ms' : '—' }}</td>
+            <td><button class="act-btn" type="button" @click="openApiLogDetail(log.id)">🔍 Xem</button></td>
+          </tr>
+          <tr v-if="!loading && apiLogs.length === 0">
+            <td colspan="8" class="cell-muted" style="text-align: center">Chưa có log gọi API phù hợp.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span class="pg-info">Tổng {{ apiLogTotal }} dòng</span>
+      <button class="pg-btn" type="button" :disabled="apiLogPage <= 1" @click="goApiLogPage(apiLogPage - 1)">‹</button>
+      <button class="pg-btn active" type="button">{{ apiLogPage }}</button>
+      <button class="pg-btn" type="button" :disabled="apiLogPage * 100 >= apiLogTotal" @click="goApiLogPage(apiLogPage + 1)">›</button>
+    </div>
+  </section>
+
   <section v-if="activeTab === 'reset' && isAdmin" class="card">
     <div class="notice notice-blue" style="margin-bottom: 16px">
       <strong>⚠️ Vùng nguy hiểm.</strong> Thao tác này xóa <strong>toàn bộ dữ liệu</strong>
@@ -795,6 +938,54 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+
+  <div v-if="apiLogDetail" class="modal-overlay" @click.self="apiLogDetail = null">
+    <div class="modal" style="width: 720px; max-width: 92vw">
+      <div class="modal-header">
+        <span class="modal-title">Chi tiết log gọi API #{{ apiLogDetail.id }}</span>
+        <button class="modal-close" type="button" @click="apiLogDetail = null">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="api-log-grid">
+          <div><span class="detail-label">Nguồn</span>{{ externalApiSourceLabel(apiLogDetail.source) }}</div>
+          <div><span class="detail-label">Trạng thái</span>
+            <span class="badge" :class="apiLogDetail.isSuccess ? 'badge-green' : 'badge-red'">
+              {{ apiLogDetail.isSuccess ? 'Thành công' : 'Lỗi' }}
+            </span>
+          </div>
+          <div><span class="detail-label">KVC</span>{{ apiLogDetail.parkName ?? '—' }}</div>
+          <div><span class="detail-label">Ngày dữ liệu</span>{{ apiLogDetail.businessDate ? formatDate(apiLogDetail.businessDate) : '—' }}</div>
+          <div><span class="detail-label">HTTP status</span>{{ apiLogDetail.responseStatusCode ?? '—' }}</div>
+          <div><span class="detail-label">Thời gian gọi</span>{{ apiLogDetail.durationMs != null ? apiLogDetail.durationMs + ' ms' : '—' }}</div>
+          <div><span class="detail-label">Thời điểm</span>{{ formatDateTime(apiLogDetail.receivedAtUtc) }}</div>
+          <div><span class="detail-label">Job Run</span>{{ apiLogDetail.jobRunId ?? '—' }}</div>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px">
+          <label class="form-label">Request URL</label>
+          <div class="api-log-url">{{ apiLogDetail.requestUrl ?? '—' }}</div>
+        </div>
+
+        <div v-if="apiLogDetail.errorMessage" class="form-group">
+          <label class="form-label">Lỗi</label>
+          <div class="notice notice-blue" style="margin: 0">{{ apiLogDetail.errorMessage }}</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Request payload</label>
+          <pre class="api-log-json">{{ prettyJson(apiLogDetail.requestPayloadJson) }}</pre>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0">
+          <label class="form-label">Response body</label>
+          <pre class="api-log-json">{{ prettyJson(apiLogDetail.responseBodyJson) }}</pre>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" @click="apiLogDetail = null">Đóng</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -811,5 +1002,44 @@ onMounted(async () => {
 .btn-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.api-log-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  font-size: 13px;
+}
+
+.api-log-grid .detail-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+.api-log-url {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.api-log-json {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.12);
 }
 </style>

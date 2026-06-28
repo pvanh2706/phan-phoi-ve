@@ -128,6 +128,15 @@ export function auditActionLabel(value?: string | null) {
   return value ? labels[value] ?? value : '-'
 }
 
+export function externalApiSourceLabel(value?: string | null) {
+  const labels: Record<string, string> = {
+    ParkBalance: 'Số dư KVC',
+    TicketCost: 'Giá vốn vé',
+    BankTransaction: 'Giao dịch ngân hàng',
+  }
+  return value ? labels[value] ?? value : '-'
+}
+
 export function badgeClassForStatus(value?: string | null) {
   if (!value) return 'badge-gray'
   if (['Active', 'Matched', 'Succeeded', 'ManualResolved'].includes(value)) return 'badge-green'
