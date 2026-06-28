@@ -104,6 +104,7 @@ public enum AuditAction
     UnlockUser,
     ResetPassword,
     RevokeSession,
+    ResetData,
 }
 
 public enum NotificationType

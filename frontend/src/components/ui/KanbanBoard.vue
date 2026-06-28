@@ -228,8 +228,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
       </div>
     </div>
 
-    <div v-if="openColumn" class="col-pop open" :style="popStyle" @click.stop>
-      <div class="col-pop-tabs">
+    <Teleport to="body">
+      <div v-if="openColumn" class="col-pop open" :style="popStyle" @click.stop>
+        <div class="col-pop-tabs">
         <div class="col-pop-tab" :class="{ active: colTab === 0 }" @click="colTab = 0">Trường thông tin</div>
         <div class="col-pop-tab" :class="{ active: colTab === 1 }" @click="colTab = 1">Phân quyền</div>
       </div>
@@ -260,7 +261,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
             />
           </div>
         </template>
+        </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>

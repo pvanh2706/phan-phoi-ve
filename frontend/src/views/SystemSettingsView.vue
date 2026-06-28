@@ -44,8 +44,9 @@ import {
   type UserRole,
   type UserStatus,
 } from '../services/formatters'
+import { resetAllData, RESET_CONFIRM_PHRASE } from '../services/systemApi'
 
-type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipients'
+type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipients' | 'reset'
 
 const router = useRouter()
 const { mode, setMode } = useTheme()
@@ -112,6 +113,7 @@ const tabs = computed(() => {
   if (isAdmin.value) {
     base.push({ id: 'users', label: 'Quản lý người dùng', icon: '👥' })
     base.push({ id: 'recipients', label: 'Email nhận lỗi', icon: '🔔' })
+    base.push({ id: 'reset', label: 'Xóa dữ liệu', icon: '🗑️' })
   }
 
   return base
@@ -399,6 +401,32 @@ async function deactivateRecipient(id: number) {
   await loadRecipients()
 }
 
+// ── Xóa toàn bộ dữ liệu (chỉ Admin) ──
+const resetConfirmText = ref('')
+const resetting = ref(false)
+const canReset = computed(() => resetConfirmText.value.trim() === RESET_CONFIRM_PHRASE)
+
+async function runReset() {
+  if (!canReset.value || resetting.value) return
+  if (!window.confirm(
+    'Hành động này sẽ xóa VĨNH VIỄN toàn bộ dữ liệu nghiệp vụ (chỉ giữ lại tài khoản Admin '
+    + 'và cấu hình hệ thống) và KHÔNG THỂ hoàn tác. Bạn chắc chắn muốn tiếp tục?'
+  )) return
+
+  resetting.value = true
+  clearNotice()
+  try {
+    const result = await resetAllData(resetConfirmText.value.trim())
+    resetConfirmText.value = ''
+    message.value = `Đã xóa ${result.totalDeleted.toLocaleString('vi-VN')} bản ghi, `
+      + `giữ lại ${result.keptAdminCount} tài khoản Admin và cấu hình hệ thống.`
+  } catch (err) {
+    error.value = errorText(err, 'Không xóa được dữ liệu.')
+  } finally {
+    resetting.value = false
+  }
+}
+
 watch(activeTab, async () => {
   clearNotice()
   if (activeTab.value === 'sessions') await loadSessions()
@@ -407,7 +435,7 @@ watch(activeTab, async () => {
 })
 
 watch(isAdmin, (value) => {
-  if (!value && (activeTab.value === 'users' || activeTab.value === 'recipients')) {
+  if (!value && (activeTab.value === 'users' || activeTab.value === 'recipients' || activeTab.value === 'reset')) {
     activeTab.value = 'profile'
   }
 })
@@ -636,6 +664,30 @@ onMounted(async () => {
     </div>
   </section>
 
+  <section v-if="activeTab === 'reset' && isAdmin" class="card">
+    <div class="notice notice-blue" style="margin-bottom: 16px">
+      <strong>⚠️ Vùng nguy hiểm.</strong> Thao tác này xóa <strong>toàn bộ dữ liệu</strong>
+      (khu vui chơi, loại vé, giao dịch ngân hàng, đối soát, giá vốn, công việc, nhật ký hệ thống,
+      và các tài khoản người dùng khác). Hệ thống chỉ giữ lại <strong>tài khoản Admin</strong> và
+      <strong>cấu hình hệ thống</strong>. Dữ liệu đã xóa <strong>không thể khôi phục</strong>.
+    </div>
+    <div class="form-group">
+      <label class="form-label">
+        Để xác nhận, hãy gõ chính xác: <code class="reset-phrase">{{ RESET_CONFIRM_PHRASE }}</code>
+      </label>
+      <input
+        v-model="resetConfirmText"
+        class="form-input"
+        :placeholder="RESET_CONFIRM_PHRASE"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <button class="btn-danger" type="button" :disabled="!canReset || resetting" @click="runReset">
+      {{ resetting ? 'Đang xóa...' : '🗑️ Xóa toàn bộ dữ liệu' }}
+    </button>
+  </section>
+
   <div v-if="userModal.open" class="modal-overlay" @click.self="userModal.open = false">
     <div class="modal">
       <div class="modal-header">
@@ -744,3 +796,20 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.reset-phrase {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  user-select: all;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>

@@ -123,6 +123,7 @@ export function auditActionLabel(value?: string | null) {
     UnlockUser: 'Mở khóa',
     ResetPassword: 'Đặt lại mật khẩu',
     RevokeSession: 'Đăng xuất thiết bị',
+    ResetData: 'Xóa toàn bộ dữ liệu',
   }
   return value ? labels[value] ?? value : '-'
 }
