@@ -69,6 +69,15 @@ builder.Services.AddHttpClient<IParkBalanceApiClient, ParkBalanceApiClient>((ser
         .Value;
     client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 300));
 });
+builder.Services.Configure<OneInventoryApiOptions>(builder.Configuration.GetSection("ExternalApis:OneInventory"));
+builder.Services.AddHttpClient<IOneInventoryBookingApiClient, OneInventoryBookingApiClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<OneInventoryApiOptions>>()
+        .Value;
+    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 300));
+});
+builder.Services.AddScoped<ITicketCostSyncService, TicketCostSyncService>();
 builder.Services.Configure<BankStatementImportOptions>(builder.Configuration.GetSection("BankStatementImport"));
 builder.Services.AddScoped<IImapEmailReader, ImapEmailReader>();
 builder.Services.AddScoped<IBankStatementSyncService, BankStatementSyncService>();

@@ -2,14 +2,16 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
-import { listTicketCostDetails, type TicketSaleCostDetailDto } from '../services/summariesApi'
+import { listTicketCostDetails, syncTicketCostDetails, type TicketSaleCostDetailDto } from '../services/summariesApi'
 import { formatDate, formatNumber } from '../services/formatters'
 
 const activeTab = ref<'nap' | 'cn'>('nap')
 const page = ref(1)
 const totalItems = ref(0)
 const loading = ref(false)
+const syncing = ref(false)
 const error = ref('')
+const message = ref('')
 const rows = ref<TicketSaleCostDetailDto[]>([])
 
 const filters = reactive({
@@ -50,6 +52,30 @@ async function load() {
     error.value = err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu.'
   } finally {
     loading.value = false
+  }
+}
+
+async function syncToday() {
+  syncing.value = true
+  error.value = ''
+  message.value = ''
+  try {
+    const result = await syncTicketCostDetails()
+    const date = formatDate(result.businessDate)
+    if (result.imported === 0) {
+      message.value = `Không có dữ liệu vé bán để ghi nhận cho ngày ${date}.`
+    } else {
+      message.value = `Đã ghi nhận ${result.imported} KVC (gộp từ ${result.totalLines} dòng vé) cho ngày ${date}.`
+    }
+    if (result.skippedUnmatched > 0) {
+      message.value += ` Bỏ qua ${result.skippedUnmatched} dòng thuộc KVC chưa khai báo: ${result.unmatchedParkCodes.join(', ')}.`
+    }
+    page.value = 1
+    await load()
+  } catch (err) {
+    error.value = err instanceof ApiClientError ? err.message : 'Không lấy được dữ liệu giá vốn vé bán.'
+  } finally {
+    syncing.value = false
   }
 }
 
@@ -107,8 +133,15 @@ onMounted(load)
       <input v-model="filters.dateFrom" class="tb-date" type="date" @change="applyFilter" />
       <span class="tb-label">Đến ngày</span>
       <input v-model="filters.dateTo" class="tb-date" type="date" @change="applyFilter" />
+      <button class="add-btn" type="button" :disabled="syncing || loading" @click="syncToday">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
+        </svg>
+        {{ syncing ? 'Đang lấy...' : 'Lấy dữ liệu' }}
+      </button>
     </div>
 
+    <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
     <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
     <div class="table-wrap report-table-wrap">

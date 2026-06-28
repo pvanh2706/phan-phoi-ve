@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PpvRecon.Api.Services;
 using PpvRecon.Application.Common;
 using PpvRecon.Application.Summaries;
 using PpvRecon.Domain.Enums;
@@ -11,7 +12,9 @@ namespace PpvRecon.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/ticket-cost-details")]
-public sealed class TicketSaleCostDetailsController(PpvReconDbContext dbContext) : PpvControllerBase
+public sealed class TicketSaleCostDetailsController(
+    PpvReconDbContext dbContext,
+    ITicketCostSyncService syncService) : PpvControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResult<TicketSaleCostDetailDto>>>> List(
@@ -87,5 +90,32 @@ public sealed class TicketSaleCostDetailsController(PpvReconDbContext dbContext)
             TotalItems = totalItems,
             TotalPages = (int)Math.Ceiling(totalItems / (double)PagedResult<TicketSaleCostDetailDto>.FixedPageSize),
         }));
+    }
+
+    /// <summary>
+    /// Lấy chi tiết vé bán hôm nay từ Oneinventory → gộp theo KVC (cộng tổng tiền) →
+    /// ghi đè dữ liệu nguồn API của ngày hôm nay. (Nút "Lấy dữ liệu")
+    /// </summary>
+    [HttpPost("sync")]
+    public async Task<ActionResult<ApiResponse<TicketCostSyncResult>>> Sync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await syncService.SyncTodayAsync(CurrentUserId, cancellationToken);
+
+            var message = result.Imported == 0
+                ? $"Không có dữ liệu vé bán để ghi nhận cho ngày {result.BusinessDate:dd/MM/yyyy}."
+                : $"Đã ghi nhận {result.Imported} KVC (gộp từ {result.TotalLines} dòng vé) cho ngày {result.BusinessDate:dd/MM/yyyy}.";
+            if (result.SkippedUnmatched > 0)
+                message += $" Bỏ qua {result.SkippedUnmatched} dòng thuộc KVC chưa khai báo: {string.Join(", ", result.UnmatchedParkCodes)}.";
+
+            return Ok(ApiResponse<TicketCostSyncResult>.Ok(result, message));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<TicketCostSyncResult>.Fail(
+                $"Không lấy được dữ liệu giá vốn vé bán: {ex.Message}"));
+        }
     }
 }

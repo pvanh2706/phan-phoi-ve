@@ -199,6 +199,20 @@ export function saveManualTicketCostSummary(request: ManualTicketCostSummaryRequ
   })
 }
 
+export interface TicketCostSyncResult {
+  businessDate: string
+  totalLines: number
+  imported: number
+  skippedUnmatched: number
+  unmatchedParkCodes: string[]
+}
+
+export function syncTicketCostDetails() {
+  return apiRequest<TicketCostSyncResult>('/ticket-cost-details/sync', {
+    method: 'POST',
+  })
+}
+
 export function listTicketCostDetails(filters: TicketCostDetailFilters = {}) {
   const query = buildQuery({
     page: filters.page ?? 1,
