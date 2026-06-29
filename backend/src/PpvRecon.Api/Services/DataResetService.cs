@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Application.Auditing;
+using PpvRecon.Domain.Entities.Workflow;
 using PpvRecon.Domain.Enums;
 using PpvRecon.Infrastructure.Persistence;
 
@@ -44,7 +45,9 @@ public sealed class DataResetService(
     [
         "AuditLogs",
         "WorkflowTasks",
-        "WorkflowColumns",
+        // CHÚ Ý: KHÔNG xóa "WorkflowColumns" ở đây. 5 cột là dữ liệu CẤU TRÚC của
+        // "Quy trình nạp tiền KVC", phải luôn tồn tại để chức năng hoạt động.
+        // Chúng được đưa về mặc định (factory) ở bước riêng bên dưới, không bị xóa.
         "ParkReconciliations",
         "BankTransactionDetails",
         "DailyBankTransactionSummaries",
@@ -88,6 +91,13 @@ public sealed class DataResetService(
                     await AccumulateAsync(result, connection, transaction, table, $"DELETE FROM {table}", cancellationToken);
                 }
 
+                // Cột quy trình KVC: GIỮ lại cột, chỉ đưa cấu hình về mặc định và gỡ
+                // tham chiếu tới user sắp xóa (CreatedBy/UpdatedBy là FK tới Users).
+                await ExecuteAsync(connection, transaction,
+                    $"UPDATE WorkflowColumns SET VisibleFields = '{WorkflowBoardDefaults.DefaultVisibleFields}', " +
+                    "PermittedUserIds = '', CreatedByUserId = NULL, UpdatedByUserId = NULL, UpdatedAtUtc = NULL",
+                    cancellationToken);
+
                 // Bảng gắn với user: chỉ giữ dòng thuộc về Admin còn hiệu lực.
                 foreach (var table in new[] { "UserSessions", "UserPreferences", "NotificationPreferences" })
                 {
@@ -121,6 +131,10 @@ public sealed class DataResetService(
 
         // Các entity đang được EF theo dõi giờ đã lỗi thời sau khi xóa bằng SQL thô.
         dbContext.ChangeTracker.Clear();
+
+        // Bổ sung lại bất kỳ cột quy trình nào còn thiếu (phòng khi DB đã từng bị
+        // xóa mất cột trước đây), đảm bảo bảng KVC luôn đủ 5 cột sau khi reset.
+        await WorkflowBoardSeeder.EnsureColumnsAsync(dbContext, cancellationToken);
 
         result.KeptAdminCount = await dbContext.Users
             .CountAsync(x => x.Role == UserRole.Admin && !x.IsDeleted, cancellationToken);

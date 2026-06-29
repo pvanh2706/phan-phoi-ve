@@ -15,6 +15,7 @@ using PpvRecon.Application.Jobs;
 using PpvRecon.Application.Reconciliation;
 using Serilog;
 using PpvRecon.Infrastructure;
+using PpvRecon.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -172,6 +173,14 @@ try
     {
         await AdminSeedCommand.RunAsync(app.Services);
         return;
+    }
+
+    // Đảm bảo các cột cố định của "Quy trình nạp tiền KVC" luôn tồn tại
+    // (tự phục hồi nếu DB từng bị xóa mất cột). Idempotent, an toàn mỗi lần chạy.
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<PpvReconDbContext>();
+        await WorkflowBoardSeeder.EnsureColumnsAsync(db);
     }
 
     await app.RunAsync();

@@ -88,8 +88,8 @@ public sealed class WorkflowController(PpvReconDbContext dbContext) : PpvControl
         var columnId = request.ColumnId
             ?? await dbContext.WorkflowColumns.OrderBy(x => x.SortOrder).Select(x => x.Id).FirstOrDefaultAsync(cancellationToken);
 
-        var columnExists = await dbContext.WorkflowColumns.AnyAsync(x => x.Id == columnId, cancellationToken);
-        if (!columnExists)
+        var column = await dbContext.WorkflowColumns.FirstOrDefaultAsync(x => x.Id == columnId, cancellationToken);
+        if (column is null)
         {
             return BadRequest(ApiResponse<WorkflowTaskDto>.Fail("Cột không hợp lệ."));
         }
@@ -118,6 +118,20 @@ public sealed class WorkflowController(PpvReconDbContext dbContext) : PpvControl
         };
 
         dbContext.WorkflowTasks.Add(task);
+
+        // Mặc định cho người tạo quyền chuyển task ở cột vừa tạo (admin đã được miễn trừ nên không cần thêm).
+        if (CurrentUserId is int creatorId && !User.IsInRole(nameof(UserRole.Admin)))
+        {
+            var permittedUserIds = SplitCsvInts(column.PermittedUserIds);
+            if (!permittedUserIds.Contains(creatorId))
+            {
+                permittedUserIds.Add(creatorId);
+                column.PermittedUserIds = string.Join(',', permittedUserIds);
+                column.UpdatedAtUtc = DateTime.UtcNow;
+                column.UpdatedByUserId = CurrentUserId;
+            }
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(ApiResponse<WorkflowTaskDto>.Ok(await ToDto(task, cancellationToken), "Tạo nhiệm vụ thành công."));
@@ -174,6 +188,20 @@ public sealed class WorkflowController(PpvReconDbContext dbContext) : PpvControl
 
         if (task.ColumnId != request.ColumnId)
         {
+            // Chỉ người được phân quyền ở cột nguồn (bước hiện tại) mới được chuyển task sang bước kế.
+            // Admin được miễn trừ.
+            if (!User.IsInRole(nameof(UserRole.Admin)))
+            {
+                var sourceColumn = await dbContext.WorkflowColumns.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == task.ColumnId, cancellationToken);
+                var permittedUserIds = SplitCsvInts(sourceColumn?.PermittedUserIds);
+                if (CurrentUserId is null || !permittedUserIds.Contains(CurrentUserId.Value))
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden,
+                        ApiResponse<WorkflowTaskDto>.Fail("Bạn không có quyền chuyển nhiệm vụ ở bước này."));
+                }
+            }
+
             task.ColumnId = request.ColumnId;
             task.SortOrder = await NextSortOrder(request.ColumnId, cancellationToken);
             task.UpdatedAtUtc = DateTime.UtcNow;

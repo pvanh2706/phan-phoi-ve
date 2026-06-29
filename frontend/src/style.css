@@ -2131,6 +2131,14 @@ tr.row-handled td {
   cursor: grabbing;
 }
 
+.task-card-locked {
+  cursor: default;
+}
+
+.task-card-locked:active {
+  cursor: default;
+}
+
 [data-theme='light'] .task-card {
   border-color: rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.88);

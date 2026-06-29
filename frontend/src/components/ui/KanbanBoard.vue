@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { KanbanColumn, KanbanTask } from '../../data/workflows'
+import { authState } from '../../services/authStore'
 
 interface BoardUser {
   id: number
@@ -21,7 +22,21 @@ const emit = defineEmits<{
 
 let draggingTaskId = ''
 
-function dragStart(taskId: string) {
+// Chỉ người được tích ở cột nguồn (bước hiện tại) mới được kéo task sang bước kế. Admin được miễn trừ.
+const isAdmin = computed(() => authState.user?.role === 'Admin')
+
+function canMoveFrom(column: KanbanColumn) {
+  if (isAdmin.value) return true
+  const userId = authState.user?.id
+  if (userId == null) return false
+  return (column.permittedUserIds ?? []).includes(userId)
+}
+
+function dragStart(taskId: string, column: KanbanColumn, event: DragEvent) {
+  if (!canMoveFrom(column)) {
+    event.preventDefault()
+    return
+  }
   draggingTaskId = taskId
 }
 
@@ -208,8 +223,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
               v-for="task in column.tasks"
               :key="task.id"
               class="task-card"
-              draggable="true"
-              @dragstart="dragStart(task.id)"
+              :class="{ 'task-card-locked': !canMoveFrom(column) }"
+              :draggable="canMoveFrom(column)"
+              :title="canMoveFrom(column) ? undefined : 'Bạn không có quyền chuyển nhiệm vụ ở bước này'"
+              @dragstart="dragStart(task.id, column, $event)"
               @click="emit('taskOpen', task)"
             >
               <span v-if="fieldOn(column, 'tag')" class="task-tag" :class="`task-tag-${task.tone}`">{{ task.park }}</span>
