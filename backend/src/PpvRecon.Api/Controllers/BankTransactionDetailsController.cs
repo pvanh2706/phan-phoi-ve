@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,8 @@ public sealed class BankTransactionDetailsController(
     PpvReconDbContext dbContext,
     IBankStatementSyncService syncService) : PpvControllerBase
 {
+    private static readonly JsonSerializerOptions JsonLineItemsOptions = new() { PropertyNameCaseInsensitive = true };
+
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResult<BankTransactionDetailDto>>>> List(
         [FromQuery] int page = 1,
@@ -41,31 +44,43 @@ public sealed class BankTransactionDetailsController(
         }
 
         var totalItems = await query.CountAsync(cancellationToken);
-        var items = await query
+        var rows = await query
             .OrderByDescending(x => x.BusinessDate)
             .ThenByDescending(x => x.TransactionAtUtc)
             .ThenBy(x => x.Id)
             .Skip((page - 1) * PagedResult<BankTransactionDetailDto>.FixedPageSize)
             .Take(PagedResult<BankTransactionDetailDto>.FixedPageSize)
-            .Select(x => new BankTransactionDetailDto
+            .Select(x => new
             {
-                Id = x.Id,
-                BusinessDate = x.BusinessDate,
-                TransactionAtUtc = x.TransactionAtUtc,
-                PaymentType = x.PaymentType,
-                DebitAmount = x.DebitAmount,
-                CreditAmount = x.CreditAmount,
-                Content = x.Content,
-                BankAccount = x.BankAccount,
-                ParkId = x.ParkId,
-                ParkName = x.ParkId == null
-                    ? null
-                    : dbContext.Parks.Where(p => p.Id == x.ParkId).Select(p => p.Name).FirstOrDefault(),
-                SourceType = x.SourceType,
-                CreatedAtUtc = x.CreatedAtUtc,
-                UpdatedAtUtc = x.UpdatedAtUtc,
+                Dto = new BankTransactionDetailDto
+                {
+                    Id = x.Id,
+                    BusinessDate = x.BusinessDate,
+                    TransactionAtUtc = x.TransactionAtUtc,
+                    PaymentType = x.PaymentType,
+                    DebitAmount = x.DebitAmount,
+                    CreditAmount = x.CreditAmount,
+                    Content = x.Content,
+                    BankAccount = x.BankAccount,
+                    ParkId = x.ParkId,
+                    ParkName = x.ParkId == null
+                        ? null
+                        : dbContext.Parks.Where(p => p.Id == x.ParkId).Select(p => p.Name).FirstOrDefault(),
+                    SourceType = x.SourceType,
+                    CreatedAtUtc = x.CreatedAtUtc,
+                    UpdatedAtUtc = x.UpdatedAtUtc,
+                },
+                x.LineItemsJson,
             })
             .ToListAsync(cancellationToken);
+
+        // Chi tiết từng giao dịch (khi gộp) được giải mã ngoài bộ nhớ vì EF không dịch được JSON.
+        var items = rows.Select(r =>
+        {
+            if (!string.IsNullOrEmpty(r.LineItemsJson))
+                r.Dto.LineItems = JsonSerializer.Deserialize<List<BankTransactionLineItemDto>>(r.LineItemsJson, JsonLineItemsOptions);
+            return r.Dto;
+        }).ToList();
 
         return Ok(ApiResponse<PagedResult<BankTransactionDetailDto>>.Ok(new PagedResult<BankTransactionDetailDto>
         {
@@ -78,7 +93,7 @@ public sealed class BankTransactionDetailsController(
 
     /// <summary>
     /// Lấy sao kê BIDV từ email → trích PDF → parse → map Park qua TKThe →
-    /// ghi đè theo ngày vào bảng BankTransactionDetails. (Nút "Get API")
+    /// gộp theo (KVC, ngày) → ghi đè theo ngày vào bảng BankTransactionDetails. (Nút "Get API")
     /// </summary>
     [HttpPost("sync")]
     public async Task<ActionResult<ApiResponse<BankStatementSyncResult>>> Sync(
@@ -90,7 +105,7 @@ public sealed class BankTransactionDetailsController(
 
             var message = result.Imported == 0
                 ? "Không có giao dịch nào được nhập."
-                : $"Đã nhập {result.Imported} giao dịch từ {result.MailsProcessed} email.";
+                : $"Đã nhập {result.Imported} dòng KVC (gộp từ {result.TransactionsParsed} giao dịch) từ {result.MailsProcessed} email.";
             if (result.SkippedUnmatched > 0)
                 message += $" Bỏ qua {result.SkippedUnmatched} giao dịch không khớp KVC.";
 

@@ -64,7 +64,7 @@ function moveTask(taskId: string, toColumnId: string) {
     </div>
   </aside>
 
-  <div v-if="showAdd" class="modal-overlay" @click.self="showAdd = false">
+  <div v-if="showAdd" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">{{ currentReport.addLabel?.replace('+ ', '') }}</span>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 import { ApiClientError } from '../services/apiClient'
 import { authState } from '../services/authStore'
 import {
@@ -28,11 +30,12 @@ import {
 
 type TabKey = 'parks' | 'nap' | 'cn'
 
+const toast = useToast()
+const { confirm } = useConfirm()
+
 const activeTab = ref<TabKey>('parks')
 const loading = ref(false)
 const saving = ref(false)
-const error = ref('')
-const message = ref('')
 
 const parkPage = ref(1)
 const ticketPage = ref(1)
@@ -65,7 +68,7 @@ const parkForm = reactive({
   creditLimit: '',
   apiSiteId: '',
   apiProfileId: '',
-  balanceTransformRule: '',
+  balanceTransformRule: 'None',
   apiNote: '',
   status: 'Active' as RecordStatus,
 })
@@ -136,7 +139,6 @@ async function loadTicketTypes() {
 
 async function load() {
   loading.value = true
-  error.value = ''
   try {
     if (activeTab.value === 'parks') {
       await loadParks()
@@ -144,7 +146,7 @@ async function load() {
       await loadTicketTypes()
     }
   } catch (err) {
-    error.value = errorText(err, 'Không tải được dữ liệu KVC.')
+    toast.error(errorText(err, 'Không tải được dữ liệu KVC.'))
   } finally {
     loading.value = false
   }
@@ -178,7 +180,7 @@ function openAddPark() {
     creditLimit: '',
     apiSiteId: '',
     apiProfileId: '',
-    balanceTransformRule: '',
+    balanceTransformRule: 'None',
     apiNote: '',
     status: 'Active',
   })
@@ -198,7 +200,7 @@ function openEditPark(park: ParkDto) {
     creditLimit: park.creditLimit?.toString() ?? '',
     apiSiteId: park.apiSiteId ?? '',
     apiProfileId: park.apiProfileId ?? '',
-    balanceTransformRule: park.balanceTransformRule ?? '',
+    balanceTransformRule: park.balanceTransformRule || 'None',
     apiNote: park.apiNote ?? '',
     status: park.status,
   })
@@ -208,8 +210,6 @@ function openEditPark(park: ParkDto) {
 async function savePark() {
   if (saving.value) return
   saving.value = true
-  error.value = ''
-  message.value = ''
   try {
     const payload = {
       code: parkForm.code.trim(),
@@ -229,15 +229,15 @@ async function savePark() {
 
     if (editingParkId.value) {
       await updatePark(editingParkId.value, payload)
-      message.value = 'Đã cập nhật khu vui chơi.'
+      toast.success('Đã cập nhật khu vui chơi.')
     } else {
       await createPark(payload)
-      message.value = 'Đã tạo khu vui chơi.'
+      toast.success('Đã tạo khu vui chơi.')
     }
     showParkModal.value = false
     await loadParks()
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được khu vui chơi.')
+    toast.error(errorText(err, 'Không lưu được khu vui chơi.'))
   } finally {
     saving.value = false
   }
@@ -274,8 +274,6 @@ function openEditTicket(ticket: ParkTicketTypeDto) {
 async function saveTicket() {
   if (saving.value || !ticketForm.parkId) return
   saving.value = true
-  error.value = ''
-  message.value = ''
   try {
     const payload = {
       parkId: Number(ticketForm.parkId),
@@ -289,46 +287,82 @@ async function saveTicket() {
 
     if (editingTicketId.value) {
       await updateParkTicketType(editingTicketId.value, payload)
-      message.value = 'Đã cập nhật loại vé.'
+      toast.success('Đã cập nhật loại vé.')
     } else {
       await createParkTicketType(payload)
-      message.value = 'Đã tạo loại vé.'
+      toast.success('Đã tạo loại vé.')
     }
     showTicketModal.value = false
     await loadTicketTypes()
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được loại vé.')
+    toast.error(errorText(err, 'Không lưu được loại vé.'))
   } finally {
     saving.value = false
   }
 }
 
 async function inactivePark(id: number) {
-  if (!confirm('Ngừng sử dụng khu vui chơi này?')) return
-  await setParkInactive(id)
-  message.value = 'Đã ngừng sử dụng khu vui chơi.'
-  await loadParks()
+  const ok = await confirm({
+    title: 'Ngừng sử dụng khu vui chơi',
+    message: 'Bạn có chắc muốn ngừng sử dụng khu vui chơi này?',
+    confirmText: 'Ngừng sử dụng',
+  })
+  if (!ok) return
+  try {
+    await setParkInactive(id)
+    toast.success('Đã ngừng sử dụng khu vui chơi.')
+    await loadParks()
+  } catch (err) {
+    toast.error(errorText(err, 'Không thực hiện được thao tác.'))
+  }
 }
 
 async function softDeletePark(id: number) {
-  if (!confirm('Xóa mềm khu vui chơi này?')) return
-  await deletePark(id)
-  message.value = 'Đã xóa mềm khu vui chơi.'
-  await loadParks()
+  const ok = await confirm({
+    title: 'Xóa khu vui chơi',
+    message: 'Bạn có chắc muốn xóa mềm khu vui chơi này?',
+    confirmText: 'Xóa',
+  })
+  if (!ok) return
+  try {
+    await deletePark(id)
+    toast.success('Đã xóa mềm khu vui chơi.')
+    await loadParks()
+  } catch (err) {
+    toast.error(errorText(err, 'Không xóa được khu vui chơi.'))
+  }
 }
 
 async function inactiveTicket(id: number) {
-  if (!confirm('Ngừng sử dụng loại vé này?')) return
-  await setParkTicketTypeInactive(id)
-  message.value = 'Đã ngừng sử dụng loại vé.'
-  await loadTicketTypes()
+  const ok = await confirm({
+    title: 'Ngừng sử dụng loại vé',
+    message: 'Bạn có chắc muốn ngừng sử dụng loại vé này?',
+    confirmText: 'Ngừng sử dụng',
+  })
+  if (!ok) return
+  try {
+    await setParkTicketTypeInactive(id)
+    toast.success('Đã ngừng sử dụng loại vé.')
+    await loadTicketTypes()
+  } catch (err) {
+    toast.error(errorText(err, 'Không thực hiện được thao tác.'))
+  }
 }
 
 async function softDeleteTicket(id: number) {
-  if (!confirm('Xóa mềm loại vé này?')) return
-  await deleteParkTicketType(id)
-  message.value = 'Đã xóa mềm loại vé.'
-  await loadTicketTypes()
+  const ok = await confirm({
+    title: 'Xóa loại vé',
+    message: 'Bạn có chắc muốn xóa mềm loại vé này?',
+    confirmText: 'Xóa',
+  })
+  if (!ok) return
+  try {
+    await deleteParkTicketType(id)
+    toast.success('Đã xóa mềm loại vé.')
+    await loadTicketTypes()
+  } catch (err) {
+    toast.error(errorText(err, 'Không xóa được loại vé.'))
+  }
 }
 
 function goPage(page: number) {
@@ -339,11 +373,6 @@ function goPage(page: number) {
   }
   void load()
 }
-
-watch(activeTab, () => {
-  message.value = ''
-  error.value = ''
-})
 
 onMounted(async () => {
   await load()
@@ -405,8 +434,6 @@ onMounted(async () => {
       </template>
     </div>
 
-    <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
     <div v-if="activeTab === 'parks'" class="table-wrap park-code-table-wrap">
       <table class="park-code-table">
@@ -518,7 +545,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div v-if="showParkModal" class="modal-overlay park-code-modal-overlay" @click.self="showParkModal = false">
+  <div v-if="showParkModal" class="modal-overlay park-code-modal-overlay">
     <div class="modal park-code-modal">
       <div class="modal-header">
         <span class="modal-title">{{ editingParkId ? 'Sửa khu vui chơi' : 'Thêm khu vui chơi' }}</span>
@@ -588,7 +615,10 @@ onMounted(async () => {
           </div>
           <div class="form-group">
             <label class="form-label">Quy tắc số dư</label>
-            <input v-model="parkForm.balanceTransformRule" class="form-input" placeholder="None, MultiplyMinusOne..." />
+            <select v-model="parkForm.balanceTransformRule" class="form-select">
+              <option value="None">Giữ nguyên số dư</option>
+              <option value="MultiplyMinusOne">Đảo dấu số dư (× -1)</option>
+            </select>
           </div>
         </div>
         <div class="form-group">
@@ -603,7 +633,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div v-if="showTicketModal" class="modal-overlay park-code-modal-overlay" @click.self="showTicketModal = false">
+  <div v-if="showTicketModal" class="modal-overlay park-code-modal-overlay">
     <div class="modal park-code-modal">
       <div class="modal-header">
         <span class="modal-title">{{ editingTicketId ? 'Sửa loại vé' : 'Thêm loại vé' }}</span>

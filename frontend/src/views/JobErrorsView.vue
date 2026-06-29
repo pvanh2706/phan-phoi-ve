@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
 import { ApiClientError } from '../services/apiClient'
 import { authState } from '../services/authStore'
 import {
@@ -31,10 +32,10 @@ const source = ref<ExternalApiSource | ''>('')
 const status = ref<'Failed' | 'ManualResolved' | ''>('Failed')
 const loading = ref(false)
 const actionLoading = ref(false)
-const error = ref('')
-const message = ref('')
 const items = ref<JobRunItemDto[]>([])
 const parks = ref<ParkDto[]>([])
+
+const toast = useToast()
 
 const manualModal = reactive({
   open: false,
@@ -86,7 +87,6 @@ async function loadParks() {
 
 async function load() {
   loading.value = true
-  error.value = ''
   try {
     const result = await listJobErrors({
       page: 1,
@@ -96,7 +96,7 @@ async function load() {
     })
     items.value = result.items
   } catch (err) {
-    error.value = errorText(err, 'Không tải được lỗi đồng bộ.')
+    toast.error(errorText(err, 'Không tải được lỗi đồng bộ.'))
   } finally {
     loading.value = false
   }
@@ -104,18 +104,16 @@ async function load() {
 
 async function runJob(kind: ExternalApiSource) {
   actionLoading.value = true
-  error.value = ''
-  message.value = ''
   const request = { businessDate: businessDate.value || todayIso() }
   businessDate.value = request.businessDate
   try {
     if (kind === 'ParkBalance') await runParkBalances(request)
     if (kind === 'TicketCost') await runTicketCosts(request)
     if (kind === 'BankTransaction') await runBankTransactions(request)
-    message.value = `Đã chạy job ${sourceLabel(kind)} cho ngày ${formatDate(request.businessDate)}.`
+    toast.success(`Đã chạy job ${sourceLabel(kind)} cho ngày ${formatDate(request.businessDate)}.`)
     await load()
   } catch (err) {
-    error.value = errorText(err, 'Không chạy được job.')
+    toast.error(errorText(err, 'Không chạy được job.'))
   } finally {
     actionLoading.value = false
   }
@@ -123,15 +121,13 @@ async function runJob(kind: ExternalApiSource) {
 
 async function sendEmailSummary() {
   actionLoading.value = true
-  error.value = ''
-  message.value = ''
   const request = { businessDate: businessDate.value || todayIso() }
   businessDate.value = request.businessDate
   try {
     const result = await sendSyncErrorSummary(request)
-    message.value = result.message || 'Đã chạy gửi email tổng hợp lỗi.'
+    toast.success(result.message || 'Đã chạy gửi email tổng hợp lỗi.')
   } catch (err) {
-    error.value = errorText(err, 'Không gửi được email tổng hợp lỗi.')
+    toast.error(errorText(err, 'Không gửi được email tổng hợp lỗi.'))
   } finally {
     actionLoading.value = false
   }
@@ -157,8 +153,6 @@ async function saveManual() {
   if (!manualModal.source || !manualModal.parkId) return
 
   actionLoading.value = true
-  error.value = ''
-  message.value = ''
 
   try {
     if (manualModal.source === 'TicketCost') {
@@ -186,12 +180,12 @@ async function saveManual() {
       })
     }
 
-    message.value = 'Đã lưu dữ liệu nhập tay và đánh dấu lỗi đã xử lý.'
+    toast.success('Đã lưu dữ liệu nhập tay và đánh dấu lỗi đã xử lý.')
     manualModal.open = false
     status.value = ''
     await load()
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được dữ liệu nhập tay.')
+    toast.error(errorText(err, 'Không lưu được dữ liệu nhập tay.'))
   } finally {
     actionLoading.value = false
   }
@@ -251,9 +245,6 @@ onMounted(async () => {
       </button>
     </div>
 
-    <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
-
     <div class="table-wrap report-table-wrap">
       <table>
         <thead>
@@ -303,7 +294,7 @@ onMounted(async () => {
     </div>
   </section>
 
-  <div v-if="manualModal.open" class="modal-overlay" @click.self="manualModal.open = false">
+  <div v-if="manualModal.open" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Nhập tay {{ sourceLabel(manualModal.source || null) }}</span>

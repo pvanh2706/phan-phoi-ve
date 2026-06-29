@@ -146,10 +146,12 @@ public sealed class JobRunner(
             if (apiResult.IsSuccess && apiResult.AvailableBalance is not null)
             {
                 item.Status = JobRunItemStatus.Succeeded;
+                // Áp "Quy tắc số dư" của KVC (vd MultiplyMinusOne = đảo dấu) trước khi lưu snapshot.
+                var transformedBalance = ApplyBalanceTransform(apiResult.AvailableBalance.Value, park.BalanceTransformRule);
                 await UpsertParkBalanceSnapshotAsync(
                     park,
                     businessDate,
-                    apiResult.AvailableBalance.Value,
+                    transformedBalance,
                     jobRun.Id,
                     item.Id,
                     rawResponse.Id,
@@ -190,6 +192,15 @@ public sealed class JobRunner(
 
         return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
     }
+
+    /// <summary>
+    /// Áp quy tắc biến đổi số dư của KVC (Park.BalanceTransformRule):
+    /// "MultiplyMinusOne" = nhân -1 (đảo dấu); "None"/null/khác = giữ nguyên.
+    /// </summary>
+    private static long ApplyBalanceTransform(long rawBalance, string? rule)
+        => string.Equals(rule?.Trim(), "MultiplyMinusOne", StringComparison.OrdinalIgnoreCase)
+            ? -rawBalance
+            : rawBalance;
 
     private async Task UpsertParkBalanceSnapshotAsync(
         Park park,

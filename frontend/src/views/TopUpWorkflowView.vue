@@ -2,6 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import KanbanBoard from '../components/ui/KanbanBoard.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 import { ApiClientError } from '../services/apiClient'
 import {
   listBankTransactionDetails,
@@ -26,13 +28,15 @@ import { topUpColumnDecor, type KanbanColumn, type KanbanTask, type KanbanTone }
 
 type Tab = 'quytrinh' | 'nap' | 'cn'
 
+const toast = useToast()
+const { confirm } = useConfirm()
+
 const activeTab = ref<Tab>('quytrinh')
 
 // ── Kanban (Quy trình nạp tiền KVC) ──
 const boardDto = ref<WorkflowBoardDto | null>(null)
 const columns = ref<KanbanColumn[]>([])
 const boardUsers = ref<WorkflowUserOption[]>([])
-const boardError = ref('')
 const selectedTask = ref<KanbanTask | null>(null)
 
 function mapBoard(board: WorkflowBoardDto): KanbanColumn[] {
@@ -66,14 +70,13 @@ function mapBoard(board: WorkflowBoardDto): KanbanColumn[] {
 }
 
 async function loadBoard() {
-  boardError.value = ''
   try {
     const board = await getWorkflowBoard()
     boardDto.value = board
     boardUsers.value = board.users
     columns.value = mapBoard(board)
   } catch (err) {
-    boardError.value = err instanceof ApiClientError ? err.message : 'Không tải được quy trình.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không tải được quy trình.')
   }
 }
 
@@ -87,7 +90,7 @@ async function moveTask(taskId: string, toColumnId: string) {
     await moveWorkflowTask(task.dbId, toColumn.dbId)
     await loadBoard()
   } catch (err) {
-    boardError.value = err instanceof ApiClientError ? err.message : 'Không chuyển được nhiệm vụ.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không chuyển được nhiệm vụ.')
     await loadBoard()
   }
 }
@@ -98,8 +101,9 @@ async function onSettingsChange(payload: { columnId: number; visibleFields: stri
       visibleFields: payload.visibleFields,
       permittedUserIds: payload.permittedUserIds,
     })
+    toast.success('Đã lưu cấu hình cột.')
   } catch (err) {
-    boardError.value = err instanceof ApiClientError ? err.message : 'Không lưu được cấu hình cột.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không lưu được cấu hình cột.')
   }
 }
 
@@ -169,11 +173,10 @@ function onParkChange() {
 
 async function saveTask() {
   if (!taskForm.value.title.trim()) {
-    boardError.value = 'Vui lòng nhập tên nhiệm vụ.'
+    toast.warning('Vui lòng nhập tên nhiệm vụ.')
     return
   }
   saving.value = true
-  boardError.value = ''
   try {
     const payload: SaveWorkflowTaskRequest = {
       ...taskForm.value,
@@ -182,13 +185,15 @@ async function saveTask() {
     }
     if (editingTaskId.value) {
       await updateWorkflowTask(editingTaskId.value, payload)
+      toast.success('Đã cập nhật nhiệm vụ.')
     } else {
       await createWorkflowTask(payload)
+      toast.success('Đã tạo nhiệm vụ.')
     }
     showTaskModal.value = false
     await loadBoard()
   } catch (err) {
-    boardError.value = err instanceof ApiClientError ? err.message : 'Không lưu được nhiệm vụ.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không lưu được nhiệm vụ.')
   } finally {
     saving.value = false
   }
@@ -196,27 +201,33 @@ async function saveTask() {
 
 async function removeTask(task: KanbanTask) {
   if (!task.dbId) return
-  if (!window.confirm(`Xóa nhiệm vụ "${task.title}"?`)) return
+  const ok = await confirm({
+    title: 'Xóa nhiệm vụ',
+    message: `Bạn có chắc muốn xóa nhiệm vụ "${task.title}"?`,
+    confirmText: 'Xóa',
+  })
+  if (!ok) return
   try {
     await deleteWorkflowTask(task.dbId)
     selectedTask.value = null
+    toast.success('Đã xóa nhiệm vụ.')
     await loadBoard()
   } catch (err) {
-    boardError.value = err instanceof ApiClientError ? err.message : 'Không xóa được nhiệm vụ.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không xóa được nhiệm vụ.')
   }
 }
 
 // ── Transaction tables (Nạp tiền / Công nợ) ──
 const loading = ref(false)
-const error = ref('')
 const rows = ref<BankTransactionDetailDto[]>([])
+// Dòng đang xem chi tiết các giao dịch đã gộp (popup).
+const txDetailRow = ref<BankTransactionDetailDto | null>(null)
 const totalItems = ref(0)
 const page = ref(1)
 
 const filters = ref({ keyword: '', dateFrom: '', dateTo: '' })
 
 const syncing = ref(false)
-const syncNotice = ref('')
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / 100)))
 
@@ -244,7 +255,6 @@ function formatTxTime(iso: string) {
 async function load() {
   if (activeTab.value === 'quytrinh') return
   loading.value = true
-  error.value = ''
   try {
     const result = await listBankTransactionDetails({
       page: page.value,
@@ -256,7 +266,7 @@ async function load() {
     rows.value = result.items
     totalItems.value = result.totalItems
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu giao dịch.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu giao dịch.')
   } finally {
     loading.value = false
   }
@@ -280,21 +290,19 @@ function applyFilter() {
 async function syncFromEmail() {
   if (syncing.value) return
   syncing.value = true
-  syncNotice.value = ''
-  error.value = ''
   try {
     const result = await syncBankTransactions()
-    let msg = `Đã nhập ${result.imported} giao dịch từ ${result.mailsProcessed} email`
+    let msg = `Đã nhập ${result.imported} dòng KVC (gộp từ ${result.transactionsParsed} giao dịch) từ ${result.mailsProcessed} email`
     if (result.skippedUnmatched > 0) {
       const accounts = result.unmatchedAccounts.slice(0, 5).join(', ')
       msg += `. Bỏ qua ${result.skippedUnmatched} giao dịch không khớp KVC`
       if (accounts) msg += ` (TK: ${accounts}${result.unmatchedAccounts.length > 5 ? '…' : ''})`
     }
-    syncNotice.value = msg + '.'
+    toast.success(msg + '.', { duration: 6000 })
     page.value = 1
     await load()
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không lấy được dữ liệu từ email.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không lấy được dữ liệu từ email.')
   } finally {
     syncing.value = false
   }
@@ -346,7 +354,6 @@ onMounted(() => {
     <div class="kb-toolbar">
       <button class="btn-primary" type="button" @click="openCreate">＋ Tạo nhiệm vụ</button>
     </div>
-    <div v-if="boardError" class="notice notice-blue" style="margin-bottom: 14px">{{ boardError }}</div>
     <section class="card">
       <KanbanBoard
         :columns="columns"
@@ -376,9 +383,6 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="syncNotice" class="notice notice-green" style="margin-bottom: 14px">{{ syncNotice }}</div>
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
-
     <div class="table-wrap report-table-wrap">
       <table>
         <thead>
@@ -399,7 +403,15 @@ onMounted(() => {
               <td>{{ item.row.parkName ?? '—' }}</td>
               <td class="td-num amount amount-green">{{ formatNumber(item.row.debitAmount) }}</td>
               <td class="td-num cell-muted">{{ formatNumber(item.row.creditAmount) }}</td>
-              <td class="content-cell">{{ item.row.content }}</td>
+              <td class="content-cell">
+                <button
+                  v-if="item.row.lineItems && item.row.lineItems.length"
+                  type="button"
+                  class="tx-detail-link"
+                  @click="txDetailRow = item.row"
+                >{{ item.row.content }}</button>
+                <template v-else>{{ item.row.content }}</template>
+              </td>
             </template>
           </tr>
           <tr v-if="!loading && rows.length === 0">
@@ -438,7 +450,44 @@ onMounted(() => {
     </div>
   </aside>
 
-  <div v-if="showTaskModal" class="modal-overlay" @click.self="showTaskModal = false">
+  <div v-if="txDetailRow" class="modal-overlay">
+    <div class="modal tx-detail-modal">
+      <div class="modal-header">
+        <div class="modal-title">Chi tiết giao dịch — {{ txDetailRow.parkName ?? '—' }}</div>
+        <button class="modal-close" type="button" @click="txDetailRow = null">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="notice notice-indigo" style="margin-bottom: 14px">
+          {{ formatDate(txDetailRow.businessDate) }} · Gồm {{ txDetailRow.lineItems?.length ?? 0 }} giao dịch
+        </div>
+        <div class="table-wrap report-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ngày giờ giao dịch</th>
+                <th class="td-num">Ghi nợ</th>
+                <th class="td-num">Ghi có</th>
+                <th>Nội dung</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(line, idx) in txDetailRow.lineItems ?? []" :key="idx">
+                <td class="cell-muted">{{ formatTxTime(line.transactionAtUtc) }}</td>
+                <td class="td-num amount amount-green">{{ formatNumber(line.debitAmount) }}</td>
+                <td class="td-num cell-muted">{{ formatNumber(line.creditAmount) }}</td>
+                <td class="content-cell">{{ line.content }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" type="button" @click="txDetailRow = null">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showTaskModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">{{ editingTaskId ? 'Sửa nhiệm vụ' : 'Tạo nhiệm vụ mới' }}</div>

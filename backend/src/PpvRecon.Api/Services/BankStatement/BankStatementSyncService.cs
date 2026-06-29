@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using PpvRecon.Application.Summaries;
 using PpvRecon.Domain.Entities.Parks;
 using PpvRecon.Domain.Entities.Summaries;
 using PpvRecon.Domain.Enums;
@@ -28,6 +30,7 @@ public interface IBankStatementSyncService
 
 /// <summary>
 /// Lấy sao kê BIDV từ email → trích PDF → parse → map Park qua TKThe →
+/// gộp theo (KVC, ngày) thành 1 dòng tổng (cộng dồn Ghi nợ/Ghi có) →
 /// ghi đè theo ngày vào bảng BankTransactionDetails.
 /// </summary>
 public sealed class BankStatementSyncService(
@@ -109,7 +112,7 @@ public sealed class BankStatementSyncService(
                 BusinessDate = businessDate.Value,
                 TransactionAtUtc = ParseDateTime(t.NgayGD) ?? businessDate.Value.ToDateTime(TimeOnly.MinValue),
                 PaymentType = park.PaymentType,
-                DebitAmount = ToLong(t.SoDu),         // theo yêu cầu: cột "Ghi nợ" hiển thị Số dư
+                DebitAmount = ToLong(t.PhatSinhNo),         // theo yêu cầu: cột "Ghi nợ" hiển thị Số dư
                 CreditAmount = ToLong(t.PhatSinhCo),
                 Content = t.DienGiai,
                 BankAccount = tkThe,
@@ -123,8 +126,43 @@ public sealed class BankStatementSyncService(
         result.UnmatchedAccounts = unmatched.ToList();
         if (matched.Count == 0) return result;
 
-        // 3) Ghi đè theo ngày: với mỗi ngày có dữ liệu mới, xóa GD nguồn API của ngày đó rồi nạp lại.
-        var datesToOverwrite = matched.Select(m => m.BusinessDate).Distinct().ToList();
+        // 3) Gộp theo (KVC, ngày): mỗi KVC + mỗi ngày = 1 dòng tổng (cộng dồn Ghi nợ/Ghi có).
+        var aggregated = matched
+            .GroupBy(m => new { m.ParkId, m.BusinessDate })
+            .Select(g =>
+            {
+                var lines = g.OrderBy(x => x.TransactionAtUtc).ToList();
+                var first = lines[0];
+                var isSingle = lines.Count == 1;
+                return new BankTransactionDetail
+                {
+                    BusinessDate = g.Key.BusinessDate,
+                    TransactionAtUtc = lines.Max(x => x.TransactionAtUtc),  // hiển thị giờ giao dịch mới nhất trong ngày
+                    PaymentType = first.PaymentType,
+                    DebitAmount = lines.Sum(x => x.DebitAmount),
+                    CreditAmount = lines.Sum(x => x.CreditAmount),
+                    // 1 GD: giữ nội dung gốc. ≥2 GD: "Gồm N giao dịch" + lưu chi tiết để xem khi bấm vào.
+                    Content = isSingle ? first.Content : $"Gồm {lines.Count} giao dịch",
+                    LineItemsJson = isSingle
+                        ? null
+                        : JsonSerializer.Serialize(lines.Select(x => new BankTransactionLineItemDto
+                        {
+                            TransactionAtUtc = x.TransactionAtUtc,
+                            Content = x.Content,
+                            DebitAmount = x.DebitAmount,
+                            CreditAmount = x.CreditAmount,
+                        })),
+                    BankAccount = first.BankAccount,
+                    ParkId = g.Key.ParkId,
+                    SourceType = SourceType.Api,
+                    CreatedAtUtc = nowUtc,
+                    CreatedByUserId = currentUserId,
+                };
+            })
+            .ToList();
+
+        // 4) Ghi đè theo ngày: với mỗi ngày có dữ liệu mới, xóa GD nguồn API của ngày đó rồi nạp lại.
+        var datesToOverwrite = aggregated.Select(m => m.BusinessDate).Distinct().ToList();
         result.OverwrittenDates = datesToOverwrite.Count;
 
         var existing = await dbContext.BankTransactionDetails
@@ -132,10 +170,10 @@ public sealed class BankStatementSyncService(
             .ToListAsync(cancellationToken);
         dbContext.BankTransactionDetails.RemoveRange(existing);
 
-        await dbContext.BankTransactionDetails.AddRangeAsync(matched, cancellationToken);
+        await dbContext.BankTransactionDetails.AddRangeAsync(aggregated, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        result.Imported = matched.Count;
+        result.Imported = aggregated.Count;
         return result;
     }
 

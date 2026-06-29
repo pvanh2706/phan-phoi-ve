@@ -85,6 +85,18 @@ public sealed class BankTransactionDetailDto
     public SourceType SourceType { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
+
+    /// <summary>Chi tiết từng giao dịch khi dòng này gộp ≥2 GD; null nếu chỉ có 1 GD.</summary>
+    public List<BankTransactionLineItemDto>? LineItems { get; set; }
+}
+
+/// <summary>Một giao dịch thành phần trong dòng tổng hợp theo (KVC, ngày).</summary>
+public sealed class BankTransactionLineItemDto
+{
+    public DateTime TransactionAtUtc { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public long DebitAmount { get; set; }
+    public long CreditAmount { get; set; }
 }
 
 public sealed class DailyBankTransactionSummaryDto

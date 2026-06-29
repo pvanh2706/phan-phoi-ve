@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
 import { ApiClientError } from '../services/apiClient'
 import { listTicketCostDetails, syncTicketCostDetails, type TicketSaleCostDetailDto } from '../services/summariesApi'
 import { formatDate, formatNumber } from '../services/formatters'
@@ -10,9 +11,9 @@ const page = ref(1)
 const totalItems = ref(0)
 const loading = ref(false)
 const syncing = ref(false)
-const error = ref('')
-const message = ref('')
 const rows = ref<TicketSaleCostDetailDto[]>([])
+
+const toast = useToast()
 
 const filters = reactive({
   keyword: '',
@@ -37,7 +38,6 @@ const displayRows = computed(() => {
 
 async function load() {
   loading.value = true
-  error.value = ''
   try {
     const result = await listTicketCostDetails({
       page: page.value,
@@ -49,7 +49,7 @@ async function load() {
     rows.value = result.items
     totalItems.value = result.totalItems
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu.')
   } finally {
     loading.value = false
   }
@@ -57,23 +57,25 @@ async function load() {
 
 async function syncToday() {
   syncing.value = true
-  error.value = ''
-  message.value = ''
   try {
     const result = await syncTicketCostDetails()
     const date = formatDate(result.businessDate)
-    if (result.imported === 0) {
-      message.value = `Không có dữ liệu vé bán để ghi nhận cho ngày ${date}.`
-    } else {
-      message.value = `Đã ghi nhận ${result.imported} KVC (gộp từ ${result.totalLines} dòng vé) cho ngày ${date}.`
-    }
+    let suffix = ''
     if (result.skippedUnmatched > 0) {
-      message.value += ` Bỏ qua ${result.skippedUnmatched} dòng thuộc KVC chưa khai báo: ${result.unmatchedParkCodes.join(', ')}.`
+      suffix = ` Bỏ qua ${result.skippedUnmatched} dòng thuộc KVC chưa khai báo: ${result.unmatchedParkCodes.join(', ')}.`
+    }
+    if (result.imported === 0) {
+      toast.info(`Không có dữ liệu vé bán để ghi nhận cho ngày ${date}.${suffix}`, { duration: 6000 })
+    } else {
+      toast.success(
+        `Đã ghi nhận ${result.imported} KVC (gộp từ ${result.totalLines} dòng vé) cho ngày ${date}.${suffix}`,
+        { duration: 6000 },
+      )
     }
     page.value = 1
     await load()
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không lấy được dữ liệu giá vốn vé bán.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không lấy được dữ liệu giá vốn vé bán.')
   } finally {
     syncing.value = false
   }
@@ -140,9 +142,6 @@ onMounted(load)
         {{ syncing ? 'Đang lấy...' : 'Lấy dữ liệu' }}
       </button>
     </div>
-
-    <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
     <div class="table-wrap report-table-wrap">
       <table>

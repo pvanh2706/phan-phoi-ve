@@ -157,12 +157,14 @@ function closeSettings() {
   openColId.value = null
 }
 
-function onDocumentClick() {
-  if (openColId.value) closeSettings()
+// Popup chỉ đóng khi nhấn lại nút ⚙ hoặc phím Esc — không tự đóng khi click ra ngoài,
+// tránh việc lỡ tay click cạnh popup làm mất cấu hình đang thao tác.
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && openColId.value) closeSettings()
 }
 
-onMounted(() => document.addEventListener('click', onDocumentClick))
-onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
+onMounted(() => document.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>

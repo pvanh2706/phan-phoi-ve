@@ -1705,6 +1705,172 @@ tr.row-handled td {
   color: #15803d;
 }
 
+/* ── Toast notifications (góc trên phải) ───────────────────────── */
+.toast-host {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #1a1f3a, #12172e);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+[data-theme='light'] .toast {
+  border-color: rgba(0, 0, 0, 0.10);
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.toast-success { border-left: 3px solid var(--green); }
+.toast-error { border-left: 3px solid var(--red); }
+.toast-warning { border-left: 3px solid var(--amber); }
+.toast-info { border-left: 3px solid var(--primary); }
+
+.toast-icon {
+  flex: 0 0 auto;
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.toast-success .toast-icon { background: var(--green); }
+.toast-error .toast-icon { background: var(--red); }
+.toast-warning .toast-icon { background: var(--amber); }
+.toast-info .toast-icon { background: var(--primary); }
+
+.toast-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.toast-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.toast-text {
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.toast-close {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px;
+}
+
+.toast-close:hover { color: var(--text-primary); }
+
+.toast-enter-active,
+.toast-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.toast-enter-from,
+.toast-leave-to { opacity: 0; transform: translateX(24px); }
+.toast-leave-active { position: absolute; right: 0; width: 100%; }
+.toast-move { transition: transform 0.25s ease; }
+
+/* ── Hộp thoại xác nhận ────────────────────────────────────────── */
+.confirm-modal {
+  width: 420px;
+}
+
+.confirm-main {
+  display: flex;
+  gap: 14px;
+  padding: 24px 24px 8px;
+}
+
+.confirm-icon {
+  flex: 0 0 auto;
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.confirm-icon-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+.confirm-icon-primary {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
+.confirm-texts { min-width: 0; }
+
+.confirm-title {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.confirm-message {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.confirm-enter-active,
+.confirm-leave-active { transition: opacity 0.2s ease; }
+.confirm-enter-from,
+.confirm-leave-to { opacity: 0; }
+
+/* ── Ô "Gồm N giao dịch" bấm được + popup chi tiết ─────────────── */
+.tx-detail-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--primary-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.tx-detail-link:hover {
+  color: var(--primary);
+  text-decoration-style: solid;
+}
+
+.tx-detail-modal { width: 720px; }
+
 .kanban-wrap {
   overflow-x: auto;
   padding-bottom: 8px;

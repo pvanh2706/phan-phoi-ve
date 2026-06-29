@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
 import { ApiClientError } from '../services/apiClient'
 import { listParkAuditLogs, type AuditLogDto } from '../services/auditApi'
 import { auditActionLabel, formatDateTime } from '../services/formatters'
 
 const loading = ref(false)
-const error = ref('')
 const items = ref<AuditLogDto[]>([])
+const toast = useToast()
 const totalItems = ref(0)
 const page = ref(1)
 
@@ -34,7 +35,6 @@ function compactJson(value?: string | null) {
 
 async function load() {
   loading.value = true
-  error.value = ''
   try {
     const result = await listParkAuditLogs({
       page: page.value,
@@ -47,7 +47,7 @@ async function load() {
     items.value = result.items
     totalItems.value = result.totalItems
   } catch (err) {
-    error.value = errorText(err, 'Không tải được nhật ký.')
+    toast.error(errorText(err, 'Không tải được nhật ký.'))
   } finally {
     loading.value = false
   }
@@ -102,8 +102,6 @@ onMounted(load)
       <button class="btn-secondary" type="button" @click="load">Lọc</button>
       <button class="btn-secondary" type="button" @click="resetFilters">Xóa lọc</button>
     </div>
-
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
     <div class="table-wrap">
       <table>

@@ -4,8 +4,9 @@ using PpvRecon.Domain.Enums;
 namespace PpvRecon.Domain.Entities.Summaries;
 
 /// <summary>
-/// Chi tiết giao dịch ngân hàng theo từng dòng (line-level), phục vụ màn "Danh sách nạp tiền KVC theo ngày".
-/// Mỗi dòng là một giao dịch nạp tiền (Prepaid) hoặc thanh toán công nợ (Debt) lấy từ sao kê ngân hàng.
+/// Giao dịch ngân hàng đã gộp theo (KVC, ngày), phục vụ màn "Danh sách nạp tiền KVC theo ngày".
+/// Mỗi dòng là tổng hợp các giao dịch nạp tiền (Prepaid) hoặc thanh toán công nợ (Debt) trong ngày
+/// của một KVC, lấy từ sao kê ngân hàng (Ghi nợ/Ghi có là tổng cộng dồn).
 /// </summary>
 public sealed class BankTransactionDetail : IAuditableEntity
 {
@@ -25,8 +26,14 @@ public sealed class BankTransactionDetail : IAuditableEntity
     /// <summary>Ghi có.</summary>
     public long CreditAmount { get; set; }
 
-    /// <summary>Nội dung giao dịch (memo từ sao kê).</summary>
+    /// <summary>Nội dung giao dịch (memo từ sao kê). Khi gộp ≥2 GD thì là "Gồm N giao dịch".</summary>
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>
+    /// JSON chi tiết từng giao dịch đã gộp (giờ/nội dung/ghi nợ/ghi có), để xem khi bấm vào.
+    /// Null khi dòng chỉ có 1 giao dịch (lúc đó <see cref="Content"/> đã là nội dung gốc).
+    /// </summary>
+    public string? LineItemsJson { get; set; }
 
     public string? BankAccount { get; set; }
     public int? ParkId { get; set; }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
 import { ApiClientError } from '../services/apiClient'
 import {
   buildReconciliation,
@@ -15,9 +16,9 @@ const activeTab = ref<'nap' | 'cn'>('nap')
 const page = ref(1)
 const totalItems = ref(0)
 const loading = ref(false)
-const error = ref('')
-const message = ref('')
 const rows = ref<ParkReconciliationDto[]>([])
+
+const toast = useToast()
 
 const filters = reactive({
   keyword: '',
@@ -44,7 +45,6 @@ function todayIso() {
 
 async function load() {
   loading.value = true
-  error.value = ''
   try {
     const result = await listReconciliations({
       page: page.value,
@@ -57,7 +57,7 @@ async function load() {
     rows.value = result.items
     totalItems.value = result.totalItems
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu.')
   } finally {
     loading.value = false
   }
@@ -116,16 +116,14 @@ function onCbClick(row: ParkReconciliationDto) {
 
 async function saveResolve() {
   loading.value = true
-  error.value = ''
-  message.value = ''
   try {
     const amount = Number(resolveModal.adjustmentAmount.trim().replace(/[,. ]/g, '')) || 0
     await resolveReconciliation(resolveModal.id, amount, resolveModal.adjustmentNote)
-    message.value = 'Đã đánh dấu xử lý dòng đối soát.'
+    toast.success('Đã đánh dấu xử lý dòng đối soát.')
     resolveModal.open = false
     await load()
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không xử lý được dòng đối soát.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không xử lý được dòng đối soát.')
   } finally {
     loading.value = false
   }
@@ -134,14 +132,15 @@ async function saveResolve() {
 async function runBuild() {
   const businessDate = filters.dateTo || filters.dateFrom || todayIso()
   loading.value = true
-  error.value = ''
-  message.value = ''
   try {
     const result = await buildReconciliation(businessDate)
-    message.value = `Đã build đối soát ${formatDate(result.businessDate)}: ${result.totalItems} KVC, ${result.varianceCount} lệch, ${result.missingDataCount} thiếu dữ liệu.`
+    toast.success(
+      `Đã build đối soát ${formatDate(result.businessDate)}: ${result.totalItems} KVC, ${result.varianceCount} lệch, ${result.missingDataCount} thiếu dữ liệu.`,
+      { duration: 6000 },
+    )
     await load()
   } catch (err) {
-    error.value = err instanceof ApiClientError ? err.message : 'Không build được đối soát.'
+    toast.error(err instanceof ApiClientError ? err.message : 'Không build được đối soát.')
   } finally {
     loading.value = false
   }
@@ -187,9 +186,6 @@ onMounted(load)
         Build đối soát
       </button>
     </div>
-
-    <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
     <div class="table-wrap report-table-wrap">
       <table>
@@ -255,7 +251,7 @@ onMounted(load)
     </div>
   </section>
 
-  <div v-if="resolveModal.open" class="modal-overlay" @click.self="resolveModal.open = false">
+  <div v-if="resolveModal.open" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Xử lý lệch đối soát</span>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import { useToast } from '../composables/useToast'
 import { ApiClientError, type PagedResult } from '../services/apiClient'
 import { authState } from '../services/authStore'
 import {
@@ -44,9 +45,8 @@ type ApiRow = ParkDto | DailyParkBalanceSnapshotDto | DailyTicketCostSummaryDto 
 const page = ref(1)
 const totalItems = ref(0)
 const loading = ref(false)
-const error = ref('')
-const message = ref('')
 const rows = ref<ApiRow[]>([])
+const toast = useToast()
 const parkOptions = ref<ParkDto[]>([])
 const balanceTab = ref<'nap' | 'cn'>('nap')
 
@@ -167,7 +167,6 @@ async function loadParkOptions() {
 async function load() {
   if (isUnsupported.value) return
   loading.value = true
-  error.value = ''
 
   try {
     if (props.pageKey === 'parkList') {
@@ -213,7 +212,7 @@ async function load() {
       setPagedResult(result)
     }
   } catch (err) {
-    error.value = errorText(err, 'Không tải được dữ liệu.')
+    toast.error(errorText(err, 'Không tải được dữ liệu.'))
   } finally {
     loading.value = false
   }
@@ -240,14 +239,15 @@ async function runBuild() {
   const businessDate = filters.businessDate || todayIso()
   filters.businessDate = businessDate
   loading.value = true
-  error.value = ''
-  message.value = ''
   try {
     const result = await buildReconciliation(businessDate)
-    message.value = `Đã build đối soát ${formatDate(result.businessDate)}: ${result.totalItems} KVC, ${result.varianceCount} lệch, ${result.missingDataCount} thiếu dữ liệu.`
+    toast.success(
+      `Đã build đối soát ${formatDate(result.businessDate)}: ${result.totalItems} KVC, ${result.varianceCount} lệch, ${result.missingDataCount} thiếu dữ liệu.`,
+      { duration: 6000 },
+    )
     await load()
   } catch (err) {
-    error.value = errorText(err, 'Không build được đối soát.')
+    toast.error(errorText(err, 'Không build được đối soát.'))
   } finally {
     loading.value = false
   }
@@ -258,15 +258,16 @@ async function runBalanceApiTest() {
   filters.businessDate = businessDate
   page.value = 1
   loading.value = true
-  error.value = ''
-  message.value = ''
 
   try {
     const result = await runParkBalances({ businessDate })
-    message.value = `Đã gọi API số dư ${formatDate(result.businessDate)}: ${result.successItems}/${result.totalItems} KVC thành công, ${result.failedItems} lỗi. Dữ liệu cùng ngày đã được ghi đè.`
+    toast.success(
+      `Đã gọi API số dư ${formatDate(result.businessDate)}: ${result.successItems}/${result.totalItems} KVC thành công, ${result.failedItems} lỗi. Dữ liệu cùng ngày đã được ghi đè.`,
+      { duration: 6000 },
+    )
     await load()
   } catch (err) {
-    error.value = errorText(err, 'Không gọi được API số dư KVC.')
+    toast.error(errorText(err, 'Không gọi được API số dư KVC.'))
   } finally {
     loading.value = false
   }
@@ -282,16 +283,14 @@ function openResolve(row: ParkReconciliationDto) {
 
 async function saveResolve() {
   loading.value = true
-  error.value = ''
-  message.value = ''
   try {
     const amount = Number(resolveModal.adjustmentAmount.trim().replace(/[,. ]/g, '')) || 0
     await resolveReconciliation(resolveModal.id, amount, resolveModal.adjustmentNote)
-    message.value = 'Đã xử lý dòng đối soát.'
+    toast.success('Đã xử lý dòng đối soát.')
     resolveModal.open = false
     await load()
   } catch (err) {
-    error.value = errorText(err, 'Không xử lý được dòng đối soát.')
+    toast.error(errorText(err, 'Không xử lý được dòng đối soát.'))
   } finally {
     loading.value = false
   }
@@ -314,8 +313,6 @@ watch(
   () => {
     rows.value = []
     totalItems.value = 0
-    message.value = ''
-    error.value = ''
     balanceTab.value = 'nap'
     resetFilters()
     if (props.pageKey === 'dailyBalances') {
@@ -413,9 +410,6 @@ onMounted(async () => {
         Build đối soát
       </button>
     </div>
-
-    <div v-if="message" class="notice notice-indigo" style="margin-bottom: 14px">{{ message }}</div>
-    <div v-if="error" class="notice notice-blue" style="margin-bottom: 14px">{{ error }}</div>
 
     <div class="table-wrap report-table-wrap">
       <table v-if="props.pageKey === 'parkList'">
@@ -602,7 +596,7 @@ onMounted(async () => {
     </div>
   </section>
 
-  <div v-if="resolveModal.open" class="modal-overlay" @click.self="resolveModal.open = false">
+  <div v-if="resolveModal.open" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Xử lý lệch đối soát</span>

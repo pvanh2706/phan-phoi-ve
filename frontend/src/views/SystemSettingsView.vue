@@ -5,6 +5,8 @@ import PageHeader from '../components/ui/PageHeader.vue'
 import { ApiClientError } from '../services/apiClient'
 import { authState, logout, setCurrentUser } from '../services/authStore'
 import { useTheme, type ThemeMode } from '../composables/useTheme'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 import {
   changePassword,
   getPreferences,
@@ -60,10 +62,10 @@ type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipie
 
 const router = useRouter()
 const { mode, setMode } = useTheme()
+const toast = useToast()
+const { confirm } = useConfirm()
 const activeTab = ref<TabKey>('profile')
 const loading = ref(false)
-const error = ref('')
-const message = ref('')
 const avatarInput = ref<HTMLInputElement | null>(null)
 
 const profile = reactive({
@@ -140,11 +142,6 @@ function errorText(err: unknown, fallback: string) {
   return err instanceof ApiClientError ? err.message : fallback
 }
 
-function clearNotice() {
-  error.value = ''
-  message.value = ''
-}
-
 function initials(name: string) {
   return (name || 'U')
     .split(/\s+/)
@@ -175,7 +172,6 @@ async function loadProfile() {
 
 async function saveProfile() {
   loading.value = true
-  clearNotice()
   try {
     const data = await updateProfile({
       fullName: profile.fullName,
@@ -188,9 +184,9 @@ async function saveProfile() {
         phoneNumber: data.phoneNumber,
       })
     }
-    message.value = 'Đã cập nhật thông tin tài khoản.'
+    toast.success('Đã cập nhật thông tin tài khoản.')
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được thông tin tài khoản.')
+    toast.error(errorText(err, 'Không lưu được thông tin tài khoản.'))
   } finally {
     loading.value = false
   }
@@ -200,15 +196,14 @@ async function handleAvatarChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
   loading.value = true
-  clearNotice()
   try {
     const result = await uploadAvatar(file)
     if (authState.user) {
       setCurrentUser({ ...authState.user, avatarPath: result.avatarPath })
     }
-    message.value = 'Đã cập nhật avatar.'
+    toast.success('Đã cập nhật avatar.')
   } catch (err) {
-    error.value = errorText(err, 'Không upload được avatar.')
+    toast.error(errorText(err, 'Không upload được avatar.'))
   } finally {
     loading.value = false
   }
@@ -221,19 +216,17 @@ async function loadPreferences() {
 
 async function saveTheme(value: ThemeMode) {
   setMode(value)
-  clearNotice()
   try {
     await updatePreferences({ themeMode: uiThemeToApi(value), language: 'vi-VN' })
-    message.value = 'Đã lưu giao diện.'
+    toast.success('Đã lưu giao diện.')
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được giao diện.')
+    toast.error(errorText(err, 'Không lưu được giao diện.'))
   }
 }
 
 async function savePassword() {
-  clearNotice()
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    error.value = 'Mật khẩu mới nhập lại không khớp.'
+    toast.warning('Mật khẩu mới nhập lại không khớp.')
     return
   }
 
@@ -246,9 +239,9 @@ async function savePassword() {
     passwordForm.currentPassword = ''
     passwordForm.newPassword = ''
     passwordForm.confirmPassword = ''
-    message.value = 'Đã đổi mật khẩu.'
+    toast.success('Đã đổi mật khẩu.')
   } catch (err) {
-    error.value = errorText(err, 'Không đổi được mật khẩu.')
+    toast.error(errorText(err, 'Không đổi được mật khẩu.'))
   } finally {
     loading.value = false
   }
@@ -259,14 +252,18 @@ async function loadSessions() {
 }
 
 async function revokeDevice(session: UserSessionDto) {
-  await revokeSession(session.id)
-  if (session.isCurrent) {
-    await logout()
-    await router.replace('/login')
-    return
+  try {
+    await revokeSession(session.id)
+    if (session.isCurrent) {
+      await logout()
+      await router.replace('/login')
+      return
+    }
+    await loadSessions()
+    toast.success('Đã đăng xuất thiết bị.')
+  } catch (err) {
+    toast.error(errorText(err, 'Không đăng xuất được thiết bị.'))
   }
-  await loadSessions()
-  message.value = 'Đã đăng xuất thiết bị.'
 }
 
 async function revokeAllDevices() {
@@ -294,7 +291,6 @@ function openUserModal(user?: ProfileDto) {
 
 async function saveUser() {
   loading.value = true
-  clearNotice()
   try {
     if (userModal.id) {
       await updateUser(userModal.id, {
@@ -303,7 +299,7 @@ async function saveUser() {
         role: userModal.role,
         status: userModal.status,
       })
-      message.value = 'Đã cập nhật người dùng.'
+      toast.success('Đã cập nhật người dùng.')
     } else {
       await createUser({
         fullName: userModal.fullName,
@@ -312,12 +308,12 @@ async function saveUser() {
         role: userModal.role,
         password: userModal.password,
       })
-      message.value = 'Đã tạo người dùng.'
+      toast.success('Đã tạo người dùng.')
     }
     userModal.open = false
     await loadUsers()
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được người dùng.')
+    toast.error(errorText(err, 'Không lưu được người dùng.'))
   } finally {
     loading.value = false
   }
@@ -332,36 +328,41 @@ function openPasswordModal(user: ProfileDto) {
 
 async function saveResetPassword() {
   loading.value = true
-  clearNotice()
   try {
     await resetUserPassword(passwordModal.userId, passwordModal.newPassword)
     passwordModal.open = false
-    message.value = 'Đã đặt lại mật khẩu.'
+    toast.success('Đã đặt lại mật khẩu.')
     await loadUsers()
   } catch (err) {
-    error.value = errorText(err, 'Không đặt lại được mật khẩu.')
+    toast.error(errorText(err, 'Không đặt lại được mật khẩu.'))
   } finally {
     loading.value = false
   }
 }
 
 async function toggleUserStatus(user: ProfileDto) {
-  clearNotice()
-  if (user.status === 'Inactive') {
-    await enableUser(user.id)
-    message.value = 'Đã kích hoạt người dùng.'
-  } else {
-    await disableUser(user.id)
-    message.value = 'Đã vô hiệu hóa người dùng.'
+  try {
+    if (user.status === 'Inactive') {
+      await enableUser(user.id)
+      toast.success('Đã kích hoạt người dùng.')
+    } else {
+      await disableUser(user.id)
+      toast.success('Đã vô hiệu hóa người dùng.')
+    }
+    await loadUsers()
+  } catch (err) {
+    toast.error(errorText(err, 'Không đổi được trạng thái người dùng.'))
   }
-  await loadUsers()
 }
 
 async function unlock(user: ProfileDto) {
-  clearNotice()
-  await unlockUser(user.id)
-  message.value = 'Đã mở khóa người dùng.'
-  await loadUsers()
+  try {
+    await unlockUser(user.id)
+    toast.success('Đã mở khóa người dùng.')
+    await loadUsers()
+  } catch (err) {
+    toast.error(errorText(err, 'Không mở khóa được người dùng.'))
+  }
 }
 
 async function loadRecipients() {
@@ -381,7 +382,6 @@ function openRecipientModal(recipient?: NotificationRecipientDto) {
 
 async function saveRecipient() {
   loading.value = true
-  clearNotice()
   try {
     const payload = {
       notificationType: recipientModal.notificationType,
@@ -391,25 +391,28 @@ async function saveRecipient() {
     }
     if (recipientModal.id) {
       await updateNotificationRecipient(recipientModal.id, payload)
-      message.value = 'Đã cập nhật email nhận lỗi.'
+      toast.success('Đã cập nhật email nhận lỗi.')
     } else {
       await createNotificationRecipient(payload)
-      message.value = 'Đã thêm email nhận lỗi.'
+      toast.success('Đã thêm email nhận lỗi.')
     }
     recipientModal.open = false
     await loadRecipients()
   } catch (err) {
-    error.value = errorText(err, 'Không lưu được email nhận lỗi.')
+    toast.error(errorText(err, 'Không lưu được email nhận lỗi.'))
   } finally {
     loading.value = false
   }
 }
 
 async function deactivateRecipient(id: number) {
-  clearNotice()
-  await deactivateNotificationRecipient(id)
-  message.value = 'Đã ngừng gửi email cho dòng này.'
-  await loadRecipients()
+  try {
+    await deactivateNotificationRecipient(id)
+    toast.success('Đã ngừng gửi email cho dòng này.')
+    await loadRecipients()
+  } catch (err) {
+    toast.error(errorText(err, 'Không thực hiện được thao tác.'))
+  }
 }
 
 // ── Log gọi API ngoài (chỉ Admin) ──
@@ -428,13 +431,12 @@ const apiLogFilters = reactive<ExternalApiLogFilters>({
 async function loadApiLogs() {
   if (!isAdmin.value) return
   loading.value = true
-  clearNotice()
   try {
     const result = await listExternalApiLogs({ ...apiLogFilters, page: apiLogPage.value })
     apiLogs.value = result.items
     apiLogTotal.value = result.totalItems
   } catch (err) {
-    error.value = errorText(err, 'Không tải được log gọi API.')
+    toast.error(errorText(err, 'Không tải được log gọi API.'))
   } finally {
     loading.value = false
   }
@@ -462,11 +464,10 @@ function goApiLogPage(next: number) {
 }
 
 async function openApiLogDetail(id: number) {
-  clearNotice()
   try {
     apiLogDetail.value = await getExternalApiLog(id)
   } catch (err) {
-    error.value = errorText(err, 'Không tải được chi tiết log.')
+    toast.error(errorText(err, 'Không tải được chi tiết log.'))
   }
 }
 
@@ -486,27 +487,32 @@ const canReset = computed(() => resetConfirmText.value.trim() === RESET_CONFIRM_
 
 async function runReset() {
   if (!canReset.value || resetting.value) return
-  if (!window.confirm(
-    'Hành động này sẽ xóa VĨNH VIỄN toàn bộ dữ liệu nghiệp vụ (chỉ giữ lại tài khoản Admin '
-    + 'và cấu hình hệ thống) và KHÔNG THỂ hoàn tác. Bạn chắc chắn muốn tiếp tục?'
-  )) return
+  const ok = await confirm({
+    title: 'Xóa toàn bộ dữ liệu',
+    message:
+      'Hành động này sẽ xóa VĨNH VIỄN toàn bộ dữ liệu nghiệp vụ (chỉ giữ lại tài khoản Admin '
+      + 'và cấu hình hệ thống) và KHÔNG THỂ hoàn tác. Bạn chắc chắn muốn tiếp tục?',
+    confirmText: 'Xóa vĩnh viễn',
+  })
+  if (!ok) return
 
   resetting.value = true
-  clearNotice()
   try {
     const result = await resetAllData(resetConfirmText.value.trim())
     resetConfirmText.value = ''
-    message.value = `Đã xóa ${result.totalDeleted.toLocaleString('vi-VN')} bản ghi, `
-      + `giữ lại ${result.keptAdminCount} tài khoản Admin và cấu hình hệ thống.`
+    toast.success(
+      `Đã xóa ${result.totalDeleted.toLocaleString('vi-VN')} bản ghi, `
+      + `giữ lại ${result.keptAdminCount} tài khoản Admin và cấu hình hệ thống.`,
+      { duration: 7000 },
+    )
   } catch (err) {
-    error.value = errorText(err, 'Không xóa được dữ liệu.')
+    toast.error(errorText(err, 'Không xóa được dữ liệu.'))
   } finally {
     resetting.value = false
   }
 }
 
 watch(activeTab, async () => {
-  clearNotice()
   if (activeTab.value === 'sessions') await loadSessions()
   if (activeTab.value === 'users') await loadUsers()
   if (activeTab.value === 'recipients') await loadRecipients()
@@ -525,7 +531,7 @@ onMounted(async () => {
     await loadProfile()
     await loadPreferences().catch(() => undefined)
   } catch (err) {
-    error.value = errorText(err, 'Không tải được cài đặt tài khoản.')
+    toast.error(errorText(err, 'Không tải được cài đặt tài khoản.'))
   } finally {
     loading.value = false
   }
@@ -548,9 +554,6 @@ onMounted(async () => {
       {{ tab.label }}
     </button>
   </div>
-
-  <div v-if="message" class="notice notice-indigo" style="margin-bottom: 16px">{{ message }}</div>
-  <div v-if="error" class="notice notice-blue" style="margin-bottom: 16px">{{ error }}</div>
 
   <section v-if="activeTab === 'profile'" class="card">
     <div class="form-row">
@@ -834,7 +837,7 @@ onMounted(async () => {
     </button>
   </section>
 
-  <div v-if="userModal.open" class="modal-overlay" @click.self="userModal.open = false">
+  <div v-if="userModal.open" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">{{ userModal.id ? 'Sửa người dùng' : 'Thêm người dùng' }}</span>
@@ -887,7 +890,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div v-if="passwordModal.open" class="modal-overlay" @click.self="passwordModal.open = false">
+  <div v-if="passwordModal.open" class="modal-overlay">
     <div class="modal" style="width: 420px">
       <div class="modal-header">
         <span class="modal-title">Reset mật khẩu</span>
@@ -907,7 +910,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div v-if="recipientModal.open" class="modal-overlay" @click.self="recipientModal.open = false">
+  <div v-if="recipientModal.open" class="modal-overlay">
     <div class="modal" style="width: 460px">
       <div class="modal-header">
         <span class="modal-title">{{ recipientModal.id ? 'Sửa email nhận lỗi' : 'Thêm email nhận lỗi' }}</span>
@@ -942,7 +945,7 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div v-if="apiLogDetail" class="modal-overlay" @click.self="apiLogDetail = null">
+  <div v-if="apiLogDetail" class="modal-overlay">
     <div class="modal" style="width: 720px; max-width: 92vw">
       <div class="modal-header">
         <span class="modal-title">Chi tiết log gọi API #{{ apiLogDetail.id }}</span>

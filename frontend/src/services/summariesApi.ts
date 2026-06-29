@@ -86,6 +86,13 @@ export interface TicketCostDetailFilters {
   keyword?: string
 }
 
+export interface BankTransactionLineItem {
+  transactionAtUtc: string
+  content: string
+  debitAmount: number
+  creditAmount: number
+}
+
 export interface BankTransactionDetailDto {
   id: number
   businessDate: string
@@ -100,6 +107,8 @@ export interface BankTransactionDetailDto {
   sourceType: SourceType
   createdAtUtc: string
   updatedAtUtc?: string | null
+  /** Chi tiết từng giao dịch khi dòng này gộp ≥2 GD; null nếu chỉ có 1 GD. */
+  lineItems?: BankTransactionLineItem[] | null
 }
 
 export interface BankStatementSyncResult {
