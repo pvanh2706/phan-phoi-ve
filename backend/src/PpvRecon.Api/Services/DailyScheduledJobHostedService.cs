@@ -68,38 +68,32 @@ public sealed class DailyScheduledJobHostedService(
 
         var timeZone = GetVietnamTimeZone();
         var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
-        var scheduleTime = await GetScheduleTimeAsync(dbContext, cancellationToken);
-
-        if (TimeOnly.FromDateTime(localNow) < scheduleTime)
-        {
-            return;
-        }
-
+        var nowTime = TimeOnly.FromDateTime(localNow);
         var businessDate = DateOnly.FromDateTime(localNow);
-        var completedSummary = await HasScheduledJobAsync(
-            dbContext,
-            "SendDailySyncErrorSummary",
-            businessDate,
-            cancellationToken);
-
-        if (completedSummary && await HasCleanupRunTodayAsync(dbContext, localNow, timeZone, cancellationToken))
-        {
-            return;
-        }
-
-        logger.LogInformation("Running scheduled daily workflow for business date {BusinessDate}.", businessDate);
 
         var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
         var reconciliationBuilder = scope.ServiceProvider.GetRequiredService<IReconciliationBuilder>();
         var maintenanceJobService = scope.ServiceProvider.GetRequiredService<IMaintenanceJobService>();
 
+        // 1) Các job đồng bộ API ngoài: mỗi nguồn chạy theo khung giờ riêng (appsettings Jobs:ScheduleTimes).
         foreach (var source in SyncSources)
         {
+            var sourceTime = await GetSourceScheduleTimeAsync(dbContext, source, cancellationToken);
+            if (nowTime < sourceTime)
+            {
+                continue;
+            }
+
             var jobName = GetJobName(source);
             if (await HasScheduledJobAsync(dbContext, jobName, businessDate, cancellationToken))
             {
                 continue;
             }
+
+            logger.LogInformation(
+                "Running scheduled sync {JobName} for business date {BusinessDate}.",
+                jobName,
+                businessDate);
 
             await jobRunner.RunExternalSyncAsync(
                 source,
@@ -107,6 +101,13 @@ public sealed class DailyScheduledJobHostedService(
                 JobTriggerType.Schedule,
                 triggeredByUserId: null,
                 cancellationToken);
+        }
+
+        // 2) Đối soát + tổng hợp lỗi + dọn log: dùng mốc giờ chung (DB SystemSettings "Jobs.ScheduleTime").
+        var sharedTime = await GetScheduleTimeAsync(dbContext, cancellationToken);
+        if (nowTime < sharedTime)
+        {
+            return;
         }
 
         if (!await HasScheduledJobAsync(dbContext, "BuildParkReconciliation", businessDate, cancellationToken))
@@ -134,6 +135,21 @@ public sealed class DailyScheduledJobHostedService(
                 cancellationToken,
                 JobTriggerType.Schedule);
         }
+    }
+
+    /// <summary>
+    /// Khung giờ chạy của từng nguồn đồng bộ, cấu hình trong appsettings: "Jobs:ScheduleTimes:{Source}".
+    /// Nếu không cấu hình (hoặc sai định dạng) thì lùi về mốc giờ chung trong DB.
+    /// </summary>
+    private async Task<TimeOnly> GetSourceScheduleTimeAsync(
+        PpvReconDbContext dbContext,
+        ExternalApiSource source,
+        CancellationToken cancellationToken)
+    {
+        var configured = configuration[$"Jobs:ScheduleTimes:{source}"];
+        return TimeOnly.TryParse(configured, out var parsed)
+            ? parsed
+            : await GetScheduleTimeAsync(dbContext, cancellationToken);
     }
 
     private static async Task<TimeOnly> GetScheduleTimeAsync(PpvReconDbContext dbContext, CancellationToken cancellationToken)

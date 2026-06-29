@@ -39,6 +39,7 @@ import {
   externalApiSourceLabel,
   formatDate,
   formatDateTime,
+  formatDateTimeMs,
   notificationTypeLabel,
   userRoleLabel,
   userStatusLabel,
@@ -767,6 +768,7 @@ onMounted(async () => {
         <thead>
           <tr>
             <th>Thời điểm</th>
+            <th>Mã chạy</th>
             <th>Nguồn</th>
             <th>Ngày DL</th>
             <th>KVC</th>
@@ -777,9 +779,10 @@ onMounted(async () => {
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="8">Đang tải...</td></tr>
+          <tr v-if="loading"><td colspan="9">Đang tải...</td></tr>
           <tr v-for="log in apiLogs" :key="log.id">
-            <td class="cell-muted">{{ formatDateTime(log.receivedAtUtc) }}</td>
+            <td class="cell-muted">{{ formatDateTimeMs(log.receivedAtUtc) }}</td>
+            <td>{{ log.jobRunId != null ? '#' + log.jobRunId : '—' }}</td>
             <td>{{ externalApiSourceLabel(log.source) }}</td>
             <td>{{ log.businessDate ? formatDate(log.businessDate) : '—' }}</td>
             <td>{{ log.parkName ?? '—' }}</td>
@@ -793,7 +796,7 @@ onMounted(async () => {
             <td><button class="act-btn" type="button" @click="openApiLogDetail(log.id)">🔍 Xem</button></td>
           </tr>
           <tr v-if="!loading && apiLogs.length === 0">
-            <td colspan="8" class="cell-muted" style="text-align: center">Chưa có log gọi API phù hợp.</td>
+            <td colspan="9" class="cell-muted" style="text-align: center">Chưa có log gọi API phù hợp.</td>
           </tr>
         </tbody>
       </table>
@@ -957,7 +960,7 @@ onMounted(async () => {
           <div><span class="detail-label">Ngày dữ liệu</span>{{ apiLogDetail.businessDate ? formatDate(apiLogDetail.businessDate) : '—' }}</div>
           <div><span class="detail-label">HTTP status</span>{{ apiLogDetail.responseStatusCode ?? '—' }}</div>
           <div><span class="detail-label">Thời gian gọi</span>{{ apiLogDetail.durationMs != null ? apiLogDetail.durationMs + ' ms' : '—' }}</div>
-          <div><span class="detail-label">Thời điểm</span>{{ formatDateTime(apiLogDetail.receivedAtUtc) }}</div>
+          <div><span class="detail-label">Thời điểm</span>{{ formatDateTimeMs(apiLogDetail.receivedAtUtc) }}</div>
           <div><span class="detail-label">Job Run</span>{{ apiLogDetail.jobRunId ?? '—' }}</div>
         </div>
 

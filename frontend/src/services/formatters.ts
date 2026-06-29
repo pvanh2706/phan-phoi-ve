@@ -33,6 +33,14 @@ export function formatDateTime(value?: string | null) {
   return date.toLocaleString('vi-VN')
 }
 
+export function formatDateTimeMs(value?: string | null) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const ms = date.getMilliseconds().toString().padStart(3, '0')
+  return `${date.toLocaleString('vi-VN')}.${ms}`
+}
+
 export function paymentTypeLabel(value?: PaymentType | string | null) {
   if (value === 'Prepaid') return 'Nạp trước'
   if (value === 'Debt') return 'Công nợ'

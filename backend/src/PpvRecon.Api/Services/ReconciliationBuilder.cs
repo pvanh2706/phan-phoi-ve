@@ -60,25 +60,30 @@ public sealed class ReconciliationBuilder(
             var actualBalance = await dbContext.DailyParkBalanceSnapshots
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.BusinessDate == businessDate && x.ParkId == park.Id, cancellationToken);
-            var ticketCost = await dbContext.DailyTicketCostSummaries
+            // (3) Số đã dùng và (2) Số nạp thêm lấy trực tiếp từ dữ liệu chi tiết đã đồng bộ
+            // (TicketSaleCostDetails / BankTransactionDetails), không dùng bảng summary nhập tay.
+            var ticketCostDetails = await dbContext.TicketSaleCostDetails
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.BusinessDate == businessDate && x.ParkId == park.Id, cancellationToken);
-            var bankSummaries = await dbContext.DailyBankTransactionSummaries
+                .Where(x => x.BusinessDate == businessDate && x.ParkId == park.Id)
+                .ToListAsync(cancellationToken);
+            var bankDetails = await dbContext.BankTransactionDetails
                 .AsNoTracking()
                 .Where(x => x.BusinessDate == businessDate && x.ParkId == park.Id)
                 .ToListAsync(cancellationToken);
 
             var missingPreviousBalance = previousBalance is null;
             var missingActualBalance = actualBalance is null;
-            var missingTicketCost = ticketCost is null;
-            var missingBankTransaction = bankSummaries.Count == 0;
+            var missingTicketCost = ticketCostDetails.Count == 0;
+            var missingBankTransaction = bankDetails.Count == 0;
 
             long? previousBalanceValue = previousBalance?.AvailableBalance;
             long? actualBalanceValue = actualBalance?.AvailableBalance;
-            long? usedAmount = ticketCost?.TotalTicketCost;
-            long? additionalAmount = bankSummaries.Count == 0
+            long? usedAmount = ticketCostDetails.Count == 0
                 ? null
-                : bankSummaries.Sum(x => x.TotalCreditAmount - x.TotalDebitAmount);
+                : ticketCostDetails.Sum(x => x.CostAmount);              // (3) tổng giá vốn vé
+            long? additionalAmount = bankDetails.Count == 0
+                ? null
+                : bankDetails.Sum(x => x.CreditAmount - x.DebitAmount);  // (2) tổng nạp ròng (Có − Nợ)
 
             long? expectedBalance = null;
             long? varianceAmount = null;
@@ -103,8 +108,8 @@ public sealed class ReconciliationBuilder(
                 previousBusinessDate,
                 previousBalance,
                 actualBalance,
-                ticketCost,
-                bankSummaries,
+                ticketCostDetails,
+                bankDetails,
                 additionalAmount,
                 usedAmount);
 
@@ -210,8 +215,8 @@ public sealed class ReconciliationBuilder(
         DateOnly previousBusinessDate,
         DailyParkBalanceSnapshot? previousBalance,
         DailyParkBalanceSnapshot? actualBalance,
-        DailyTicketCostSummary? ticketCost,
-        IReadOnlyList<DailyBankTransactionSummary> bankSummaries,
+        IReadOnlyList<TicketSaleCostDetail> ticketCostDetails,
+        IReadOnlyList<BankTransactionDetail> bankDetails,
         long? additionalAmount,
         long? usedAmount)
     {
@@ -232,21 +237,21 @@ public sealed class ReconciliationBuilder(
                 actualBalance.AvailableBalance,
                 actualBalance.SourceType,
             },
-            ticketCost = ticketCost is null ? null : new
-            {
-                ticketCost.Id,
-                ticketCost.TotalTicketCost,
-                ticketCost.SourceType,
-            },
-            bankSummaries = bankSummaries
-                .OrderBy(x => x.TransactionType)
+            ticketCostDetails = ticketCostDetails
+                .OrderBy(x => x.Id)
                 .Select(x => new
                 {
                     x.Id,
-                    x.TransactionType,
-                    x.TotalDebitAmount,
-                    x.TotalCreditAmount,
-                    x.TransactionCount,
+                    x.CostAmount,
+                    x.SourceType,
+                }),
+            bankDetails = bankDetails
+                .OrderBy(x => x.Id)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.DebitAmount,
+                    x.CreditAmount,
                     x.SourceType,
                 }),
             additionalAmount,

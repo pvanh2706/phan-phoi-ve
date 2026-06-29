@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using PpvRecon.Api.Services.BankStatement;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Jobs;
 using PpvRecon.Domain.Entities.Jobs;
@@ -13,6 +14,8 @@ namespace PpvRecon.Api.Services;
 public sealed class JobRunner(
     PpvReconDbContext dbContext,
     IParkBalanceApiClient parkBalanceApiClient,
+    ITicketCostSyncService ticketCostSyncService,
+    IBankStatementSyncService bankStatementSyncService,
     IAuditService auditService) : IJobRunner
 {
     public Task<JobRunDetailDto> RunExternalSyncAsync(
@@ -22,9 +25,51 @@ public sealed class JobRunner(
         int? triggeredByUserId,
         CancellationToken cancellationToken = default)
     {
-        return source == ExternalApiSource.ParkBalance
-            ? RunParkBalanceSyncAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken)
-            : RunExternalSyncPlaceholderAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken);
+        return source switch
+        {
+            ExternalApiSource.ParkBalance =>
+                RunParkBalanceSyncAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken),
+            ExternalApiSource.TicketCost =>
+                RunServiceBackedSyncAsync(
+                    source,
+                    businessDate,
+                    triggeredBy,
+                    triggeredByUserId,
+                    async ct =>
+                    {
+                        var r = await ticketCostSyncService.SyncTodayAsync(triggeredByUserId, ct);
+                        return new
+                        {
+                            r.BusinessDate,
+                            r.TotalLines,
+                            r.Imported,
+                            r.SkippedUnmatched,
+                            r.UnmatchedParkCodes,
+                        };
+                    },
+                    cancellationToken),
+            ExternalApiSource.BankTransaction =>
+                RunServiceBackedSyncAsync(
+                    source,
+                    businessDate,
+                    triggeredBy,
+                    triggeredByUserId,
+                    async ct =>
+                    {
+                        var r = await bankStatementSyncService.SyncAsync(triggeredByUserId, ct);
+                        return new
+                        {
+                            r.MailsProcessed,
+                            r.TransactionsParsed,
+                            r.Imported,
+                            r.SkippedUnmatched,
+                            r.OverwrittenDates,
+                            r.UnmatchedAccounts,
+                        };
+                    },
+                    cancellationToken),
+            _ => RunExternalSyncPlaceholderAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken),
+        };
     }
 
     private async Task<JobRunDetailDto> RunParkBalanceSyncAsync(
@@ -283,6 +328,121 @@ public sealed class JobRunner(
             businessDate,
             activeParkCount = parks.Count,
             externalApiConfigured = false,
+        });
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await LogJobRunAsync(jobRun, triggeredByUserId, cancellationToken);
+
+        return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Chạy một job đồng bộ dựa trên service tổng hợp (TicketCost/BankTransaction): tạo JobRun,
+    /// gọi service thật, ghi 1 JobRunItem tóm tắt + 1 bản ghi log gọi API, và cập nhật trạng thái.
+    /// </summary>
+    private async Task<JobRunDetailDto> RunServiceBackedSyncAsync(
+        ExternalApiSource source,
+        DateOnly businessDate,
+        JobTriggerType triggeredBy,
+        int? triggeredByUserId,
+        Func<CancellationToken, Task<object>> syncAction,
+        CancellationToken cancellationToken)
+    {
+        var startedAtUtc = DateTime.UtcNow;
+        var jobRun = new JobRun
+        {
+            JobName = GetJobName(source),
+            BusinessDate = businessDate,
+            TriggeredBy = triggeredBy,
+            TriggeredByUserId = triggeredByUserId,
+            StartedAtUtc = startedAtUtc,
+            Status = JobRunStatus.Running,
+            TotalItems = 1,
+        };
+
+        dbContext.JobRuns.Add(jobRun);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var item = new JobRunItem
+        {
+            JobRunId = jobRun.Id,
+            BusinessDate = businessDate,
+            ParkId = null,
+            Source = source,
+            Status = JobRunItemStatus.Running,
+            AttemptCount = 1,
+            StartedAtUtc = startedAtUtc,
+        };
+
+        dbContext.JobRunItems.Add(item);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        object? summaryPayload = null;
+        string? errorMessage = null;
+        bool isSuccess;
+        try
+        {
+            summaryPayload = await syncAction(cancellationToken);
+            isSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            isSuccess = false;
+            errorMessage = ex.Message;
+        }
+
+        var finishedAtUtc = DateTime.UtcNow;
+        var durationMs = (int)Math.Clamp((finishedAtUtc - startedAtUtc).TotalMilliseconds, 0, int.MaxValue);
+
+        var responseBody = isSuccess
+            ? (object)new { success = true, result = summaryPayload }
+            : new { success = false, message = errorMessage };
+
+        var rawResponse = new ExternalApiRawResponse
+        {
+            Source = source,
+            BusinessDate = businessDate,
+            ParkId = null,
+            JobRunId = jobRun.Id,
+            JobRunItemId = item.Id,
+            RequestPayloadJson = JsonSerializer.Serialize(new
+            {
+                source = source.ToString(),
+                businessDate,
+                triggeredBy = triggeredBy.ToString(),
+            }),
+            ResponseBodyJson = JsonSerializer.Serialize(responseBody),
+            IsSuccess = isSuccess,
+            ErrorMessage = isSuccess ? null : errorMessage,
+            DurationMs = durationMs,
+            ReceivedAtUtc = finishedAtUtc,
+        };
+
+        dbContext.ExternalApiRawResponses.Add(rawResponse);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        item.Status = isSuccess ? JobRunItemStatus.Succeeded : JobRunItemStatus.Failed;
+        item.FinishedAtUtc = finishedAtUtc;
+        item.DurationMs = durationMs;
+        item.RawResponseId = rawResponse.Id;
+        if (!isSuccess)
+        {
+            item.ErrorCode = "ExternalSyncFailed";
+            item.ErrorMessage = errorMessage;
+        }
+
+        jobRun.FinishedAtUtc = finishedAtUtc;
+        jobRun.SuccessItems = isSuccess ? 1 : 0;
+        jobRun.FailedItems = isSuccess ? 0 : 1;
+        jobRun.SkippedItems = 0;
+        jobRun.Status = isSuccess ? JobRunStatus.Succeeded : JobRunStatus.CompletedWithErrors;
+        jobRun.ErrorMessage = isSuccess ? null : errorMessage;
+        jobRun.SummaryJson = JsonSerializer.Serialize(new
+        {
+            source = source.ToString(),
+            businessDate,
+            success = isSuccess,
+            result = summaryPayload,
         });
 
         await dbContext.SaveChangesAsync(cancellationToken);
