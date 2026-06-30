@@ -2,7 +2,7 @@ using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
-using Microsoft.Extensions.Options;
+using PpvRecon.Api.Services.Settings;
 
 namespace PpvRecon.Api.Services.BankStatement;
 
@@ -17,44 +17,48 @@ public sealed class FetchedEmail
 
 public interface IImapEmailReader
 {
-    /// <summary>Lấy N email gần nhất từ người gửi đã cấu hình (không đánh dấu đã đọc).</summary>
-    Task<List<FetchedEmail>> FetchRecentAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// Lấy tất cả email trong ngày <paramref name="localDate"/> (giờ VN) từ người gửi đã cấu hình.
+    /// Mở hộp thư ở chế độ chỉ đọc nên KHÔNG đánh dấu mail đã đọc.
+    /// </summary>
+    Task<List<FetchedEmail>> FetchForDateAsync(DateOnly localDate, CancellationToken cancellationToken);
 }
 
 /// <summary>
-/// Đọc email qua IMAP, lấy N mail gần nhất từ BIDV. Port từ console GetPDFFromEmail.
+/// Đọc email qua IMAP, lấy các mail BIDV phát sinh trong một ngày. Port từ console GetPDFFromEmail.
 /// </summary>
-public sealed class ImapEmailReader(IOptions<BankStatementImportOptions> options) : IImapEmailReader
+public sealed class ImapEmailReader(IConnectionSettingsService connectionSettings) : IImapEmailReader
 {
-    private readonly BankStatementImportOptions _opt = options.Value;
-
-    public async Task<List<FetchedEmail>> FetchRecentAsync(CancellationToken cancellationToken)
+    public async Task<List<FetchedEmail>> FetchForDateAsync(DateOnly localDate, CancellationToken cancellationToken)
     {
         var results = new List<FetchedEmail>();
+        var timeZone = GetVietnamTimeZone();
+        var opt = await connectionSettings.GetBankStatementAsync(cancellationToken);
 
         using var client = new ImapClient();
-        var socketOptions = _opt.UseSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable;
-        await client.ConnectAsync(_opt.Host, _opt.Port, socketOptions, cancellationToken);
-        await client.AuthenticateAsync(_opt.Username, _opt.Password, cancellationToken);
+        var socketOptions = opt.UseSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTlsWhenAvailable;
+        await client.ConnectAsync(opt.Host, opt.Port, socketOptions, cancellationToken);
+        await client.AuthenticateAsync(opt.Username, opt.Password, cancellationToken);
 
-        var folder = string.Equals(_opt.Mailbox, "INBOX", StringComparison.OrdinalIgnoreCase)
+        var folder = string.Equals(opt.Mailbox, "INBOX", StringComparison.OrdinalIgnoreCase)
             ? client.Inbox
-            : await client.GetFolderAsync(_opt.Mailbox, cancellationToken);
+            : await client.GetFolderAsync(opt.Mailbox, cancellationToken);
         await folder.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
 
-        SearchQuery query = SearchQuery.All;
-        if (!string.IsNullOrWhiteSpace(_opt.FromFilter))
-            query = query.And(SearchQuery.FromContains(_opt.FromFilter));
+        // Lọc thô ở server theo ngày nhận (lùi 1 ngày để bao biên múi giờ), tinh chỉnh đúng ngày ở dưới.
+        SearchQuery query = SearchQuery.DeliveredAfter(localDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
+        if (!string.IsNullOrWhiteSpace(opt.FromFilter))
+            query = query.And(SearchQuery.FromContains(opt.FromFilter));
 
         var uids = (await folder.SearchAsync(query, cancellationToken)).ToList();
-
-        // Giữ N mail mới nhất (UID lớn nhất = mail đến sau cùng).
-        if (_opt.RecentCount > 0 && uids.Count > _opt.RecentCount)
-            uids = uids.OrderBy(u => u.Id).TakeLast(_opt.RecentCount).ToList();
 
         foreach (var uid in uids)
         {
             var message = await folder.GetMessageAsync(uid, cancellationToken);
+
+            // Chỉ giữ mail có ngày gửi (quy về giờ VN) đúng bằng ngày đang quét.
+            var localSentDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(message.Date, timeZone).DateTime);
+            if (localSentDate != localDate) continue;
 
             var fetched = new FetchedEmail
             {
@@ -79,5 +83,17 @@ public sealed class ImapEmailReader(IOptions<BankStatementImportOptions> options
 
         await client.DisconnectAsync(true, cancellationToken);
         return results;
+    }
+
+    private static TimeZoneInfo GetVietnamTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok");
+        }
     }
 }

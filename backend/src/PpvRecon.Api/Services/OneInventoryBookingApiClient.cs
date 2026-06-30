@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Options;
+using PpvRecon.Api.Services.Settings;
 
 namespace PpvRecon.Api.Services;
 
@@ -67,7 +67,7 @@ public interface IOneInventoryBookingApiClient
 /// </summary>
 public sealed class OneInventoryBookingApiClient(
     HttpClient httpClient,
-    IOptions<OneInventoryApiOptions> options) : IOneInventoryBookingApiClient
+    IConnectionSettingsService connectionSettings) : IOneInventoryBookingApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -78,7 +78,7 @@ public sealed class OneInventoryBookingApiClient(
         DateOnly businessDate,
         CancellationToken cancellationToken)
     {
-        var opt = options.Value;
+        var opt = await connectionSettings.GetOneInventoryAsync(cancellationToken);
         var baseUrl = (string.IsNullOrWhiteSpace(opt.BaseUrl)
             ? "https://admin.oneinventory.com"
             : opt.BaseUrl).TrimEnd('/');
@@ -91,10 +91,14 @@ public sealed class OneInventoryBookingApiClient(
 
         var stopwatch = Stopwatch.StartNew();
 
+        // Timeout đọc từ cấu hình (áp dụng ngay), bao trùm cả login + gọi procedure.
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 1, 300)));
+
         try
         {
             // 1) Login lấy token.
-            var token = await LoginAsync(baseUrl, opt.Username, opt.Password, cancellationToken);
+            var token = await LoginAsync(baseUrl, opt.Username, opt.Password, timeoutCts.Token);
             if (token is null)
             {
                 stopwatch.Stop();
@@ -112,9 +116,9 @@ public sealed class OneInventoryBookingApiClient(
             request.Headers.TryAddWithoutValidation("Authorization", $"Token {token}");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            using var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await httpClient.SendAsync(request, timeoutCts.Token);
             var statusCode = (int)response.StatusCode;
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             stopwatch.Stop();
 
             if (!response.IsSuccessStatusCode)

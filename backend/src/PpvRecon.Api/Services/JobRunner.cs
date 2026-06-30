@@ -54,19 +54,7 @@ public sealed class JobRunner(
                     businessDate,
                     triggeredBy,
                     triggeredByUserId,
-                    async ct =>
-                    {
-                        var r = await bankStatementSyncService.SyncAsync(triggeredByUserId, ct);
-                        return new
-                        {
-                            r.MailsProcessed,
-                            r.TransactionsParsed,
-                            r.Imported,
-                            r.SkippedUnmatched,
-                            r.OverwrittenDates,
-                            r.UnmatchedAccounts,
-                        };
-                    },
+                    async ct => await bankStatementSyncService.SyncAsync(businessDate, triggeredByUserId, ct),
                     cancellationToken),
             _ => RunExternalSyncPlaceholderAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken),
         };

@@ -25,7 +25,7 @@ public sealed class BankStatementSyncResult
 
 public interface IBankStatementSyncService
 {
-    Task<BankStatementSyncResult> SyncAsync(int? currentUserId, CancellationToken cancellationToken);
+    Task<BankStatementSyncResult> SyncAsync(DateOnly scanDate, int? currentUserId, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -35,20 +35,20 @@ public interface IBankStatementSyncService
 /// </summary>
 public sealed class BankStatementSyncService(
     IImapEmailReader emailReader,
-    Microsoft.Extensions.Options.IOptions<BankStatementImportOptions> options,
+    PpvRecon.Api.Services.Settings.IConnectionSettingsService connectionSettings,
     PpvReconDbContext dbContext) : IBankStatementSyncService
 {
-    private readonly BankStatementImportOptions optionsValue = options.Value;
-
     // Lấy số sau "TKThe :" (bao trùm cả dạng "HBK-TKThe :"). Giá trị có thể chứa chữ + số.
     private static readonly Regex _tkTheRegex = new(
         @"TKThe\s*:\s*(?<tk>[^,\s]+)", RegexOptions.Compiled);
 
-    public async Task<BankStatementSyncResult> SyncAsync(int? currentUserId, CancellationToken cancellationToken)
+    public async Task<BankStatementSyncResult> SyncAsync(DateOnly scanDate, int? currentUserId, CancellationToken cancellationToken)
     {
         var result = new BankStatementSyncResult();
 
-        var emails = await emailReader.FetchRecentAsync(cancellationToken);
+        // Quét tất cả mail BIDV trong ngày scanDate (giờ VN), không đánh dấu đã đọc.
+        var emails = await emailReader.FetchForDateAsync(scanDate, cancellationToken);
+        var pdfPassword = (await connectionSettings.GetBankStatementAsync(cancellationToken)).PdfPassword;
 
         // 1) Parse toàn bộ giao dịch từ các PDF đính kèm.
         var parsed = new List<ParsedTransaction>();
@@ -61,7 +61,7 @@ public sealed class BankStatementSyncService(
             string pdfText;
             try
             {
-                pdfText = PdfExtractor.ExtractText(pdf.Data, optionsValue.PdfPassword);
+                pdfText = PdfExtractor.ExtractText(pdf.Data, pdfPassword);
             }
             catch
             {

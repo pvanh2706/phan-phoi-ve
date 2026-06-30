@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PpvRecon.Api.Services.Settings;
 using PpvRecon.Application.Jobs;
 using PpvRecon.Application.Reconciliation;
 using PpvRecon.Domain.Enums;
@@ -11,11 +12,11 @@ public sealed class DailyScheduledJobHostedService(
     IConfiguration configuration,
     ILogger<DailyScheduledJobHostedService> logger) : BackgroundService
 {
+    // Các nguồn chạy 1 lần/ngày theo mốc giờ riêng (BankTransaction tách riêng vì quét lặp 4h–8h).
     private static readonly ExternalApiSource[] SyncSources =
     [
         ExternalApiSource.ParkBalance,
         ExternalApiSource.TicketCost,
-        ExternalApiSource.BankTransaction,
     ];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -74,11 +75,17 @@ public sealed class DailyScheduledJobHostedService(
         var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
         var reconciliationBuilder = scope.ServiceProvider.GetRequiredService<IReconciliationBuilder>();
         var maintenanceJobService = scope.ServiceProvider.GetRequiredService<IMaintenanceJobService>();
+        var connectionSettings = scope.ServiceProvider.GetRequiredService<IConnectionSettingsService>();
 
-        // 1) Các job đồng bộ API ngoài: mỗi nguồn chạy theo khung giờ riêng (appsettings Jobs:ScheduleTimes).
+        // Khung giờ chạy job (Admin sửa qua màn "Cấu hình kết nối", áp dụng ngay).
+        var schedule = await connectionSettings.GetJobScheduleAsync(cancellationToken);
+
+        // 1) Các job đồng bộ API ngoài: mỗi nguồn chạy theo khung giờ riêng.
         foreach (var source in SyncSources)
         {
-            var sourceTime = await GetSourceScheduleTimeAsync(dbContext, source, cancellationToken);
+            var sourceTime = source == ExternalApiSource.ParkBalance
+                ? schedule.ParkBalanceTime
+                : schedule.TicketCostTime;
             if (nowTime < sourceTime)
             {
                 continue;
@@ -102,6 +109,9 @@ public sealed class DailyScheduledJobHostedService(
                 triggeredByUserId: null,
                 cancellationToken);
         }
+
+        // 1b) Quét sao kê BIDV từ email: chạy lặp mỗi N phút trong khung 4h–8h sáng (giờ VN).
+        await RunBankTransactionScanIfDueAsync(dbContext, jobRunner, schedule, nowTime, businessDate, cancellationToken);
 
         // 2) Đối soát + tổng hợp lỗi + dọn log: dùng mốc giờ chung (DB SystemSettings "Jobs.ScheduleTime").
         var sharedTime = await GetScheduleTimeAsync(dbContext, cancellationToken);
@@ -138,18 +148,53 @@ public sealed class DailyScheduledJobHostedService(
     }
 
     /// <summary>
-    /// Khung giờ chạy của từng nguồn đồng bộ, cấu hình trong appsettings: "Jobs:ScheduleTimes:{Source}".
-    /// Nếu không cấu hình (hoặc sai định dạng) thì lùi về mốc giờ chung trong DB.
+    /// Quét sao kê BIDV từ email theo kiểu lặp: chỉ chạy trong khung giờ [Start, End) (giờ VN),
+    /// và đảm bảo mỗi lần quét cách nhau ít nhất IntervalMinutes phút. Khung giờ lấy từ cấu hình kết nối.
     /// </summary>
-    private async Task<TimeOnly> GetSourceScheduleTimeAsync(
+    private async Task RunBankTransactionScanIfDueAsync(
         PpvReconDbContext dbContext,
-        ExternalApiSource source,
+        IJobRunner jobRunner,
+        JobScheduleSettings schedule,
+        TimeOnly nowTime,
+        DateOnly businessDate,
         CancellationToken cancellationToken)
     {
-        var configured = configuration[$"Jobs:ScheduleTimes:{source}"];
-        return TimeOnly.TryParse(configured, out var parsed)
-            ? parsed
-            : await GetScheduleTimeAsync(dbContext, cancellationToken);
+        // Ngoài khung giờ 4h–8h thì không quét.
+        if (nowTime < schedule.BankScanStart || nowTime >= schedule.BankScanEnd)
+        {
+            return;
+        }
+
+        var intervalMinutes = schedule.BankScanIntervalMinutes;
+
+        // Phải cách lần quét gần nhất trong ngày >= IntervalMinutes phút.
+        var jobName = GetJobName(ExternalApiSource.BankTransaction);
+        var lastStartedAtUtc = await dbContext.JobRuns
+            .Where(x => x.JobName == jobName
+                && x.BusinessDate == businessDate
+                && x.TriggeredBy == JobTriggerType.Schedule)
+            .OrderByDescending(x => x.StartedAtUtc)
+            .Select(x => (DateTime?)x.StartedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lastStartedAtUtc is not null
+            && DateTime.UtcNow - lastStartedAtUtc.Value < TimeSpan.FromMinutes(intervalMinutes))
+        {
+            return;
+        }
+
+        logger.LogInformation(
+            "Running scheduled bank statement scan {JobName} for business date {BusinessDate} at {LocalTime}.",
+            jobName,
+            businessDate,
+            nowTime);
+
+        await jobRunner.RunExternalSyncAsync(
+            ExternalApiSource.BankTransaction,
+            businessDate,
+            JobTriggerType.Schedule,
+            triggeredByUserId: null,
+            cancellationToken);
     }
 
     private static async Task<TimeOnly> GetScheduleTimeAsync(PpvReconDbContext dbContext, CancellationToken cancellationToken)

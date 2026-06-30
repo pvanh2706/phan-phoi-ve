@@ -57,8 +57,25 @@ import {
   type ExternalApiLogDetailDto,
   type ExternalApiLogFilters,
 } from '../services/externalApiLogsApi'
+import {
+  getConnectionSettings,
+  saveConnectionSettings,
+  testMailConnection,
+  testParkBalanceConnection,
+  testOneInventoryConnection,
+  type ConnectionSettings,
+} from '../services/connectionSettingsApi'
 
-type TabKey = 'profile' | 'theme' | 'password' | 'sessions' | 'users' | 'recipients' | 'reset' | 'apilogs'
+type TabKey =
+  | 'profile'
+  | 'theme'
+  | 'password'
+  | 'sessions'
+  | 'users'
+  | 'recipients'
+  | 'reset'
+  | 'apilogs'
+  | 'connections'
 
 const router = useRouter()
 const { mode, setMode } = useTheme()
@@ -125,6 +142,7 @@ const tabs = computed(() => {
   if (isAdmin.value) {
     base.push({ id: 'users', label: 'Quản lý người dùng', icon: '👥' })
     base.push({ id: 'recipients', label: 'Email nhận lỗi', icon: '🔔' })
+    base.push({ id: 'connections', label: 'Cấu hình kết nối', icon: '🔌' })
     base.push({ id: 'apilogs', label: 'Log gọi API', icon: '📡' })
     base.push({ id: 'reset', label: 'Xóa dữ liệu', icon: '🗑️' })
   }
@@ -480,6 +498,79 @@ function prettyJson(value?: string | null) {
   }
 }
 
+// ── Cấu hình kết nối (chỉ Admin) ──
+const connSettings = ref<ConnectionSettings | null>(null)
+const connSaving = ref(false)
+const connTesting = reactive({ mail: false, parkBalance: false, oneInventory: false })
+const showPwd = reactive({ mail: false, oneInventory: false, pdf: false })
+
+async function loadConnectionSettings() {
+  if (!isAdmin.value) return
+  loading.value = true
+  try {
+    connSettings.value = await getConnectionSettings()
+  } catch (err) {
+    toast.error(errorText(err, 'Không tải được cấu hình kết nối.'))
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveConnSettings() {
+  if (!connSettings.value || connSaving.value) return
+  connSaving.value = true
+  try {
+    connSettings.value = await saveConnectionSettings(connSettings.value)
+    toast.success('Đã lưu cấu hình kết nối. Thay đổi áp dụng ngay cho lần lấy dữ liệu kế tiếp.')
+  } catch (err) {
+    toast.error(errorText(err, 'Không lưu được cấu hình kết nối.'))
+  } finally {
+    connSaving.value = false
+  }
+}
+
+async function testMail() {
+  if (!connSettings.value || connTesting.mail) return
+  connTesting.mail = true
+  try {
+    const result = await testMailConnection(connSettings.value.mail)
+    if (result.success) toast.success(`${result.message} (${result.durationMs} ms)`)
+    else toast.error(result.message)
+  } catch (err) {
+    toast.error(errorText(err, 'Không kiểm tra được kết nối mail.'))
+  } finally {
+    connTesting.mail = false
+  }
+}
+
+async function testParkBalance() {
+  if (!connSettings.value || connTesting.parkBalance) return
+  connTesting.parkBalance = true
+  try {
+    const result = await testParkBalanceConnection(connSettings.value.parkBalance)
+    if (result.success) toast.success(`${result.message} (${result.durationMs} ms)`)
+    else toast.error(result.message)
+  } catch (err) {
+    toast.error(errorText(err, 'Không kiểm tra được kết nối API số dư KVC.'))
+  } finally {
+    connTesting.parkBalance = false
+  }
+}
+
+async function testOneInventory() {
+  if (!connSettings.value || connTesting.oneInventory) return
+  connTesting.oneInventory = true
+  try {
+    const result = await testOneInventoryConnection(connSettings.value.oneInventory)
+    if (result.success) toast.success(`${result.message} (${result.durationMs} ms)`)
+    else toast.error(result.message)
+  } catch (err) {
+    toast.error(errorText(err, 'Không kiểm tra được kết nối OneInventory.'))
+  } finally {
+    connTesting.oneInventory = false
+  }
+}
+
 // ── Xóa toàn bộ dữ liệu (chỉ Admin) ──
 const resetConfirmText = ref('')
 const resetting = ref(false)
@@ -517,10 +608,11 @@ watch(activeTab, async () => {
   if (activeTab.value === 'users') await loadUsers()
   if (activeTab.value === 'recipients') await loadRecipients()
   if (activeTab.value === 'apilogs') await loadApiLogs()
+  if (activeTab.value === 'connections') await loadConnectionSettings()
 })
 
 watch(isAdmin, (value) => {
-  if (!value && ['users', 'recipients', 'apilogs', 'reset'].includes(activeTab.value)) {
+  if (!value && ['users', 'recipients', 'apilogs', 'connections', 'reset'].includes(activeTab.value)) {
     activeTab.value = 'profile'
   }
 })
@@ -813,6 +905,152 @@ onMounted(async () => {
     </div>
   </section>
 
+  <section v-if="activeTab === 'connections' && isAdmin" class="card">
+    <div v-if="connSettings">
+      <div class="notice notice-blue" style="margin-bottom: 16px">
+        Cấu hình các kết nối lấy dữ liệu. Khi lưu, thay đổi <strong>áp dụng ngay</strong> cho lần lấy dữ liệu/chạy job kế tiếp (không cần khởi động lại).
+      </div>
+
+      <!-- Mail sao kê BIDV -->
+      <h3 class="conn-group-title">📧 Mail sao kê BIDV (IMAP)</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Host</label>
+          <input v-model="connSettings.mail.host" class="form-input" placeholder="imappro.zoho.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Port</label>
+          <input v-model.number="connSettings.mail.port" class="form-input" type="number" min="1" max="65535" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input v-model="connSettings.mail.username" class="form-input" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pwd-wrap">
+            <input v-model="connSettings.mail.password" class="form-input" :type="showPwd.mail ? 'text' : 'password'" autocomplete="new-password" />
+            <button class="pwd-eye" type="button" @click="showPwd.mail = !showPwd.mail">{{ showPwd.mail ? '🙈' : '👁️' }}</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Mailbox</label>
+          <input v-model="connSettings.mail.mailbox" class="form-input" placeholder="INBOX" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lọc người gửi (FromFilter)</label>
+          <input v-model="connSettings.mail.fromFilter" class="form-input" placeholder="insaoke@bidv.com.vn" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Mật khẩu mở file PDF sao kê</label>
+          <div class="pwd-wrap">
+            <input v-model="connSettings.mail.pdfPassword" class="form-input" :type="showPwd.pdf ? 'text' : 'password'" autocomplete="new-password" />
+            <button class="pwd-eye" type="button" @click="showPwd.pdf = !showPwd.pdf">{{ showPwd.pdf ? '🙈' : '👁️' }}</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dùng SSL</label>
+          <label class="toggle" style="margin-top: 6px">
+            <input v-model="connSettings.mail.useSsl" type="checkbox" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <button class="btn-secondary" type="button" :disabled="connTesting.mail" @click="testMail">
+        {{ connTesting.mail ? 'Đang kiểm tra...' : '🔌 Kiểm tra kết nối mail' }}
+      </button>
+
+      <!-- API Số dư KVC -->
+      <h3 class="conn-group-title">🏦 API Số dư KVC (ParkBalance)</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Endpoint</label>
+          <input v-model="connSettings.parkBalance.endpoint" class="form-input" placeholder="http://api-ezcmt.ezticket.com.vn/gw/common/check-ar" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Timeout (giây)</label>
+          <input v-model.number="connSettings.parkBalance.timeoutSeconds" class="form-input" type="number" min="1" max="300" />
+        </div>
+      </div>
+      <button class="btn-secondary" type="button" :disabled="connTesting.parkBalance" @click="testParkBalance">
+        {{ connTesting.parkBalance ? 'Đang kiểm tra...' : '🔌 Kiểm tra kết nối API số dư' }}
+      </button>
+
+      <!-- API OneInventory -->
+      <h3 class="conn-group-title">🎟️ API OneInventory (giá vốn vé)</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Base URL</label>
+          <input v-model="connSettings.oneInventory.baseUrl" class="form-input" placeholder="https://admin.oneinventory.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Timeout (giây)</label>
+          <input v-model.number="connSettings.oneInventory.timeoutSeconds" class="form-input" type="number" min="1" max="300" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input v-model="connSettings.oneInventory.username" class="form-input" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="pwd-wrap">
+            <input v-model="connSettings.oneInventory.password" class="form-input" :type="showPwd.oneInventory ? 'text' : 'password'" autocomplete="new-password" />
+            <button class="pwd-eye" type="button" @click="showPwd.oneInventory = !showPwd.oneInventory">{{ showPwd.oneInventory ? '🙈' : '👁️' }}</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-secondary" type="button" :disabled="connTesting.oneInventory" @click="testOneInventory">
+        {{ connTesting.oneInventory ? 'Đang kiểm tra...' : '🔌 Kiểm tra kết nối OneInventory' }}
+      </button>
+
+      <!-- Khung giờ chạy job -->
+      <h3 class="conn-group-title">⏰ Khung giờ chạy job</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Giờ chạy Số dư KVC</label>
+          <input v-model="connSettings.jobSchedule.parkBalanceTime" class="form-input" type="time" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Giờ chạy Giá vốn vé</label>
+          <input v-model="connSettings.jobSchedule.ticketCostTime" class="form-input" type="time" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Quét mail BIDV — từ</label>
+          <input v-model="connSettings.jobSchedule.bankScanStart" class="form-input" type="time" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quét mail BIDV — đến</label>
+          <input v-model="connSettings.jobSchedule.bankScanEnd" class="form-input" type="time" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Chu kỳ quét mail (phút)</label>
+          <input v-model.number="connSettings.jobSchedule.bankScanIntervalMinutes" class="form-input" type="number" min="1" max="720" />
+        </div>
+        <div class="form-group"></div>
+      </div>
+
+      <div class="conn-actions">
+        <button class="btn-secondary" type="button" :disabled="loading" @click="loadConnectionSettings">Tải lại</button>
+        <button class="btn-primary" type="button" :disabled="connSaving" @click="saveConnSettings">
+          {{ connSaving ? 'Đang lưu...' : '💾 Lưu cấu hình' }}
+        </button>
+      </div>
+    </div>
+    <div v-else class="notice notice-indigo">Đang tải cấu hình...</div>
+  </section>
+
   <section v-if="activeTab === 'reset' && isAdmin" class="card">
     <div class="notice notice-blue" style="margin-bottom: 16px">
       <strong>⚠️ Vùng nguy hiểm.</strong> Thao tác này xóa <strong>toàn bộ dữ liệu</strong>
@@ -1047,5 +1285,50 @@ onMounted(async () => {
   padding: 10px 12px;
   border-radius: 8px;
   background: rgba(127, 127, 127, 0.12);
+}
+
+.conn-group-title {
+  margin: 24px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(127, 127, 127, 0.2);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.conn-group-title:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.pwd-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pwd-wrap .form-input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.pwd-eye {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px;
+}
+
+.conn-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(127, 127, 127, 0.2);
 }
 </style>

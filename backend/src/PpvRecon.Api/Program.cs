@@ -2,12 +2,14 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PpvRecon.Api.Auth;
 using PpvRecon.Api.Commands;
 using PpvRecon.Api.Middleware;
 using PpvRecon.Api.Services;
 using PpvRecon.Api.Services.BankStatement;
+using PpvRecon.Api.Services.Settings;
 using PpvRecon.Application.Auth;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
@@ -62,24 +64,18 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.Configure<ParkBalanceApiOptions>(builder.Configuration.GetSection("ExternalApis:ParkBalance"));
-builder.Services.AddHttpClient<IParkBalanceApiClient, ParkBalanceApiClient>((serviceProvider, client) =>
+// Cấu hình kết nối lấy dữ liệu đọc từ DB (qua IConnectionSettingsService) để Admin sửa áp dụng ngay.
+// Timeout HttpClient điều khiển per-call theo cấu hình (CTS) nên để vô hạn tại đây.
+builder.Services.AddScoped<IConnectionSettingsService, ConnectionSettingsService>();
+builder.Services.AddHttpClient<IParkBalanceApiClient, ParkBalanceApiClient>(client =>
 {
-    var options = serviceProvider
-        .GetRequiredService<Microsoft.Extensions.Options.IOptions<ParkBalanceApiOptions>>()
-        .Value;
-    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 300));
+    client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
 });
-builder.Services.Configure<OneInventoryApiOptions>(builder.Configuration.GetSection("ExternalApis:OneInventory"));
-builder.Services.AddHttpClient<IOneInventoryBookingApiClient, OneInventoryBookingApiClient>((serviceProvider, client) =>
+builder.Services.AddHttpClient<IOneInventoryBookingApiClient, OneInventoryBookingApiClient>(client =>
 {
-    var options = serviceProvider
-        .GetRequiredService<Microsoft.Extensions.Options.IOptions<OneInventoryApiOptions>>()
-        .Value;
-    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 300));
+    client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
 });
 builder.Services.AddScoped<ITicketCostSyncService, TicketCostSyncService>();
-builder.Services.Configure<BankStatementImportOptions>(builder.Configuration.GetSection("BankStatementImport"));
 builder.Services.AddScoped<IImapEmailReader, ImapEmailReader>();
 builder.Services.AddScoped<IBankStatementSyncService, BankStatementSyncService>();
 builder.Services.AddScoped<IJobRunner, JobRunner>();
@@ -175,11 +171,15 @@ try
         return;
     }
 
-    // Đảm bảo các cột cố định của "Quy trình nạp tiền KVC" luôn tồn tại
-    // (tự phục hồi nếu DB từng bị xóa mất cột). Idempotent, an toàn mỗi lần chạy.
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<PpvReconDbContext>();
+
+        // Tự động áp mọi migration đang chờ ngay khi khởi động, để DB luôn khớp với code.
+        await db.Database.MigrateAsync();
+
+        // Đảm bảo các cột cố định của "Quy trình nạp tiền KVC" luôn tồn tại
+        // (tự phục hồi nếu DB từng bị xóa mất cột). Idempotent, an toàn mỗi lần chạy.
         await WorkflowBoardSeeder.EnsureColumnsAsync(db);
     }
 

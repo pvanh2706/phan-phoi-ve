@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
+using PpvRecon.Api.Services.Settings;
 using PpvRecon.Domain.Entities.Parks;
 
 namespace PpvRecon.Api.Services;
@@ -35,7 +35,7 @@ public interface IParkBalanceApiClient
 
 public sealed class ParkBalanceApiClient(
     HttpClient httpClient,
-    IOptions<ParkBalanceApiOptions> options) : IParkBalanceApiClient
+    IConnectionSettingsService connectionSettings) : IParkBalanceApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -47,9 +47,11 @@ public sealed class ParkBalanceApiClient(
         DateOnly businessDate,
         CancellationToken cancellationToken)
     {
-        var endpoint = string.IsNullOrWhiteSpace(options.Value.Endpoint)
+        var options = await connectionSettings.GetParkBalanceAsync(cancellationToken);
+        var endpoint = string.IsNullOrWhiteSpace(options.Endpoint)
             ? "http://api-ezcmt.ezticket.com.vn/gw/common/check-ar"
-            : options.Value.Endpoint.Trim();
+            : options.Endpoint.Trim();
+        var timeoutSeconds = Math.Clamp(options.TimeoutSeconds, 1, 300);
 
         var payload = new
         {
@@ -86,9 +88,13 @@ public sealed class ParkBalanceApiClient(
             };
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            using var response = await httpClient.SendAsync(request, cancellationToken);
+            // Timeout đọc từ cấu hình (áp dụng ngay) qua CTS thay vì HttpClient.Timeout cố định.
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
+            using var response = await httpClient.SendAsync(request, timeoutCts.Token);
             statusCode = (int)response.StatusCode;
-            responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             stopwatch.Stop();
 
             if (!response.IsSuccessStatusCode)

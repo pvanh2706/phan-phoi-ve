@@ -19,7 +19,4 @@ public sealed class BankStatementImportOptions
 
     /// <summary>Mật khẩu mở file PDF sao kê.</summary>
     public string PdfPassword { get; set; } = "";
-
-    /// <summary>Số email gần nhất sẽ lấy mỗi lần đồng bộ.</summary>
-    public int RecentCount { get; set; } = 10;
 }

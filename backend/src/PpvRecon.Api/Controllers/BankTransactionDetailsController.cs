@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Api.Services.BankStatement;
 using PpvRecon.Application.Common;
+using PpvRecon.Application.Jobs;
 using PpvRecon.Application.Summaries;
 using PpvRecon.Domain.Enums;
 using PpvRecon.Infrastructure.Persistence;
@@ -15,7 +16,7 @@ namespace PpvRecon.Api.Controllers;
 [Route("api/bank-transaction-details")]
 public sealed class BankTransactionDetailsController(
     PpvReconDbContext dbContext,
-    IBankStatementSyncService syncService) : PpvControllerBase
+    IJobRunner jobRunner) : PpvControllerBase
 {
     private static readonly JsonSerializerOptions JsonLineItemsOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -99,22 +100,63 @@ public sealed class BankTransactionDetailsController(
     public async Task<ActionResult<ApiResponse<BankStatementSyncResult>>> Sync(
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await syncService.SyncAsync(CurrentUserId, cancellationToken);
+        // Đi qua JobRunner để lần chạy thủ công cũng được ghi log đầy đủ
+        // (JobRun + log gọi API + audit), giống lần chạy tự động theo lịch.
+        var detail = await jobRunner.RunExternalSyncAsync(
+            ExternalApiSource.BankTransaction,
+            VietnamToday(),
+            JobTriggerType.Manual,
+            CurrentUserId,
+            cancellationToken);
 
-            var message = result.Imported == 0
-                ? "Không có giao dịch nào được nhập."
-                : $"Đã nhập {result.Imported} dòng KVC (gộp từ {result.TransactionsParsed} giao dịch) từ {result.MailsProcessed} email.";
-            if (result.SkippedUnmatched > 0)
-                message += $" Bỏ qua {result.SkippedUnmatched} giao dịch không khớp KVC.";
-
-            return Ok(ApiResponse<BankStatementSyncResult>.Ok(result, message));
-        }
-        catch (Exception ex)
+        if (detail.Status is JobRunStatus.Failed or JobRunStatus.CompletedWithErrors)
         {
             return BadRequest(ApiResponse<BankStatementSyncResult>.Fail(
-                $"Không lấy được sao kê từ email: {ex.Message}"));
+                $"Không lấy được sao kê từ email: {detail.ErrorMessage}"));
+        }
+
+        var result = ExtractSyncResult(detail.SummaryJson) ?? new BankStatementSyncResult();
+
+        var message = result.Imported == 0
+            ? "Không có giao dịch nào được nhập."
+            : $"Đã nhập {result.Imported} dòng KVC (gộp từ {result.TransactionsParsed} giao dịch) từ {result.MailsProcessed} email.";
+        if (result.SkippedUnmatched > 0)
+            message += $" Bỏ qua {result.SkippedUnmatched} giao dịch không khớp KVC.";
+
+        return Ok(ApiResponse<BankStatementSyncResult>.Ok(result, message));
+    }
+
+    /// <summary>Đọc lại BankStatementSyncResult từ trường "result" trong SummaryJson của lần chạy job.</summary>
+    private static BankStatementSyncResult? ExtractSyncResult(string? summaryJson)
+    {
+        if (string.IsNullOrWhiteSpace(summaryJson)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(summaryJson);
+            if (doc.RootElement.TryGetProperty("result", out var resultElement)
+                && resultElement.ValueKind == JsonValueKind.Object)
+            {
+                return resultElement.Deserialize<BankStatementSyncResult>(JsonLineItemsOptions);
+            }
+        }
+        catch (JsonException)
+        {
+            // SummaryJson sai định dạng -> coi như không có chi tiết.
+        }
+        return null;
+    }
+
+    private static DateOnly VietnamToday()
+    {
+        try
+        {
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone));
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok");
+            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone));
         }
     }
 }

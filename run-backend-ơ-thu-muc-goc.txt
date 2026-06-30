@@ -1,1 +1,21 @@
 dotnet run --project backend/src/PpvRecon.Api -- seed-admin
+
+
+
+-- Xem trước số dòng đang có
+SELECT COUNT(*) FROM BankTransactionDetails;
+
+-- Xóa TOÀN BỘ dữ liệu
+DELETE FROM BankTransactionDetails;
+
+
+
+-- Chỉ xóa dữ liệu nguồn API (giữ dòng nhập tay nếu có)
+DELETE FROM BankTransactionDetails WHERE SourceType = 'Api';
+
+-- Chỉ xóa một ngày (định dạng yyyy-MM-dd)
+DELETE FROM BankTransactionDetails WHERE BusinessDate = '2026-06-30';
+
+-- Xóa một khoảng ngày
+DELETE FROM BankTransactionDetails
+WHERE BusinessDate >= '2026-06-01' AND BusinessDate <= '2026-06-30';
