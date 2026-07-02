@@ -137,11 +137,11 @@ function todayIso() {
   return `${year}-${month}-${day}`
 }
 
-function formatTimeVn(value?: string | null) {
+function formatTime(value?: string | null) {
   if (!value) return '-'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
-  return date.toLocaleTimeString('vi-VN', { hour12: false, timeZone: 'Asia/Ho_Chi_Minh' })
+  return date.toLocaleTimeString('vi-VN', { hour12: false })
 }
 
 function selectBalanceTab(tab: 'nap' | 'cn') {
@@ -442,7 +442,7 @@ onMounted(async () => {
         <thead>
           <tr>
             <th>Ngày VN</th>
-            <th>Giờ VN</th>
+            <th>Giờ</th>
             <th>Loại topup</th>
             <th>Tên KVC</th>
             <th>Số dư khả dụng</th>
@@ -456,7 +456,7 @@ onMounted(async () => {
             <td v-if="item.isSep" colspan="7">📅 {{ formatDate(item.row.businessDate) }}</td>
             <template v-else>
               <td>{{ formatDate(item.row.businessDate) }}</td>
-              <td class="cell-muted">{{ formatTimeVn(item.row.createdAtUtc) }}</td>
+              <td class="cell-muted">{{ formatTime(item.row.createdAtUtc) }}</td>
               <td><span class="badge badge-teal">{{ paymentTypeLabel(item.row.paymentType) }}</span></td>
               <td class="cell-strong">{{ item.row.parkName }}</td>
               <td class="amount" :class="Number(item.row.availableBalance) < 0 ? 'amount-red' : 'amount-green'">
@@ -473,7 +473,7 @@ onMounted(async () => {
         <thead>
           <tr>
             <th>Ngày VN</th>
-            <th>Giờ VN</th>
+            <th>Giờ</th>
             <th>Loại topup</th>
             <th>Tên KVC</th>
             <th>Số dư khả dụng</th>
@@ -487,7 +487,7 @@ onMounted(async () => {
             <td v-if="item.isSep" colspan="7">📅 {{ formatDate(item.row.businessDate) }}</td>
             <template v-else>
               <td>{{ formatDate(item.row.businessDate) }}</td>
-              <td class="cell-muted">{{ formatTimeVn(item.row.createdAtUtc) }}</td>
+              <td class="cell-muted">{{ formatTime(item.row.createdAtUtc) }}</td>
               <td><span class="badge badge-indigo">{{ paymentTypeLabel(item.row.paymentType) }}</span></td>
               <td class="cell-strong">{{ item.row.parkName }}</td>
               <td class="amount" :class="Number(item.row.availableBalance) < 0 ? 'amount-red' : 'amount-green'">

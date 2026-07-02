@@ -89,13 +89,20 @@ public sealed class ReconciliationBuilder(
             long? varianceAmount = null;
             ReconciliationStatus calculatedStatus;
 
-            if (missingPreviousBalance || missingActualBalance || missingTicketCost || missingBankTransaction)
+            // Ngày không có giao dịch ngân hàng / không có vé bán là bình thường:
+            // (2)/(3) trống được coi là 0, luôn tính (4)=(1)+(2)-(3) khi có số dư Ngày T-1.
+            // Chỉ coi là "Thiếu dữ liệu" khi thiếu số dư Ngày T-1 hoặc số dư Ngày T.
+            if (!missingPreviousBalance)
+            {
+                expectedBalance = previousBalanceValue + (additionalAmount ?? 0) - (usedAmount ?? 0);
+            }
+
+            if (missingPreviousBalance || missingActualBalance)
             {
                 calculatedStatus = ReconciliationStatus.MissingData;
             }
             else
             {
-                expectedBalance = previousBalanceValue + additionalAmount - usedAmount;
                 varianceAmount = actualBalanceValue - expectedBalance;
                 calculatedStatus = varianceAmount == 0
                     ? ReconciliationStatus.Matched

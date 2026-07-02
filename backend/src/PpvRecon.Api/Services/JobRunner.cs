@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Api.Services.BankStatement;
+using PpvRecon.Api.Services.Settings;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Jobs;
 using PpvRecon.Application.Reconciliation;
@@ -18,6 +19,7 @@ public sealed class JobRunner(
     ITicketCostSyncService ticketCostSyncService,
     IBankStatementSyncService bankStatementSyncService,
     IReconciliationBuilder reconciliationBuilder,
+    IConnectionSettingsService connectionSettings,
     IAuditService auditService,
     ILogger<JobRunner> logger) : IJobRunner
 {
@@ -98,11 +100,12 @@ public sealed class JobRunner(
             .ToListAsync(cancellationToken);
 
         jobRun.TotalItems = parks.Count;
-        await dbContext.SaveChangesAsync(cancellationToken);
 
+        // Pha 1: tạo sẵn JobRunItem cho toàn bộ KVC (cùng một mốc bắt đầu).
+        var startedAtUtc = DateTime.UtcNow;
+        var itemsByParkId = new Dictionary<int, JobRunItem>();
         foreach (var park in parks)
         {
-            var itemStartedAtUtc = DateTime.UtcNow;
             var item = new JobRunItem
             {
                 JobRunId = jobRun.Id,
@@ -111,14 +114,41 @@ public sealed class JobRunner(
                 Source = source,
                 Status = JobRunItemStatus.Running,
                 AttemptCount = 1,
-                StartedAtUtc = itemStartedAtUtc,
+                StartedAtUtc = startedAtUtc,
             };
-
             dbContext.JobRunItems.Add(item);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            itemsByParkId[park.Id] = item;
+        }
 
-            var apiResult = await parkBalanceApiClient.FetchAsync(park, businessDate, cancellationToken);
-            var finishedAtUtc = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Pha 2: đọc cấu hình API 1 lần rồi bắn đồng loạt tất cả KVC cùng thời điểm,
+        // tránh KVC cuối danh sách bị lấy số dư muộn (qua nửa đêm là nhảy sang ngày khác).
+        // DbContext không an toàn đa luồng nên pha này tuyệt đối không đụng DB.
+        var apiOptions = await connectionSettings.GetParkBalanceAsync(cancellationToken);
+        var fetchTasks = parks.Select(async park =>
+        {
+            try
+            {
+                var result = await parkBalanceApiClient.FetchAsync(park, businessDate, apiOptions, cancellationToken);
+                return (Park: park, Result: result, FinishedAtUtc: DateTime.UtcNow);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                return (Park: park, Result: new ParkBalanceApiResult
+                {
+                    IsSuccess = false,
+                    ErrorCode = "UnexpectedError",
+                    ErrorMessage = ex.Message,
+                }, FinishedAtUtc: DateTime.UtcNow);
+            }
+        }).ToList();
+        var outcomes = await Task.WhenAll(fetchTasks);
+
+        // Pha 3: ghi kết quả vào DB tuần tự sau khi đã gom đủ.
+        foreach (var (park, apiResult, finishedAtUtc) in outcomes)
+        {
+            var item = itemsByParkId[park.Id];
             var rawResponse = new ExternalApiRawResponse
             {
                 Source = source,

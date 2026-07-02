@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using PpvRecon.Api.Services.Settings;
 using PpvRecon.Domain.Entities.Parks;
 
 namespace PpvRecon.Api.Services;
@@ -30,12 +29,14 @@ public sealed class ParkBalanceApiResult
 
 public interface IParkBalanceApiClient
 {
-    Task<ParkBalanceApiResult> FetchAsync(Park park, DateOnly businessDate, CancellationToken cancellationToken);
+    /// <summary>
+    /// Cấu hình (endpoint/timeout) được truyền từ ngoài vào để caller đọc 1 lần rồi
+    /// gọi song song nhiều KVC — client không tự đọc DbContext (không an toàn đa luồng).
+    /// </summary>
+    Task<ParkBalanceApiResult> FetchAsync(Park park, DateOnly businessDate, ParkBalanceApiOptions options, CancellationToken cancellationToken);
 }
 
-public sealed class ParkBalanceApiClient(
-    HttpClient httpClient,
-    IConnectionSettingsService connectionSettings) : IParkBalanceApiClient
+public sealed class ParkBalanceApiClient(HttpClient httpClient) : IParkBalanceApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -45,9 +46,9 @@ public sealed class ParkBalanceApiClient(
     public async Task<ParkBalanceApiResult> FetchAsync(
         Park park,
         DateOnly businessDate,
+        ParkBalanceApiOptions options,
         CancellationToken cancellationToken)
     {
-        var options = await connectionSettings.GetParkBalanceAsync(cancellationToken);
         var endpoint = string.IsNullOrWhiteSpace(options.Endpoint)
             ? "http://api-ezcmt.ezticket.com.vn/gw/common/check-ar"
             : options.Endpoint.Trim();
