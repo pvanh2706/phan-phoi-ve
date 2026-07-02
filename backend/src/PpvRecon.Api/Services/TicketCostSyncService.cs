@@ -26,24 +26,24 @@ public sealed class TicketCostSyncResult
 
 public interface ITicketCostSyncService
 {
-    Task<TicketCostSyncResult> SyncTodayAsync(int? currentUserId, CancellationToken cancellationToken);
+    /// <summary>Lấy dữ liệu vé bán của đúng ngày chỉ định (job đêm chạy 1h sáng lấy dữ liệu ngày hôm trước).</summary>
+    Task<TicketCostSyncResult> SyncAsync(DateOnly businessDate, int? currentUserId, CancellationToken cancellationToken);
 }
 
 /// <summary>
-/// Lấy chi tiết vé bán hôm nay từ Oneinventory → map MaKhuVuiChoi vào Mã KVC con (ParkTicketType.Code) →
+/// Lấy chi tiết vé bán của ngày chỉ định từ Oneinventory → map MaKhuVuiChoi vào Mã KVC con (ParkTicketType.Code) →
 /// lần ra KVC cha (Park) qua ParkId để lấy PaymentType (phân tab) → gộp tổng tiền theo KVC cha
-/// (mỗi KVC cha = 1 dòng) → ghi đè dữ liệu nguồn API của ngày hôm nay vào bảng TicketSaleCostDetails.
+/// (mỗi KVC cha = 1 dòng) → ghi đè dữ liệu nguồn API của ngày đó vào bảng TicketSaleCostDetails.
 /// </summary>
 public sealed class TicketCostSyncService(
     IOneInventoryBookingApiClient apiClient,
     PpvReconDbContext dbContext) : ITicketCostSyncService
 {
-    public async Task<TicketCostSyncResult> SyncTodayAsync(int? currentUserId, CancellationToken cancellationToken)
+    public async Task<TicketCostSyncResult> SyncAsync(DateOnly businessDate, int? currentUserId, CancellationToken cancellationToken)
     {
-        var today = VietnamToday();
-        var result = new TicketCostSyncResult { BusinessDate = today };
+        var result = new TicketCostSyncResult { BusinessDate = businessDate };
 
-        var apiResult = await apiClient.FetchBookingsAsync(today, cancellationToken);
+        var apiResult = await apiClient.FetchBookingsAsync(businessDate, cancellationToken);
         if (!apiResult.IsSuccess)
         {
             throw new InvalidOperationException(apiResult.ErrorMessage ?? "Không lấy được dữ liệu từ Oneinventory.");
@@ -111,7 +111,7 @@ public sealed class TicketCostSyncService(
 
         var aggregated = byParent.Values.Select(acc => new TicketSaleCostDetail
         {
-            BusinessDate = today,
+            BusinessDate = businessDate,
             ParkId = acc.ParkId,
             PaymentType = acc.PaymentType,
             ParkCodeSnapshot = acc.ParkCode,
@@ -145,9 +145,9 @@ public sealed class TicketCostSyncService(
 
         result.UnmatchedParkCodes = unmatched.ToList();
 
-        // Ghi đè: xóa dữ liệu nguồn API của hôm nay rồi nạp lại bản gộp mới.
+        // Ghi đè: xóa dữ liệu nguồn API của ngày này rồi nạp lại bản gộp mới.
         var existing = await dbContext.TicketSaleCostDetails
-            .Where(x => x.SourceType == SourceType.Api && x.BusinessDate == today)
+            .Where(x => x.SourceType == SourceType.Api && x.BusinessDate == businessDate)
             .ToListAsync(cancellationToken);
         dbContext.TicketSaleCostDetails.RemoveRange(existing);
 
@@ -159,19 +159,6 @@ public sealed class TicketCostSyncService(
 
         result.Imported = aggregated.Count;
         return result;
-    }
-
-    private static DateOnly VietnamToday()
-    {
-        try
-        {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz));
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
-        }
     }
 
     private static long ToLong(string? value)

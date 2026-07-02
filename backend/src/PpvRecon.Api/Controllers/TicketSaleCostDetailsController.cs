@@ -92,17 +92,25 @@ public sealed class TicketSaleCostDetailsController(
         }));
     }
 
+    public sealed class TicketCostSyncRequest
+    {
+        /// <summary>Ngày cần lấy dữ liệu; bỏ trống = hôm nay (giờ VN).</summary>
+        public DateOnly? BusinessDate { get; set; }
+    }
+
     /// <summary>
-    /// Lấy chi tiết vé bán hôm nay từ Oneinventory → gộp theo KVC (cộng tổng tiền) →
-    /// ghi đè dữ liệu nguồn API của ngày hôm nay. (Nút "Lấy dữ liệu")
+    /// Lấy chi tiết vé bán của ngày chỉ định (mặc định hôm nay) từ Oneinventory → gộp theo KVC
+    /// (cộng tổng tiền) → ghi đè dữ liệu nguồn API của ngày đó. (Nút "Lấy dữ liệu")
     /// </summary>
     [HttpPost("sync")]
     public async Task<ActionResult<ApiResponse<TicketCostSyncResult>>> Sync(
+        TicketCostSyncRequest? request,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await syncService.SyncTodayAsync(CurrentUserId, cancellationToken);
+            var businessDate = request?.BusinessDate ?? GetVietnamToday();
+            var result = await syncService.SyncAsync(businessDate, CurrentUserId, cancellationToken);
 
             var message = result.Imported == 0
                 ? $"Không có dữ liệu vé bán để ghi nhận cho ngày {result.BusinessDate:dd/MM/yyyy}."

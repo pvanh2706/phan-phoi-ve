@@ -21,6 +21,21 @@ const filters = reactive({
   dateTo: '',
 })
 
+const syncModal = reactive({
+  open: false,
+  businessDate: '',
+})
+
+function todayIso() {
+  const now = new Date()
+  return `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, '0')}-${`${now.getDate()}`.padStart(2, '0')}`
+}
+
+function openSyncModal() {
+  syncModal.businessDate = todayIso()
+  syncModal.open = true
+}
+
 const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / 100)))
 
 const displayRows = computed(() => {
@@ -55,10 +70,15 @@ async function load() {
   }
 }
 
-async function syncToday() {
+async function runSync() {
+  if (!syncModal.businessDate) {
+    toast.error('Vui lòng chọn ngày cần lấy dữ liệu.')
+    return
+  }
+  syncModal.open = false
   syncing.value = true
   try {
-    const result = await syncTicketCostDetails()
+    const result = await syncTicketCostDetails(syncModal.businessDate)
     const date = formatDate(result.businessDate)
     let suffix = ''
     if (result.skippedUnmatched > 0) {
@@ -135,12 +155,34 @@ onMounted(load)
       <input v-model="filters.dateFrom" class="tb-date" type="date" @change="applyFilter" />
       <span class="tb-label">Đến ngày</span>
       <input v-model="filters.dateTo" class="tb-date" type="date" @change="applyFilter" />
-      <button class="add-btn" type="button" :disabled="syncing || loading" @click="syncToday">
+      <button class="add-btn" type="button" :disabled="syncing || loading" @click="openSyncModal">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l14 9-14 9V3z" />
         </svg>
         {{ syncing ? 'Đang lấy...' : 'Lấy dữ liệu' }}
       </button>
+    </div>
+
+    <div v-if="syncModal.open" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Lấy dữ liệu giá vốn vé bán</span>
+          <button class="modal-close" type="button" @click="syncModal.open = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Ngày cần lấy dữ liệu</label>
+            <input v-model="syncModal.businessDate" class="form-input" type="date" :max="todayIso()" />
+          </div>
+          <div class="notice notice-indigo">
+            Dữ liệu vé bán nguồn API của ngày này sẽ được ghi đè bằng kết quả mới từ Oneinventory.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" type="button" @click="syncModal.open = false">Hủy</button>
+          <button class="btn-primary" type="button" :disabled="syncing" @click="runSync">Lấy dữ liệu</button>
+        </div>
+      </div>
     </div>
 
     <div class="table-wrap report-table-wrap">

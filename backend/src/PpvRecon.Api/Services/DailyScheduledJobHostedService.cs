@@ -81,6 +81,8 @@ public sealed class DailyScheduledJobHostedService(
         var schedule = await connectionSettings.GetJobScheduleAsync(cancellationToken);
 
         // 1) Các job đồng bộ API ngoài: mỗi nguồn chạy theo khung giờ riêng.
+        // Số dư KVC chốt lúc cuối ngày T (23:59) cho chính ngày T; giá vốn vé chạy rạng sáng
+        // hôm sau (mặc định 01:00) nhưng lấy dữ liệu của NGÀY HÔM TRƯỚC để trọn vẹn cả ngày bán vé.
         foreach (var source in SyncSources)
         {
             var sourceTime = source == ExternalApiSource.ParkBalance
@@ -91,8 +93,12 @@ public sealed class DailyScheduledJobHostedService(
                 continue;
             }
 
+            var targetDate = source == ExternalApiSource.TicketCost
+                ? businessDate.AddDays(-1)
+                : businessDate;
+
             var jobName = GetJobName(source);
-            if (await HasScheduledJobAsync(dbContext, jobName, businessDate, cancellationToken))
+            if (await HasScheduledJobAsync(dbContext, jobName, targetDate, cancellationToken))
             {
                 continue;
             }
@@ -100,11 +106,11 @@ public sealed class DailyScheduledJobHostedService(
             logger.LogInformation(
                 "Running scheduled sync {JobName} for business date {BusinessDate}.",
                 jobName,
-                businessDate);
+                targetDate);
 
             await jobRunner.RunExternalSyncAsync(
                 source,
-                businessDate,
+                targetDate,
                 JobTriggerType.Schedule,
                 triggeredByUserId: null,
                 cancellationToken);

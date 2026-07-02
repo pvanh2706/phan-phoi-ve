@@ -45,7 +45,7 @@ public sealed class JobRunner(
                     triggeredByUserId,
                     async ct =>
                     {
-                        var r = await ticketCostSyncService.SyncTodayAsync(triggeredByUserId, ct);
+                        var r = await ticketCostSyncService.SyncAsync(businessDate, triggeredByUserId, ct);
                         return new ExternalSyncOutcome(
                             new
                             {

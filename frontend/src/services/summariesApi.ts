@@ -216,9 +216,10 @@ export interface TicketCostSyncResult {
   unmatchedParkCodes: string[]
 }
 
-export function syncTicketCostDetails() {
+export function syncTicketCostDetails(businessDate?: string) {
   return apiRequest<TicketCostSyncResult>('/ticket-cost-details/sync', {
     method: 'POST',
+    body: JSON.stringify({ businessDate: businessDate || null }),
   })
 }
 

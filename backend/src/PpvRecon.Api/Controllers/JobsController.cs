@@ -234,17 +234,4 @@ public sealed class JobsController(
             };
     }
 
-    private static DateOnly GetVietnamToday()
-    {
-        try
-        {
-            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone));
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok");
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone));
-        }
-    }
 }

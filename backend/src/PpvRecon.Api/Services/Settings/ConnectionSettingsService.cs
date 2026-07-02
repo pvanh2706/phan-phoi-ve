@@ -43,7 +43,7 @@ public sealed class OneInventoryConnectionDto
 public sealed class JobScheduleDto
 {
     public string ParkBalanceTime { get; set; } = "23:59";
-    public string TicketCostTime { get; set; } = "23:59";
+    public string TicketCostTime { get; set; } = "01:00";
     public string BankScanStart { get; set; } = "04:00";
     public string BankScanEnd { get; set; } = "08:00";
     public int BankScanIntervalMinutes { get; set; } = 5;
@@ -68,7 +68,7 @@ public sealed class ConnectionTestResult
 public sealed class JobScheduleSettings
 {
     public TimeOnly ParkBalanceTime { get; set; } = new(23, 59);
-    public TimeOnly TicketCostTime { get; set; } = new(23, 59);
+    public TimeOnly TicketCostTime { get; set; } = new(1, 0);
     public TimeOnly BankScanStart { get; set; } = new(4, 0);
     public TimeOnly BankScanEnd { get; set; } = new(8, 0);
     public int BankScanIntervalMinutes { get; set; } = 5;
@@ -179,7 +179,7 @@ public sealed class ConnectionSettingsService(
         return new JobScheduleSettings
         {
             ParkBalanceTime = Time(o, JobParkBalanceTime, configuration["Jobs:ScheduleTimes:ParkBalance"], new(23, 59)),
-            TicketCostTime = Time(o, JobTicketCostTime, configuration["Jobs:ScheduleTimes:TicketCost"], new(23, 59)),
+            TicketCostTime = Time(o, JobTicketCostTime, configuration["Jobs:ScheduleTimes:TicketCost"], new(1, 0)),
             BankScanStart = Time(o, JobBankScanStart, configuration["Jobs:BankTransactionScan:StartTime"], new(4, 0)),
             BankScanEnd = Time(o, JobBankScanEnd, configuration["Jobs:BankTransactionScan:EndTime"], new(8, 0)),
             BankScanIntervalMinutes = Math.Clamp(
@@ -284,7 +284,7 @@ public sealed class ConnectionSettingsService(
         Set(OiTimeout, Math.Clamp(dto.OneInventory.TimeoutSeconds, 1, 300).ToString(), SettingValueType.Int, false);
 
         Set(JobParkBalanceTime, NormalizeTime(dto.JobSchedule.ParkBalanceTime, new(23, 59)), SettingValueType.String, false);
-        Set(JobTicketCostTime, NormalizeTime(dto.JobSchedule.TicketCostTime, new(23, 59)), SettingValueType.String, false);
+        Set(JobTicketCostTime, NormalizeTime(dto.JobSchedule.TicketCostTime, new(1, 0)), SettingValueType.String, false);
         Set(JobBankScanStart, NormalizeTime(dto.JobSchedule.BankScanStart, new(4, 0)), SettingValueType.String, false);
         Set(JobBankScanEnd, NormalizeTime(dto.JobSchedule.BankScanEnd, new(8, 0)), SettingValueType.String, false);
         Set(JobBankScanInterval, Math.Clamp(dto.JobSchedule.BankScanIntervalMinutes, 1, 720).ToString(), SettingValueType.Int, false);
