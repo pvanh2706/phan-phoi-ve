@@ -19,6 +19,9 @@ public sealed class BankStatementSyncResult
     public int SkippedUnmatched { get; set; }
     public int OverwrittenDates { get; set; }
 
+    /// <summary>Các ngày nghiệp vụ có dữ liệu bị ghi đè (dùng để tự động build lại đối soát).</summary>
+    public List<DateOnly> OverwrittenBusinessDates { get; set; } = new();
+
     /// <summary>Các số TKThe không khớp Park nào (để cảnh báo người dùng).</summary>
     public List<string> UnmatchedAccounts { get; set; } = new();
 }
@@ -164,6 +167,7 @@ public sealed class BankStatementSyncService(
         // 4) Ghi đè theo ngày: với mỗi ngày có dữ liệu mới, xóa GD nguồn API của ngày đó rồi nạp lại.
         var datesToOverwrite = aggregated.Select(m => m.BusinessDate).Distinct().ToList();
         result.OverwrittenDates = datesToOverwrite.Count;
+        result.OverwrittenBusinessDates = datesToOverwrite;
 
         var existing = await dbContext.BankTransactionDetails
             .Where(x => x.SourceType == SourceType.Api && datesToOverwrite.Contains(x.BusinessDate))

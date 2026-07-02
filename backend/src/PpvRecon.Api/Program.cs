@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PpvRecon.Api.Auth;
 using PpvRecon.Api.Commands;
+using PpvRecon.Api.Json;
 using PpvRecon.Api.Middleware;
 using PpvRecon.Api.Services;
 using PpvRecon.Api.Services.BankStatement;
@@ -36,6 +37,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
     });
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>

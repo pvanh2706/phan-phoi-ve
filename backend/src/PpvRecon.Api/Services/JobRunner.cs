@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PpvRecon.Api.Services.BankStatement;
 using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Jobs;
+using PpvRecon.Application.Reconciliation;
 using PpvRecon.Domain.Entities.Jobs;
 using PpvRecon.Domain.Entities.Parks;
 using PpvRecon.Domain.Entities.Summaries;
@@ -16,8 +17,13 @@ public sealed class JobRunner(
     IParkBalanceApiClient parkBalanceApiClient,
     ITicketCostSyncService ticketCostSyncService,
     IBankStatementSyncService bankStatementSyncService,
-    IAuditService auditService) : IJobRunner
+    IReconciliationBuilder reconciliationBuilder,
+    IAuditService auditService,
+    ILogger<JobRunner> logger) : IJobRunner
 {
+    /// <summary>Kết quả một lần sync: payload tóm tắt + các ngày nghiệp vụ có dữ liệu mới (để tự build lại đối soát).</summary>
+    private sealed record ExternalSyncOutcome(object Summary, IReadOnlyList<DateOnly> AffectedBusinessDates);
+
     public Task<JobRunDetailDto> RunExternalSyncAsync(
         ExternalApiSource source,
         DateOnly businessDate,
@@ -38,14 +44,16 @@ public sealed class JobRunner(
                     async ct =>
                     {
                         var r = await ticketCostSyncService.SyncTodayAsync(triggeredByUserId, ct);
-                        return new
-                        {
-                            r.BusinessDate,
-                            r.TotalLines,
-                            r.Imported,
-                            r.SkippedUnmatched,
-                            r.UnmatchedParkCodes,
-                        };
+                        return new ExternalSyncOutcome(
+                            new
+                            {
+                                r.BusinessDate,
+                                r.TotalLines,
+                                r.Imported,
+                                r.SkippedUnmatched,
+                                r.UnmatchedParkCodes,
+                            },
+                            [r.BusinessDate]);
                     },
                     cancellationToken),
             ExternalApiSource.BankTransaction =>
@@ -54,7 +62,11 @@ public sealed class JobRunner(
                     businessDate,
                     triggeredBy,
                     triggeredByUserId,
-                    async ct => await bankStatementSyncService.SyncAsync(businessDate, triggeredByUserId, ct),
+                    async ct =>
+                    {
+                        var r = await bankStatementSyncService.SyncAsync(businessDate, triggeredByUserId, ct);
+                        return new ExternalSyncOutcome(r, r.OverwrittenBusinessDates);
+                    },
                     cancellationToken),
             _ => RunExternalSyncPlaceholderAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken),
         };
@@ -177,6 +189,11 @@ public sealed class JobRunner(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await LogJobRunAsync(jobRun, triggeredByUserId, cancellationToken);
+
+        if (jobRun.SuccessItems > 0)
+        {
+            await AutoBuildReconciliationAsync([businessDate], triggeredByUserId, cancellationToken);
+        }
 
         return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
     }
@@ -344,7 +361,7 @@ public sealed class JobRunner(
         DateOnly businessDate,
         JobTriggerType triggeredBy,
         int? triggeredByUserId,
-        Func<CancellationToken, Task<object>> syncAction,
+        Func<CancellationToken, Task<ExternalSyncOutcome>> syncAction,
         CancellationToken cancellationToken)
     {
         var startedAtUtc = DateTime.UtcNow;
@@ -377,11 +394,14 @@ public sealed class JobRunner(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         object? summaryPayload = null;
+        IReadOnlyList<DateOnly> affectedBusinessDates = [];
         string? errorMessage = null;
         bool isSuccess;
         try
         {
-            summaryPayload = await syncAction(cancellationToken);
+            var outcome = await syncAction(cancellationToken);
+            summaryPayload = outcome.Summary;
+            affectedBusinessDates = outcome.AffectedBusinessDates;
             isSuccess = true;
         }
         catch (Exception ex)
@@ -446,8 +466,32 @@ public sealed class JobRunner(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await LogJobRunAsync(jobRun, triggeredByUserId, cancellationToken);
+        await AutoBuildReconciliationAsync(affectedBusinessDates, triggeredByUserId, cancellationToken);
 
         return await BuildJobRunDetailAsync(jobRun.Id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Tự động build lại đối soát cho các ngày vừa nhận được dữ liệu từ API ngoài,
+    /// để màn "Đối soát Khu vui chơi" luôn phản ánh số liệu mới nhất mà không cần bấm "Build đối soát".
+    /// Build lỗi không làm hỏng kết quả job đồng bộ (chỉ ghi log).
+    /// </summary>
+    private async Task AutoBuildReconciliationAsync(
+        IReadOnlyList<DateOnly> businessDates,
+        int? triggeredByUserId,
+        CancellationToken cancellationToken)
+    {
+        foreach (var date in businessDates.Distinct().OrderBy(x => x))
+        {
+            try
+            {
+                await reconciliationBuilder.BuildAsync(date, triggeredByUserId, cancellationToken, JobTriggerType.System);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Tự động build đối soát cho ngày {BusinessDate} thất bại.", date);
+            }
+        }
     }
 
     private Task LogJobRunAsync(JobRun jobRun, int? triggeredByUserId, CancellationToken cancellationToken)
