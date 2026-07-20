@@ -30,6 +30,7 @@ import {
   reconciliationStatusLabel,
   recordStatusLabel,
   sourceTypeLabel,
+  VN_TIME_ZONE,
   type PaymentType,
   type ReconciliationStatus,
   type SourceType,
@@ -141,7 +142,7 @@ function formatTime(value?: string | null) {
   if (!value) return '-'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '-'
-  return date.toLocaleTimeString('vi-VN', { hour12: false })
+  return date.toLocaleTimeString('vi-VN', { hour12: false, timeZone: VN_TIME_ZONE })
 }
 
 function selectBalanceTab(tab: 'nap' | 'cn') {
