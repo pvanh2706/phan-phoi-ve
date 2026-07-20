@@ -55,13 +55,6 @@ const red = (text: string): TableCell => ({ kind: 'amount', text, tone: 'red' })
 const badge = (text: string, tone: KanbanTask['tone']): TableCell => ({ kind: 'badge', text, tone })
 const actions = (): TableCell => ({ kind: 'actions', actions: [{ icon: '👁️', label: 'Chi tiết' }, { icon: '✏️', label: 'Sửa' }] })
 
-export function cloneColumns(columns: KanbanColumn[]) {
-  return columns.map((column) => ({
-    ...column,
-    tasks: column.tasks.map((task) => ({ ...task, details: { ...task.details } })),
-  }))
-}
-
 /**
  * Trang trí header cột (avatar người phụ trách + thống kê) theo columnKey.
  * Đây là phần hiển thị tĩnh, được ghép vào dữ liệu cột lấy từ API.
@@ -103,104 +96,6 @@ export const topUpColumnDecor: Record<string, { avatars: KanbanAvatar[]; stats: 
     stats: { done: 7, total: 18, overdue: 0, nvTone: 'red' },
   },
 }
-
-export const refundWorkflow: KanbanColumn[] = [
-  {
-    id: 'new',
-    title: 'Tiếp nhận',
-    icon: 'inbox',
-    tone: 'gray',
-    tasks: [
-      {
-        id: 'rw-1',
-        title: 'Hoàn tiền BK-240625-001',
-        park: 'Bản Mòng',
-        owner: 'CSKH',
-        date: '25/06/2026',
-        amount: '1,250,000 đ',
-        status: 'Mới tạo',
-        tone: 'blue',
-        details: { 'Khách hàng': 'Nguyễn Văn A', 'Lý do': 'Khách huỷ vé trước hạn', 'Phương thức': 'Chuyển khoản' },
-      },
-    ],
-  },
-  {
-    id: 'check',
-    title: 'Kiểm tra điều kiện',
-    icon: 'search',
-    tone: 'sky',
-    tasks: [
-      {
-        id: 'rw-2',
-        title: 'Hoàn tiền BK-240624-014',
-        park: 'Sun Group',
-        owner: 'Vận hành',
-        date: '24/06/2026',
-        amount: '820,000 đ',
-        status: 'Đang kiểm tra',
-        tone: 'amber',
-        details: { 'Khách hàng': 'Trần Thị B', 'Lý do': 'Lỗi thanh toán', 'Phương thức': 'Ví điện tử' },
-      },
-    ],
-  },
-  {
-    id: 'approve',
-    title: 'Duyệt hoàn',
-    icon: 'check',
-    tone: 'amber',
-    tasks: [
-      {
-        id: 'rw-3',
-        title: 'Hoàn tiền BK-240623-102',
-        park: 'Đồi Rồng',
-        owner: 'Kế toán',
-        date: '23/06/2026',
-        amount: '450,000 đ',
-        status: 'Chờ duyệt',
-        tone: 'indigo',
-        details: { 'Khách hàng': 'Lê Minh C', 'Lý do': 'Đổi lịch không thành công', 'Phương thức': 'Chuyển khoản' },
-      },
-    ],
-  },
-  {
-    id: 'payment',
-    title: 'Chi hoàn tiền',
-    icon: 'card',
-    tone: 'indigo',
-    tasks: [
-      {
-        id: 'rw-4',
-        title: 'Hoàn tiền BK-240622-087',
-        park: 'TLTY',
-        owner: 'Kế toán',
-        date: '22/06/2026',
-        amount: '600,000 đ',
-        status: 'Đang chi',
-        tone: 'amber',
-        details: { 'Khách hàng': 'Phạm Đức D', 'Lý do': 'Trùng booking', 'Phương thức': 'Bù trừ công nợ' },
-      },
-    ],
-  },
-  {
-    id: 'complete',
-    title: 'Hoàn tất',
-    icon: 'target',
-    tone: 'green',
-    tasks: [
-      {
-        id: 'rw-5',
-        title: 'Hoàn tiền BK-240621-044',
-        park: 'Sơn Tiên',
-        owner: 'CSKH',
-        date: '21/06/2026',
-        amount: '1,600,000 đ',
-        status: 'Hoàn tất',
-        tone: 'green',
-        details: { 'Khách hàng': 'Hoàng Lan E', 'Lý do': 'Huỷ vé hợp lệ', 'Phương thức': 'Bù trừ công nợ' },
-      },
-    ],
-  },
-]
 
 const topUpColumns: TableColumn[] = [
   { key: 'date', label: 'Ngày' },

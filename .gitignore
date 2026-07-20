@@ -37,3 +37,6 @@ Thumbs.db
 *.suo
 TestResults/
 backend/src/PpvRecon.Api/App_Data/
+
+# Deploy script (chua mat khau server that)
+deploy/config.bat

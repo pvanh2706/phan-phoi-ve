@@ -96,6 +96,7 @@ function addButtonText(label: string) {
         </svg>
         {{ addButtonText(tab.addLabel) }}
       </button>
+      <slot name="actions" />
     </div>
 
     <DataTable :columns="tab.columns" :rows="visibleRows" />

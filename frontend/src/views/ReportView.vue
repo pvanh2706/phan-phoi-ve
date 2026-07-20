@@ -118,7 +118,7 @@ const config = computed(() => {
   }
 
   return {
-    title: props.pageKey === 'parkRefunds' ? 'KVC hoàn tiền' : 'Trạng thái hoàn tiền cho khách hàng',
+    title: 'Đang phát triển',
     subtitle: 'Phần này chưa có API backend trong phạm vi đã triển khai.',
     empty: 'Chưa có API cho màn này.',
   }

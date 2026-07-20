@@ -1,12 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AgencyDiffView from '../views/AgencyDiffView.vue'
+import AgencyListView from '../views/AgencyListView.vue'
+import AgencyMonthlyBalanceView from '../views/AgencyMonthlyBalanceView.vue'
+import AgencyReportView from '../views/AgencyReportView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import JobErrorsView from '../views/JobErrorsView.vue'
 import LoginView from '../views/LoginView.vue'
 import ParkCodesView from '../views/ParkCodesView.vue'
-import RefundProcessView from '../views/RefundProcessView.vue'
 import ReconciliationView from '../views/ReconciliationView.vue'
 import ReportView from '../views/ReportView.vue'
+import RetailDiffView from '../views/RetailDiffView.vue'
 import SystemSettingsView from '../views/SystemSettingsView.vue'
 import TicketCostDetailView from '../views/TicketCostDetailView.vue'
 import TopUpWorkflowView from '../views/TopUpWorkflowView.vue'
@@ -54,12 +58,6 @@ const router = createRouter({
       meta: { title: 'Khu vui chơi / Đối soát Khu vui chơi' },
     },
     {
-      path: '/khu-vui-choi/kvc-hoan-tien',
-      component: ReportView,
-      props: { pageKey: 'parkRefunds' },
-      meta: { title: 'Khu vui chơi / KVC hoàn tiền' },
-    },
-    {
       path: '/khu-vui-choi/nhat-ky',
       component: AuditLogView,
       meta: { title: 'Khu vui chơi / Nhật ký thay đổi' },
@@ -70,15 +68,108 @@ const router = createRouter({
       meta: { title: 'Khu vui chơi / Lỗi đồng bộ cần xử lý' },
     },
     {
-      path: '/hoan-tien/quy-trinh',
-      component: RefundProcessView,
-      meta: { title: 'Hoàn tiền / Quy trình hoàn tiền' },
+      path: '/dai-ly/danh-sach',
+      component: AgencyListView,
+      meta: { title: 'Đại lý / Danh sách các đại lý' },
     },
     {
-      path: '/hoan-tien/trang-thai-khach-hang',
-      component: ReportView,
-      props: { pageKey: 'customerRefundStatus' },
-      meta: { title: 'Hoàn tiền / Trạng thái hoàn tiền cho khách hàng' },
+      path: '/dai-ly/giao-dich-ar',
+      component: AgencyReportView,
+      props: { pageKey: 'agencyArTransactions' },
+      meta: { title: 'Đại lý / Giao dịch của các đại lý trên AR' },
+    },
+    {
+      path: '/dai-ly/giao-dich-ta',
+      component: AgencyReportView,
+      props: { pageKey: 'agencyTaTransactions' },
+      meta: { title: 'Đại lý / Giao dịch của các đại lý trên TA' },
+    },
+    {
+      path: '/dai-ly/giao-dich-bidv',
+      component: AgencyReportView,
+      props: { pageKey: 'agencyBidvTransactions' },
+      meta: { title: 'Đại lý / Giao dịch đại lý nạp tiền trên BIDV' },
+    },
+    {
+      path: '/dai-ly/doi-soat',
+      component: AgencyMonthlyBalanceView,
+      meta: { title: 'Đại lý / Số dư theo ngày của các đại lý (tự tính)' },
+    },
+    {
+      path: '/dai-ly/doi-soat-ar-ta',
+      component: AgencyDiffView,
+      props: { direction: 'ar-ta' },
+      meta: { title: 'Đại lý / Đối soát AR - TA' },
+    },
+    {
+      path: '/dai-ly/doi-soat-ta-ar',
+      component: AgencyDiffView,
+      props: { direction: 'ta-ar' },
+      meta: { title: 'Đại lý / Đối soát TA - AR' },
+    },
+    {
+      path: '/khach-le/booking-ta',
+      component: AgencyReportView,
+      props: { pageKey: 'retailTaBookings' },
+      meta: { title: 'Khách lẻ / Booking khách lẻ trên TA' },
+    },
+    {
+      path: '/khach-le/tien-ve-ngan-hang',
+      component: AgencyReportView,
+      props: { pageKey: 'retailBankInflows' },
+      meta: { title: 'Khách lẻ / Tiền về ngân hàng' },
+    },
+    {
+      path: '/khach-le/doi-soat',
+      component: RetailDiffView,
+      meta: { title: 'Khách lẻ / Đối soát' },
+    },
+    {
+      path: '/doi-soat-vin/danh-muc-kvc-con',
+      component: AgencyReportView,
+      props: { pageKey: 'vinChildParks' },
+      meta: { title: 'Đối soát Vin / Danh mục KVC con của Vin' },
+    },
+    {
+      path: '/doi-soat-vin/gia-von-ve-ban',
+      component: AgencyReportView,
+      props: { pageKey: 'vinTicketCosts' },
+      meta: { title: 'Đối soát Vin / Chi tiết giá vốn vé bán' },
+    },
+    {
+      path: '/doi-soat-vin/so-du-theo-ngay',
+      component: AgencyReportView,
+      props: { pageKey: 'vinDailyBalances' },
+      meta: { title: 'Đối soát Vin / Số dư KVC Vin theo ngày' },
+    },
+    {
+      path: '/doi-soat-vin/doi-soat',
+      component: AgencyReportView,
+      props: { pageKey: 'vinReconciliation' },
+      meta: { title: 'Đối soát Vin / Đối soát KVC Vin' },
+    },
+    {
+      path: '/dai-ly-ota/booking-ta',
+      component: AgencyReportView,
+      props: { pageKey: 'otaTaBookings' },
+      meta: { title: 'Các đại lý OTA / Booking OTA trên TA' },
+    },
+    {
+      path: '/dai-ly-ota/tien-ve-ngan-hang',
+      component: AgencyReportView,
+      props: { pageKey: 'otaBankInflows' },
+      meta: { title: 'Các đại lý OTA / Tiền về ngân hàng' },
+    },
+    {
+      path: '/dai-ly-ota/doi-soat',
+      component: RetailDiffView,
+      props: {
+        taPageKey: 'otaTaBookings',
+        bankPageKey: 'otaBankInflows',
+        entityLabel: 'Tên đại lý OTA',
+        title: 'Đối soát booking OTA với tiền về ngân hàng',
+      },
+      meta: { title: 'Các đại lý OTA / Đối soát' },
     },
     {
       path: '/system',
