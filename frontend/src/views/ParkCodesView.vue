@@ -21,7 +21,6 @@ import {
 } from '../services/parksApi'
 import {
   badgeClassForStatus,
-  formatMoney,
   paymentTypeLabel,
   recordStatusLabel,
   type PaymentType,
