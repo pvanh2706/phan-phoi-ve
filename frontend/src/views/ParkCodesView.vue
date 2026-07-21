@@ -275,11 +275,12 @@ async function saveTicket() {
   if (saving.value || !ticketForm.parkId) return
   saving.value = true
   try {
+    const code = ticketForm.code.trim()
     const payload = {
       parkId: Number(ticketForm.parkId),
-      code: ticketForm.code.trim(),
-      ticketTypeCode: ticketForm.ticketTypeCode.trim(),
-      name: ticketForm.name.trim(),
+      code,
+      ticketTypeCode: ticketForm.ticketTypeCode.trim() || code,
+      name: ticketForm.name.trim() || code,
       ticketGroupName: toNullable(ticketForm.ticketGroupName),
       costPrice: Number(ticketForm.costPrice.trim().replace(/[,. ]/g, '')) || 0,
       status: ticketForm.status,
@@ -649,29 +650,13 @@ onMounted(async () => {
             </option>
           </select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Mã dòng/KVC con</label>
-            <input v-model="ticketForm.code" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Mã loại vé</label>
-            <input v-model="ticketForm.ticketTypeCode" class="form-input" />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Mã KVC con</label>
+          <input v-model="ticketForm.code" class="form-input" />
         </div>
         <div class="form-group">
-          <label class="form-label">Tên loại vé</label>
+          <label class="form-label">Tên KVC con</label>
           <input v-model="ticketForm.name" class="form-input" />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Nhóm vé</label>
-            <input v-model="ticketForm.ticketGroupName" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Giá vốn</label>
-            <input v-model="ticketForm.costPrice" class="form-input" inputmode="numeric" />
-          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Trạng thái</label>
