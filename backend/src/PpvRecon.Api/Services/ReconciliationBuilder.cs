@@ -83,7 +83,7 @@ public sealed class ReconciliationBuilder(
                 : ticketCostDetails.Sum(x => x.CostAmount);              // (3) tổng giá vốn vé
             long? additionalAmount = bankDetails.Count == 0
                 ? null
-                : bankDetails.Sum(x => x.CreditAmount - x.DebitAmount);  // (2) tổng nạp ròng (Có − Nợ)
+                : bankDetails.Sum(x => x.DebitAmount - x.CreditAmount);  // (2) tổng nạp ròng (Nợ − Có): Ghi nợ là tiền công ty nạp/trả cho KVC
 
             long? expectedBalance = null;
             long? varianceAmount = null;

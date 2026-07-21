@@ -26,11 +26,13 @@ export function formatDate(value?: string | null) {
   return date.toLocaleDateString('vi-VN')
 }
 
+export const VN_TIME_ZONE = 'Asia/Ho_Chi_Minh'
+
 export function formatDateTime(value?: string | null) {
   if (!value) return '-'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('vi-VN')
+  return date.toLocaleString('vi-VN', { timeZone: VN_TIME_ZONE })
 }
 
 export function formatDateTimeMs(value?: string | null) {
@@ -38,7 +40,7 @@ export function formatDateTimeMs(value?: string | null) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   const ms = date.getMilliseconds().toString().padStart(3, '0')
-  return `${date.toLocaleString('vi-VN')}.${ms}`
+  return `${date.toLocaleString('vi-VN', { timeZone: VN_TIME_ZONE })}.${ms}`
 }
 
 export function paymentTypeLabel(value?: PaymentType | string | null) {

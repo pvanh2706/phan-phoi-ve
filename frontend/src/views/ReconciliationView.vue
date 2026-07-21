@@ -90,6 +90,12 @@ function variance(row: ParkReconciliationDto) {
   return Number(row.varianceAmount ?? 0)
 }
 
+// Dữ liệu (1)-(5) không có (park mới, ngày chưa có giao dịch...) hiển thị là 0
+// thay vì để trống, tránh gây hiểu lầm là công thức (4)=(1)+(2)-(3) không tính được.
+function amt(value?: number | null) {
+  return Number(value ?? 0)
+}
+
 function formatVariance(row: ParkReconciliationDto) {
   const n = variance(row)
   if (n === 0) return '0'
@@ -214,11 +220,11 @@ onMounted(load)
             <td class="mono">{{ row.bankAccount || '-' }}</td>
             <td>{{ row.parkCode }}</td>
             <td class="cell-strong">{{ row.parkName }}</td>
-            <td class="td-num amount amount-blue">{{ formatNumber(row.previousBalance) }}</td>
-            <td class="td-num amount amount-green">{{ formatNumber(row.additionalAmount) }}</td>
-            <td class="td-num amount amount-red">{{ formatNumber(row.usedAmount) }}</td>
-            <td class="td-num amount amount-blue">{{ formatNumber(row.expectedBalance) }}</td>
-            <td class="td-num amount amount-blue">{{ formatNumber(row.actualBalance) }}</td>
+            <td class="td-num amount amount-blue">{{ formatNumber(amt(row.previousBalance)) }}</td>
+            <td class="td-num amount amount-green">{{ formatNumber(amt(row.additionalAmount)) }}</td>
+            <td class="td-num amount amount-red">{{ formatNumber(amt(row.usedAmount)) }}</td>
+            <td class="td-num amount amount-blue">{{ formatNumber(amt(row.expectedBalance)) }}</td>
+            <td class="td-num amount amount-blue">{{ formatNumber(amt(row.actualBalance)) }}</td>
             <td class="td-num" :class="varianceClass(row)">{{ formatVariance(row) }}</td>
             <td class="td-center">
               <span v-if="variance(row) < 0" class="warn-cell warn-neg">⚠ Thiếu {{ formatNumber(Math.abs(variance(row))) }} ₫</span>
