@@ -85,19 +85,15 @@ public sealed class ReconciliationBuilder(
                 ? null
                 : bankDetails.Sum(x => x.DebitAmount - x.CreditAmount);  // (2) tổng nạp ròng (Nợ − Có): Ghi nợ là tiền công ty nạp/trả cho KVC
 
-            long? expectedBalance = null;
             long? varianceAmount = null;
             ReconciliationStatus calculatedStatus;
 
-            // Ngày không có giao dịch ngân hàng / không có vé bán là bình thường:
-            // (2)/(3) trống được coi là 0, luôn tính (4)=(1)+(2)-(3) khi có số dư Ngày T-1.
-            // Chỉ coi là "Thiếu dữ liệu" khi thiếu số dư Ngày T-1 hoặc số dư Ngày T.
-            if (!missingPreviousBalance)
-            {
-                expectedBalance = previousBalanceValue + (additionalAmount ?? 0) - (usedAmount ?? 0);
-            }
+            // Luôn tính (4)=(1)+(2)-(3). Thiếu số dư Ngày T-1 thì coi (1)=0 và tính như bình thường;
+            // (2)/(3) trống cũng được coi là 0.
+            // Chỉ coi là "Thiếu dữ liệu" khi thiếu số dư Ngày T (5) — không còn đủ cơ sở để đối chiếu.
+            long expectedBalance = (previousBalanceValue ?? 0) + (additionalAmount ?? 0) - (usedAmount ?? 0);
 
-            if (missingPreviousBalance || missingActualBalance)
+            if (missingActualBalance)
             {
                 calculatedStatus = ReconciliationStatus.MissingData;
             }

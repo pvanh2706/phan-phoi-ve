@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using PpvRecon.Domain.Entities.Parks;
+using PpvRecon.Domain.Enums;
 
 namespace PpvRecon.Api.Services;
 
@@ -137,7 +138,11 @@ public sealed class ParkBalanceApiClient(HttpClient httpClient) : IParkBalanceAp
 
             var value = parsed.Value;
 
-            if (value.Balance is null)
+            // KVC công nợ (Debt) lấy số dư khả dụng từ "balanceFuture"; KVC nạp tiền (Prepaid) lấy từ "balance".
+            var isDebt = park.PaymentType == ParkPaymentType.Debt;
+            var rawBalance = isDebt ? value.BalanceFuture : value.Balance;
+
+            if (rawBalance is null)
             {
                 return Failure(
                     endpoint,
@@ -146,14 +151,14 @@ public sealed class ParkBalanceApiClient(HttpClient httpClient) : IParkBalanceAp
                     responseBody,
                     (int)stopwatch.ElapsedMilliseconds,
                     "BalanceMissing",
-                    "API không trả về balance.");
+                    isDebt ? "API không trả về balanceFuture." : "API không trả về balance.");
             }
 
             return new ParkBalanceApiResult
             {
                 IsSuccess = true,
                 ProfileId = park.ApiProfileId,
-                AvailableBalance = decimal.ToInt64(decimal.Round(value.Balance.Value, 0, MidpointRounding.AwayFromZero)),
+                AvailableBalance = decimal.ToInt64(decimal.Round(rawBalance.Value, 0, MidpointRounding.AwayFromZero)),
                 RequestUrl = endpoint,
                 RequestPayloadJson = payloadJson,
                 ResponseStatusCode = statusCode,
@@ -231,5 +236,8 @@ public sealed class ParkBalanceApiClient(HttpClient httpClient) : IParkBalanceAp
     {
         public string? ProfileID { get; set; }
         public decimal? Balance { get; set; }
+
+        /// <summary>Số dư khả dụng dùng cho KVC công nợ (Debt).</summary>
+        public decimal? BalanceFuture { get; set; }
     }
 }
