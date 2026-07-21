@@ -11,6 +11,7 @@ import {
 } from '../services/reconciliationApi'
 import { authState } from '../services/authStore'
 import { formatDate, formatNumber } from '../services/formatters'
+import { isHiddenParkCode } from '../data/hiddenParks'
 
 const activeTab = ref<'nap' | 'cn'>('nap')
 const page = ref(1)
@@ -54,7 +55,7 @@ async function load() {
       keyword: filters.keyword,
       hasVariance: filters.variance === '' ? '' : filters.variance === 'lech',
     })
-    rows.value = result.items
+    rows.value = result.items.filter((row) => !isHiddenParkCode(row.parkCode))
     totalItems.value = result.totalItems
   } catch (err) {
     toast.error(err instanceof ApiClientError ? err.message : 'Không tải được dữ liệu.')

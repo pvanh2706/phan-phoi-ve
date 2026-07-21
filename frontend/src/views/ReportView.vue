@@ -36,6 +36,7 @@ import {
   type SourceType,
 } from '../services/formatters'
 import type { ReportPageKey } from '../data/reports'
+import { isHiddenParkCode } from '../data/hiddenParks'
 
 const props = defineProps<{
   pageKey: ReportPageKey
@@ -177,7 +178,7 @@ async function load() {
         paymentType: filters.paymentType,
         status: filters.recordStatus,
       })
-      setPagedResult(result)
+      setPagedResult({ ...result, items: result.items.filter((item) => !isHiddenParkCode(item.code)) })
     }
 
     if (props.pageKey === 'dailyBalances') {
