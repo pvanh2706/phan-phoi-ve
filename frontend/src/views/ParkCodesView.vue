@@ -493,25 +493,19 @@ onMounted(async () => {
             <th>Tên KVC con</th>
             <th>Mã KVC cha</th>
             <th>Tên KVC cha</th>
-            <th>Mã loại vé</th>
-            <th>Nhóm loại vé</th>
-            <th>Đơn giá vốn</th>
             <th>Trạng thái</th>
             <th style="width: 48px"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td colspan="9">Đang tải...</td>
+            <td colspan="6">Đang tải...</td>
           </tr>
           <tr v-for="ticket in ticketTypes" :key="ticket.id">
             <td class="cell-muted">{{ ticket.code }}</td>
             <td>{{ ticket.name }}</td>
             <td class="cell-muted">{{ ticket.parkCode }}</td>
             <td class="cell-strong">{{ ticket.parkName }}</td>
-            <td>{{ ticket.ticketTypeCode }}</td>
-            <td>{{ ticket.ticketGroupName || '-' }}</td>
-            <td class="amount">{{ formatMoney(ticket.costPrice) }}</td>
             <td><span class="badge" :class="badgeClassForStatus(ticket.status)">{{ recordStatusLabel(ticket.status) }}</span></td>
             <td>
               <button class="edit-btn" type="button" title="Sửa" @click="openEditTicket(ticket)">
@@ -532,7 +526,7 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="!loading && ticketTypes.length === 0">
-            <td colspan="9" class="cell-muted" style="text-align: center">Không có dữ liệu phù hợp</td>
+            <td colspan="6" class="cell-muted" style="text-align: center">Không có dữ liệu phù hợp</td>
           </tr>
         </tbody>
       </table>
