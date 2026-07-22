@@ -4,6 +4,7 @@ import AgencyListView from '../views/AgencyListView.vue'
 import AgencyMonthlyBalanceView from '../views/AgencyMonthlyBalanceView.vue'
 import AgencyMonthlyUsageView from '../views/AgencyMonthlyUsageView.vue'
 import AgencyReportView from '../views/AgencyReportView.vue'
+import AgencyTaTransactionsView from '../views/AgencyTaTransactionsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
 import JobErrorsView from '../views/JobErrorsView.vue'
@@ -82,8 +83,7 @@ const router = createRouter({
     },
     {
       path: '/dai-ly/giao-dich-ta',
-      component: AgencyReportView,
-      props: { pageKey: 'agencyTaTransactions' },
+      component: AgencyTaTransactionsView,
       meta: { title: 'Đại lý / Giao dịch của các đại lý trên TA' },
     },
     {

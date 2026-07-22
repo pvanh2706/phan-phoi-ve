@@ -18,7 +18,6 @@ const currentTab = computed(() => page.value.tabs.find((tab) => tab.id === activ
 const apiTesting = ref(false)
 const pagesWithApiTest: ReportPageKey[] = [
   'agencyArTransactions',
-  'agencyTaTransactions',
   'vinDailyBalances',
   'vinTicketCosts',
 ]

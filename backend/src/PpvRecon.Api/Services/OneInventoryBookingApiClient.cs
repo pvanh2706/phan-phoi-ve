@@ -15,6 +15,12 @@ public sealed class OneInventoryApiOptions
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Mã đại lý cấp trên dùng để lọc giao dịch đại lý trên TA (§7). Chỉ lưu các dòng có
+    /// MaDaiLyMuaCapTren khớp giá trị này. Để cấu hình, không hard-code trong logic xử lý.
+    /// </summary>
+    public string ParentAgencyCode { get; set; } = "5129";
 }
 
 /// <summary>Một dòng vé bán trả về từ procedure rp_booking_list (map 1:1 field JSON).</summary>

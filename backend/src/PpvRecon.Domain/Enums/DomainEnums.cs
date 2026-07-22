@@ -70,6 +70,7 @@ public enum ExternalApiSource
     ParkBalance,
     TicketCost,
     BankTransaction,
+    AgencyBooking,
 }
 
 public enum BankTransactionType

@@ -38,12 +38,14 @@ public sealed class OneInventoryConnectionDto
     public string Username { get; set; } = "";
     public string Password { get; set; } = "";
     public int TimeoutSeconds { get; set; } = 60;
+    public string ParentAgencyCode { get; set; } = "5129";
 }
 
 public sealed class JobScheduleDto
 {
     public string ParkBalanceTime { get; set; } = "23:59";
     public string TicketCostTime { get; set; } = "01:00";
+    public string AgencyBookingTime { get; set; } = "23:59";
     public string BankScanStart { get; set; } = "04:00";
     public string BankScanEnd { get; set; } = "08:00";
     public int BankScanIntervalMinutes { get; set; } = 5;
@@ -69,6 +71,7 @@ public sealed class JobScheduleSettings
 {
     public TimeOnly ParkBalanceTime { get; set; } = new(23, 59);
     public TimeOnly TicketCostTime { get; set; } = new(1, 0);
+    public TimeOnly AgencyBookingTime { get; set; } = new(23, 59);
     public TimeOnly BankScanStart { get; set; } = new(4, 0);
     public TimeOnly BankScanEnd { get; set; } = new(8, 0);
     public int BankScanIntervalMinutes { get; set; } = 5;
@@ -117,9 +120,11 @@ public sealed class ConnectionSettingsService(
     private const string OiUsername = "Conn.OneInventory.Username";
     private const string OiPassword = "Conn.OneInventory.Password";
     private const string OiTimeout = "Conn.OneInventory.TimeoutSeconds";
+    private const string OiParentAgencyCode = "Conn.OneInventory.ParentAgencyCode";
 
     private const string JobParkBalanceTime = "Conn.Jobs.ParkBalanceTime";
     private const string JobTicketCostTime = "Conn.Jobs.TicketCostTime";
+    private const string JobAgencyBookingTime = "Conn.Jobs.AgencyBookingTime";
     private const string JobBankScanStart = "Conn.Jobs.BankScanStart";
     private const string JobBankScanEnd = "Conn.Jobs.BankScanEnd";
     private const string JobBankScanInterval = "Conn.Jobs.BankScanIntervalMinutes";
@@ -170,6 +175,8 @@ public sealed class ConnectionSettingsService(
             Username = Str(o, OiUsername, def.Username),
             Password = Str(o, OiPassword, def.Password),
             TimeoutSeconds = IntVal(o, OiTimeout, def.TimeoutSeconds),
+            ParentAgencyCode = Str(o, OiParentAgencyCode,
+                string.IsNullOrWhiteSpace(def.ParentAgencyCode) ? "5129" : def.ParentAgencyCode),
         };
     }
 
@@ -180,6 +187,7 @@ public sealed class ConnectionSettingsService(
         {
             ParkBalanceTime = Time(o, JobParkBalanceTime, configuration["Jobs:ScheduleTimes:ParkBalance"], new(23, 59)),
             TicketCostTime = Time(o, JobTicketCostTime, configuration["Jobs:ScheduleTimes:TicketCost"], new(1, 0)),
+            AgencyBookingTime = Time(o, JobAgencyBookingTime, configuration["Jobs:ScheduleTimes:AgencyBooking"], new(23, 59)),
             BankScanStart = Time(o, JobBankScanStart, configuration["Jobs:BankTransactionScan:StartTime"], new(4, 0)),
             BankScanEnd = Time(o, JobBankScanEnd, configuration["Jobs:BankTransactionScan:EndTime"], new(8, 0)),
             BankScanIntervalMinutes = Math.Clamp(
@@ -219,11 +227,13 @@ public sealed class ConnectionSettingsService(
                 Username = oi.Username,
                 Password = oi.Password,
                 TimeoutSeconds = oi.TimeoutSeconds,
+                ParentAgencyCode = oi.ParentAgencyCode,
             },
             JobSchedule = new JobScheduleDto
             {
                 ParkBalanceTime = job.ParkBalanceTime.ToString("HH:mm"),
                 TicketCostTime = job.TicketCostTime.ToString("HH:mm"),
+                AgencyBookingTime = job.AgencyBookingTime.ToString("HH:mm"),
                 BankScanStart = job.BankScanStart.ToString("HH:mm"),
                 BankScanEnd = job.BankScanEnd.ToString("HH:mm"),
                 BankScanIntervalMinutes = job.BankScanIntervalMinutes,
@@ -282,9 +292,13 @@ public sealed class ConnectionSettingsService(
         Set(OiUsername, dto.OneInventory.Username.Trim(), SettingValueType.String, false);
         Set(OiPassword, dto.OneInventory.Password, SettingValueType.String, true);
         Set(OiTimeout, Math.Clamp(dto.OneInventory.TimeoutSeconds, 1, 300).ToString(), SettingValueType.Int, false);
+        Set(OiParentAgencyCode,
+            string.IsNullOrWhiteSpace(dto.OneInventory.ParentAgencyCode) ? "5129" : dto.OneInventory.ParentAgencyCode.Trim(),
+            SettingValueType.String, false);
 
         Set(JobParkBalanceTime, NormalizeTime(dto.JobSchedule.ParkBalanceTime, new(23, 59)), SettingValueType.String, false);
         Set(JobTicketCostTime, NormalizeTime(dto.JobSchedule.TicketCostTime, new(1, 0)), SettingValueType.String, false);
+        Set(JobAgencyBookingTime, NormalizeTime(dto.JobSchedule.AgencyBookingTime, new(23, 59)), SettingValueType.String, false);
         Set(JobBankScanStart, NormalizeTime(dto.JobSchedule.BankScanStart, new(4, 0)), SettingValueType.String, false);
         Set(JobBankScanEnd, NormalizeTime(dto.JobSchedule.BankScanEnd, new(8, 0)), SettingValueType.String, false);
         Set(JobBankScanInterval, Math.Clamp(dto.JobSchedule.BankScanIntervalMinutes, 1, 720).ToString(), SettingValueType.Int, false);

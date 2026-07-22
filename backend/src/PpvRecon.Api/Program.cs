@@ -78,6 +78,7 @@ builder.Services.AddHttpClient<IOneInventoryBookingApiClient, OneInventoryBookin
     client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
 });
 builder.Services.AddScoped<ITicketCostSyncService, TicketCostSyncService>();
+builder.Services.AddScoped<IAgencyBookingSyncService, AgencyBookingSyncService>();
 builder.Services.AddScoped<IImapEmailReader, ImapEmailReader>();
 builder.Services.AddScoped<IBankStatementSyncService, BankStatementSyncService>();
 builder.Services.AddScoped<IJobRunner, JobRunner>();

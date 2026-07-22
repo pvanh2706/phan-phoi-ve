@@ -17,6 +17,7 @@ public sealed class DailyScheduledJobHostedService(
     [
         ExternalApiSource.ParkBalance,
         ExternalApiSource.TicketCost,
+        ExternalApiSource.AgencyBooking,
     ];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -82,12 +83,17 @@ public sealed class DailyScheduledJobHostedService(
 
         // 1) Các job đồng bộ API ngoài: mỗi nguồn chạy theo khung giờ riêng.
         // Số dư KVC chốt lúc cuối ngày T (23:59) cho chính ngày T; giá vốn vé chạy rạng sáng
-        // hôm sau (mặc định 01:00) nhưng lấy dữ liệu của NGÀY HÔM TRƯỚC để trọn vẹn cả ngày bán vé.
+        // hôm sau (mặc định 01:00) nhưng lấy dữ liệu của NGÀY HÔM TRƯỚC để trọn vẹn cả ngày bán vé;
+        // giao dịch đại lý trên TA chốt 23:59 và lấy CHÍNH NGÀY T (theo phương án đã chốt).
         foreach (var source in SyncSources)
         {
-            var sourceTime = source == ExternalApiSource.ParkBalance
-                ? schedule.ParkBalanceTime
-                : schedule.TicketCostTime;
+            var sourceTime = source switch
+            {
+                ExternalApiSource.ParkBalance => schedule.ParkBalanceTime,
+                ExternalApiSource.TicketCost => schedule.TicketCostTime,
+                ExternalApiSource.AgencyBooking => schedule.AgencyBookingTime,
+                _ => schedule.ParkBalanceTime,
+            };
             if (nowTime < sourceTime)
             {
                 continue;
@@ -267,6 +273,7 @@ public sealed class DailyScheduledJobHostedService(
             ExternalApiSource.ParkBalance => "SyncParkBalances",
             ExternalApiSource.TicketCost => "SyncTicketCosts",
             ExternalApiSource.BankTransaction => "SyncBankTransactions",
+            ExternalApiSource.AgencyBooking => "SyncAgencyBookings",
             _ => $"Sync{source}",
         };
     }

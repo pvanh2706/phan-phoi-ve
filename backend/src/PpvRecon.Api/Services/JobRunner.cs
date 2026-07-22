@@ -17,6 +17,7 @@ public sealed class JobRunner(
     PpvReconDbContext dbContext,
     IParkBalanceApiClient parkBalanceApiClient,
     ITicketCostSyncService ticketCostSyncService,
+    IAgencyBookingSyncService agencyBookingSyncService,
     IBankStatementSyncService bankStatementSyncService,
     IReconciliationBuilder reconciliationBuilder,
     IConnectionSettingsService connectionSettings,
@@ -68,6 +69,32 @@ public sealed class JobRunner(
                     {
                         var r = await bankStatementSyncService.SyncAsync(businessDate, triggeredByUserId, ct);
                         return new ExternalSyncOutcome(r, r.OverwrittenBusinessDates);
+                    },
+                    cancellationToken),
+            ExternalApiSource.AgencyBooking =>
+                RunServiceBackedSyncAsync(
+                    source,
+                    businessDate,
+                    triggeredBy,
+                    triggeredByUserId,
+                    async ct =>
+                    {
+                        var r = await agencyBookingSyncService.SyncAsync(businessDate, triggeredByUserId, ct);
+                        return new ExternalSyncOutcome(
+                            new
+                            {
+                                r.BusinessDate,
+                                r.TotalLines,
+                                r.MatchedParent,
+                                r.Inserted,
+                                r.Updated,
+                                r.Skipped,
+                                r.UnmatchedAgency,
+                                r.UnmatchedAgencyCodes,
+                                r.ParentAgencyCode,
+                            },
+                            // Giao dịch đại lý không tham gia đối soát KVC → không auto-build đối soát.
+                            []);
                     },
                     cancellationToken),
             _ => RunExternalSyncPlaceholderAsync(source, businessDate, triggeredBy, triggeredByUserId, cancellationToken),
@@ -606,6 +633,7 @@ public sealed class JobRunner(
             ExternalApiSource.ParkBalance => "SyncParkBalances",
             ExternalApiSource.TicketCost => "SyncTicketCosts",
             ExternalApiSource.BankTransaction => "SyncBankTransactions",
+            ExternalApiSource.AgencyBooking => "SyncAgencyBookings",
             _ => $"Sync{source}",
         };
     }

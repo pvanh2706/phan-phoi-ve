@@ -143,6 +143,7 @@ export function externalApiSourceLabel(value?: string | null) {
     ParkBalance: 'Số dư KVC',
     TicketCost: 'Giá vốn vé',
     BankTransaction: 'Giao dịch ngân hàng',
+    AgencyBooking: 'Giao dịch đại lý TA',
   }
   return value ? labels[value] ?? value : '-'
 }

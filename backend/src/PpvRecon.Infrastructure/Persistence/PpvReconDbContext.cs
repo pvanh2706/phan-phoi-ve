@@ -24,6 +24,7 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<NotificationRecipient> NotificationRecipients => Set<NotificationRecipient>();
     public DbSet<Agency> Agencies => Set<Agency>();
+    public DbSet<AgencyBooking> AgencyBookings => Set<AgencyBooking>();
     public DbSet<Park> Parks => Set<Park>();
     public DbSet<ParkTicketType> ParkTicketTypes => Set<ParkTicketType>();
     public DbSet<ParkRefund> ParkRefunds => Set<ParkRefund>();
@@ -101,6 +102,42 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
             RestrictUser(entity, x => x.CreatedByUserId);
             RestrictUser(entity, x => x.UpdatedByUserId);
             RestrictUser(entity, x => x.DeletedByUserId);
+        });
+
+        modelBuilder.Entity<AgencyBooking>(entity =>
+        {
+            entity.ToTable("AgencyBookings");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.SourceSystem).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.SourceTransactionId).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.BookingCode).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.BuyingAgentCode).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.BuyingAgentName).HasMaxLength(300);
+            entity.Property(x => x.ParentBuyingAgentCode).HasMaxLength(50);
+            entity.Property(x => x.ParentBuyingAgentName).HasMaxLength(300);
+            entity.Property(x => x.SellingAgentCode).HasMaxLength(50);
+            entity.Property(x => x.SellingAgentName).HasMaxLength(300);
+            entity.Property(x => x.ParkExternalCode).HasMaxLength(50);
+            entity.Property(x => x.ParkExternalName).HasMaxLength(300);
+            entity.Property(x => x.TicketTypeCode).HasMaxLength(100);
+            entity.Property(x => x.TicketTypeName).HasMaxLength(500);
+            entity.Property(x => x.TicketGroupName).HasMaxLength(500);
+
+            // Chống trùng §10: mỗi giao dịch nguồn chỉ tồn tại 1 bản ghi.
+            entity.HasIndex(x => new { x.SourceSystem, x.SourceTransactionId }).IsUnique();
+            entity.HasIndex(x => x.BookingDate);
+            entity.HasIndex(x => x.BookingCode);
+            entity.HasIndex(x => x.BuyingAgentId);
+            entity.HasIndex(x => x.BuyingAgentCode);
+            entity.HasIndex(x => x.SourceType);
+
+            entity.HasOne<Agency>().WithMany().HasForeignKey(x => x.BuyingAgentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRun>().WithMany().HasForeignKey(x => x.SourceJobRunId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRunItem>().WithMany().HasForeignKey(x => x.SourceJobRunItemId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ExternalApiRawResponse>().WithMany().HasForeignKey(x => x.RawResponseId).OnDelete(DeleteBehavior.Restrict);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
         });
     }
 
