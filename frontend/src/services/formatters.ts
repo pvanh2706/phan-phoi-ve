@@ -144,6 +144,7 @@ export function externalApiSourceLabel(value?: string | null) {
     TicketCost: 'Giá vốn vé',
     BankTransaction: 'Giao dịch ngân hàng',
     AgencyBooking: 'Giao dịch đại lý TA',
+    ArTransaction: 'Giao dịch đại lý AR',
   }
   return value ? labels[value] ?? value : '-'
 }

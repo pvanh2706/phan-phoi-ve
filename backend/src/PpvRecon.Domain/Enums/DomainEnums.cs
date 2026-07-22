@@ -71,6 +71,7 @@ public enum ExternalApiSource
     TicketCost,
     BankTransaction,
     AgencyBooking,
+    ArTransaction,
 }
 
 public enum BankTransactionType

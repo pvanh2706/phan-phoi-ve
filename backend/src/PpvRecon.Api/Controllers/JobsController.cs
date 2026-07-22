@@ -178,6 +178,14 @@ public sealed class JobsController(
         return RunExternalSyncAsync(ExternalApiSource.AgencyBooking, request, cancellationToken);
     }
 
+    /// <summary>Chạy tay đồng bộ giao dịch đại lý trên AR cho một ngày; có ghi JobRun (§16).</summary>
+    [Authorize(Roles = "Admin,Accountant")]
+    [HttpPost("sync-ar-transactions/run")]
+    public Task<ActionResult<ApiResponse<JobRunDetailDto>>> RunArTransactions(RunJobRequest request, CancellationToken cancellationToken)
+    {
+        return RunExternalSyncAsync(ExternalApiSource.ArTransaction, request, cancellationToken);
+    }
+
     [Authorize(Roles = "Admin,Accountant")]
     [HttpPost("send-sync-error-summary/run")]
     public async Task<ActionResult<ApiResponse<SendSyncErrorSummaryResultDto>>> SendSyncErrorSummary(

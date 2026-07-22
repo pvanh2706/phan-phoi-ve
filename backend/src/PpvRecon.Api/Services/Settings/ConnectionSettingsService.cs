@@ -72,6 +72,7 @@ public sealed class JobScheduleSettings
     public TimeOnly ParkBalanceTime { get; set; } = new(23, 59);
     public TimeOnly TicketCostTime { get; set; } = new(1, 0);
     public TimeOnly AgencyBookingTime { get; set; } = new(23, 59);
+    public TimeOnly ArTransactionTime { get; set; } = new(23, 59);
     public TimeOnly BankScanStart { get; set; } = new(4, 0);
     public TimeOnly BankScanEnd { get; set; } = new(8, 0);
     public int BankScanIntervalMinutes { get; set; } = 5;
@@ -83,6 +84,7 @@ public interface IConnectionSettingsService
     Task<BankStatementImportOptions> GetBankStatementAsync(CancellationToken cancellationToken);
     Task<ParkBalanceApiOptions> GetParkBalanceAsync(CancellationToken cancellationToken);
     Task<OneInventoryApiOptions> GetOneInventoryAsync(CancellationToken cancellationToken);
+    Task<ArApiOptions> GetArAsync(CancellationToken cancellationToken);
     Task<JobScheduleSettings> GetJobScheduleAsync(CancellationToken cancellationToken);
 
     // Cho màn cấu hình.
@@ -122,9 +124,20 @@ public sealed class ConnectionSettingsService(
     private const string OiTimeout = "Conn.OneInventory.TimeoutSeconds";
     private const string OiParentAgencyCode = "Conn.OneInventory.ParentAgencyCode";
 
+    private const string ArLoginUrl = "Conn.Ar.LoginUrl";
+    private const string ArDataUrl = "Conn.Ar.DataUrl";
+    private const string ArUsername = "Conn.Ar.Username";
+    private const string ArPassword = "Conn.Ar.Password";
+    private const string ArLang = "Conn.Ar.Lang";
+    private const string ArTimeZone = "Conn.Ar.TimeZone";
+    private const string ArTimeout = "Conn.Ar.TimeoutSeconds";
+    private const string ArRetryCount = "Conn.Ar.RetryCount";
+    private const string ArRetryDelay = "Conn.Ar.RetryDelaySeconds";
+
     private const string JobParkBalanceTime = "Conn.Jobs.ParkBalanceTime";
     private const string JobTicketCostTime = "Conn.Jobs.TicketCostTime";
     private const string JobAgencyBookingTime = "Conn.Jobs.AgencyBookingTime";
+    private const string JobArTransactionTime = "Conn.Jobs.ArTransactionTime";
     private const string JobBankScanStart = "Conn.Jobs.BankScanStart";
     private const string JobBankScanEnd = "Conn.Jobs.BankScanEnd";
     private const string JobBankScanInterval = "Conn.Jobs.BankScanIntervalMinutes";
@@ -180,6 +193,29 @@ public sealed class ConnectionSettingsService(
         };
     }
 
+    /// <summary>
+    /// Cấu hình kết nối AR. Giá trị hiệu lực = override trong DB (SystemSettings "Conn.Ar.*") đè lên
+    /// mặc định trong appsettings ("ExternalApis:Ar"). Username/Password nên đặt qua biến môi trường hoặc
+    /// DB, không commit vào source. Không đưa vào DTO lưu chung để tránh bị ghi đè khi lưu màn cấu hình.
+    /// </summary>
+    public async Task<ArApiOptions> GetArAsync(CancellationToken cancellationToken)
+    {
+        var def = configuration.GetSection("ExternalApis:Ar").Get<ArApiOptions>() ?? new();
+        var o = await LoadOverridesAsync(cancellationToken);
+        return new ArApiOptions
+        {
+            LoginUrl = Str(o, ArLoginUrl, string.IsNullOrWhiteSpace(def.LoginUrl) ? "https://ar.ezcloud.vn/api/account-login/Process" : def.LoginUrl),
+            DataUrl = Str(o, ArDataUrl, string.IsNullOrWhiteSpace(def.DataUrl) ? "https://ar.ezcloud.vn/api/AR_TATR01/Process" : def.DataUrl),
+            Username = Str(o, ArUsername, def.Username),
+            Password = Str(o, ArPassword, def.Password),
+            Lang = Str(o, ArLang, string.IsNullOrWhiteSpace(def.Lang) ? "1000000" : def.Lang),
+            TimeZone = Str(o, ArTimeZone, string.IsNullOrWhiteSpace(def.TimeZone) ? "Asia/Ho_Chi_Minh" : def.TimeZone),
+            TimeoutSeconds = IntVal(o, ArTimeout, def.TimeoutSeconds <= 0 ? 60 : def.TimeoutSeconds),
+            RetryCount = IntVal(o, ArRetryCount, def.RetryCount < 0 ? 2 : def.RetryCount),
+            RetryDelaySeconds = IntVal(o, ArRetryDelay, def.RetryDelaySeconds < 0 ? 5 : def.RetryDelaySeconds),
+        };
+    }
+
     public async Task<JobScheduleSettings> GetJobScheduleAsync(CancellationToken cancellationToken)
     {
         var o = await LoadOverridesAsync(cancellationToken);
@@ -188,6 +224,7 @@ public sealed class ConnectionSettingsService(
             ParkBalanceTime = Time(o, JobParkBalanceTime, configuration["Jobs:ScheduleTimes:ParkBalance"], new(23, 59)),
             TicketCostTime = Time(o, JobTicketCostTime, configuration["Jobs:ScheduleTimes:TicketCost"], new(1, 0)),
             AgencyBookingTime = Time(o, JobAgencyBookingTime, configuration["Jobs:ScheduleTimes:AgencyBooking"], new(23, 59)),
+            ArTransactionTime = Time(o, JobArTransactionTime, configuration["Jobs:ScheduleTimes:ArTransaction"], new(23, 59)),
             BankScanStart = Time(o, JobBankScanStart, configuration["Jobs:BankTransactionScan:StartTime"], new(4, 0)),
             BankScanEnd = Time(o, JobBankScanEnd, configuration["Jobs:BankTransactionScan:EndTime"], new(8, 0)),
             BankScanIntervalMinutes = Math.Clamp(

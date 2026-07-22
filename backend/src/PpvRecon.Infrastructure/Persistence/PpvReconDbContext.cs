@@ -25,6 +25,7 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
     public DbSet<NotificationRecipient> NotificationRecipients => Set<NotificationRecipient>();
     public DbSet<Agency> Agencies => Set<Agency>();
     public DbSet<AgencyBooking> AgencyBookings => Set<AgencyBooking>();
+    public DbSet<AgencyArTransaction> AgencyArTransactions => Set<AgencyArTransaction>();
     public DbSet<Park> Parks => Set<Park>();
     public DbSet<ParkTicketType> ParkTicketTypes => Set<ParkTicketType>();
     public DbSet<ParkRefund> ParkRefunds => Set<ParkRefund>();
@@ -136,6 +137,32 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
             entity.HasOne<JobRun>().WithMany().HasForeignKey(x => x.SourceJobRunId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<JobRunItem>().WithMany().HasForeignKey(x => x.SourceJobRunItemId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<ExternalApiRawResponse>().WithMany().HasForeignKey(x => x.RawResponseId).OnDelete(DeleteBehavior.Restrict);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
+        });
+
+        modelBuilder.Entity<AgencyArTransaction>(entity =>
+        {
+            entity.ToTable("AgencyArTransactions");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.BookingId).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.TravelAgentName).HasMaxLength(300);
+            entity.Property(x => x.TravelAgentCode).HasMaxLength(50);
+            entity.Property(x => x.ReceivableAccountCode).HasMaxLength(50);
+            entity.Property(x => x.Description).HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.DedupHash).HasMaxLength(64).IsRequired();
+
+            // Chống trùng §13: mỗi giao dịch định danh chỉ tồn tại 1 bản ghi.
+            entity.HasIndex(x => x.DedupHash).IsUnique();
+            entity.HasIndex(x => x.BusinessDate);
+            entity.HasIndex(x => x.TransactionDate);
+            entity.HasIndex(x => x.BookingId);
+            entity.HasIndex(x => x.TravelAgentCode);
+            entity.HasIndex(x => x.SourceType);
+
+            entity.HasOne<JobRun>().WithMany().HasForeignKey(x => x.SourceJobRunId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<JobRunItem>().WithMany().HasForeignKey(x => x.SourceJobRunItemId).OnDelete(DeleteBehavior.Restrict);
             RestrictUser(entity, x => x.CreatedByUserId);
             RestrictUser(entity, x => x.UpdatedByUserId);
         });

@@ -18,6 +18,7 @@ public sealed class DailyScheduledJobHostedService(
         ExternalApiSource.ParkBalance,
         ExternalApiSource.TicketCost,
         ExternalApiSource.AgencyBooking,
+        ExternalApiSource.ArTransaction,
     ];
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -92,6 +93,7 @@ public sealed class DailyScheduledJobHostedService(
                 ExternalApiSource.ParkBalance => schedule.ParkBalanceTime,
                 ExternalApiSource.TicketCost => schedule.TicketCostTime,
                 ExternalApiSource.AgencyBooking => schedule.AgencyBookingTime,
+                ExternalApiSource.ArTransaction => schedule.ArTransactionTime,
                 _ => schedule.ParkBalanceTime,
             };
             if (nowTime < sourceTime)
@@ -274,6 +276,7 @@ public sealed class DailyScheduledJobHostedService(
             ExternalApiSource.TicketCost => "SyncTicketCosts",
             ExternalApiSource.BankTransaction => "SyncBankTransactions",
             ExternalApiSource.AgencyBooking => "SyncAgencyBookings",
+            ExternalApiSource.ArTransaction => "SyncArTransactions",
             _ => $"Sync{source}",
         };
     }

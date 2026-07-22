@@ -3,6 +3,7 @@ import AgencyDiffView from '../views/AgencyDiffView.vue'
 import AgencyListView from '../views/AgencyListView.vue'
 import AgencyMonthlyBalanceView from '../views/AgencyMonthlyBalanceView.vue'
 import AgencyMonthlyUsageView from '../views/AgencyMonthlyUsageView.vue'
+import AgencyArTransactionsView from '../views/AgencyArTransactionsView.vue'
 import AgencyReportView from '../views/AgencyReportView.vue'
 import AgencyTaTransactionsView from '../views/AgencyTaTransactionsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
@@ -77,8 +78,7 @@ const router = createRouter({
     },
     {
       path: '/dai-ly/giao-dich-ar',
-      component: AgencyReportView,
-      props: { pageKey: 'agencyArTransactions' },
+      component: AgencyArTransactionsView,
       meta: { title: 'Đại lý / Giao dịch của các đại lý trên AR' },
     },
     {

@@ -282,6 +282,8 @@ public sealed class AgencyBookingSyncServiceTests : IDisposable
         public Task<OneInventoryApiOptions> GetOneInventoryAsync(CancellationToken cancellationToken)
             => Task.FromResult(new OneInventoryApiOptions { ParentAgencyCode = parentAgencyCode });
 
+        public Task<ArApiOptions> GetArAsync(CancellationToken cancellationToken)
+            => throw new NotSupportedException();
         public Task<BankStatementImportOptions> GetBankStatementAsync(CancellationToken cancellationToken)
             => throw new NotSupportedException();
         public Task<ParkBalanceApiOptions> GetParkBalanceAsync(CancellationToken cancellationToken)

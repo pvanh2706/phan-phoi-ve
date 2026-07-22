@@ -18,6 +18,7 @@ public sealed class JobRunner(
     IParkBalanceApiClient parkBalanceApiClient,
     ITicketCostSyncService ticketCostSyncService,
     IAgencyBookingSyncService agencyBookingSyncService,
+    IArTransactionSyncService arTransactionSyncService,
     IBankStatementSyncService bankStatementSyncService,
     IReconciliationBuilder reconciliationBuilder,
     IConnectionSettingsService connectionSettings,
@@ -94,6 +95,33 @@ public sealed class JobRunner(
                                 r.ParentAgencyCode,
                             },
                             // Giao dịch đại lý không tham gia đối soát KVC → không auto-build đối soát.
+                            []);
+                    },
+                    cancellationToken),
+            ExternalApiSource.ArTransaction =>
+                RunServiceBackedSyncAsync(
+                    source,
+                    businessDate,
+                    triggeredBy,
+                    triggeredByUserId,
+                    async ct =>
+                    {
+                        var r = await arTransactionSyncService.SyncAsync(businessDate, triggeredByUserId, ct);
+                        return new ExternalSyncOutcome(
+                            new
+                            {
+                                r.BusinessDate,
+                                r.TotalRows,
+                                r.SkippedHeaderRows,
+                                r.RowsWithDescription,
+                                r.ValidBookingTransactions,
+                                r.SkippedNonBookingRows,
+                                r.ErrorRows,
+                                r.Inserted,
+                                r.Updated,
+                                r.Unchanged,
+                            },
+                            // Giao dịch AR không tham gia đối soát KVC → không auto-build đối soát.
                             []);
                     },
                     cancellationToken),
@@ -634,6 +662,7 @@ public sealed class JobRunner(
             ExternalApiSource.TicketCost => "SyncTicketCosts",
             ExternalApiSource.BankTransaction => "SyncBankTransactions",
             ExternalApiSource.AgencyBooking => "SyncAgencyBookings",
+            ExternalApiSource.ArTransaction => "SyncArTransactions",
             _ => $"Sync{source}",
         };
     }
