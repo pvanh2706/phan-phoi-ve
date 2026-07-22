@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AgencyDiffView from '../views/AgencyDiffView.vue'
 import AgencyListView from '../views/AgencyListView.vue'
 import AgencyMonthlyBalanceView from '../views/AgencyMonthlyBalanceView.vue'
+import AgencyMonthlyUsageView from '../views/AgencyMonthlyUsageView.vue'
 import AgencyReportView from '../views/AgencyReportView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import ComingSoonView from '../views/ComingSoonView.vue'
@@ -90,6 +91,11 @@ const router = createRouter({
       component: AgencyReportView,
       props: { pageKey: 'agencyBidvTransactions' },
       meta: { title: 'Đại lý / Giao dịch đại lý nạp tiền trên BIDV' },
+    },
+    {
+      path: '/dai-ly/tong-tien-thang',
+      component: AgencyMonthlyUsageView,
+      meta: { title: 'Đại lý / Tổng tiền các đại lý đã dùng theo tháng' },
     },
     {
       path: '/dai-ly/doi-soat',

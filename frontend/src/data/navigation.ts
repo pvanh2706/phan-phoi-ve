@@ -47,9 +47,10 @@ export const navigation: NavItem[] = [
       { label: 'Danh sách các đại lý', path: '/dai-ly/danh-sach' },
       { label: 'Giao dịch của các đại lý trên AR', path: '/dai-ly/giao-dich-ar' },
       { label: 'Giao dịch của các đại lý trên TA', path: '/dai-ly/giao-dich-ta' },
-      { label: 'Giao dịch đại lý nạp tiền trên BIDV', path: '/dai-ly/giao-dich-bidv' },
       { label: 'Đối soát AR - TA', path: '/dai-ly/doi-soat-ar-ta' },
       { label: 'Đối soát TA - AR', path: '/dai-ly/doi-soat-ta-ar' },
+      { label: 'Giao dịch đại lý nạp tiền trên BIDV', path: '/dai-ly/giao-dich-bidv' },
+      { label: 'Tổng tiền các đại lý đã dùng theo tháng', path: '/dai-ly/tong-tien-thang' },
     ],
   },
   {
