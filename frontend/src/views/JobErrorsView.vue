@@ -307,7 +307,7 @@ onMounted(async () => {
             <input v-model="manualModal.businessDate" class="form-input" type="date" />
           </div>
           <div class="form-group">
-            <label class="form-label">KVC</label>
+            <label class="form-label">KVC <span class="required-mark">*</span></label>
             <select v-model="manualModal.parkId" class="form-select">
               <option value="">Chọn KVC</option>
               <option v-for="park in parks" :key="park.id" :value="park.id">
@@ -360,7 +360,7 @@ onMounted(async () => {
         </template>
 
         <div class="form-group">
-          <label class="form-label">Lý do nhập tay</label>
+          <label class="form-label">Lý do nhập tay <span class="required-mark">*</span></label>
           <textarea v-model="manualModal.manualReason" class="form-textarea"></textarea>
         </div>
       </div>

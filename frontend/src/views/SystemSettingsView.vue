@@ -666,7 +666,7 @@ onMounted(async () => {
       <div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Họ và tên</label>
+            <label class="form-label">Họ và tên <span class="required-mark">*</span></label>
             <input v-model="profile.fullName" class="form-input" />
           </div>
           <div class="form-group">
@@ -718,16 +718,16 @@ onMounted(async () => {
   <section v-if="activeTab === 'password'" class="card">
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Mật khẩu hiện tại</label>
+        <label class="form-label">Mật khẩu hiện tại <span class="required-mark">*</span></label>
         <input v-model="passwordForm.currentPassword" class="form-input" type="password" autocomplete="current-password" />
       </div>
       <div class="form-group">
-        <label class="form-label">Mật khẩu mới</label>
+        <label class="form-label">Mật khẩu mới <span class="required-mark">*</span></label>
         <input v-model="passwordForm.newPassword" class="form-input" type="password" autocomplete="new-password" />
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Nhập lại mật khẩu mới</label>
+      <label class="form-label">Nhập lại mật khẩu mới <span class="required-mark">*</span></label>
       <input v-model="passwordForm.confirmPassword" class="form-input" type="password" autocomplete="new-password" />
     </div>
     <button class="btn-primary" type="button" :disabled="loading" @click="savePassword">Cập nhật mật khẩu</button>
@@ -1084,7 +1084,7 @@ onMounted(async () => {
       <div class="modal-body">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Họ tên</label>
+            <label class="form-label">Họ tên <span class="required-mark">*</span></label>
             <input v-model="userModal.fullName" class="form-input" />
           </div>
           <div class="form-group">
@@ -1094,7 +1094,7 @@ onMounted(async () => {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Email</label>
+            <label class="form-label">Email <span v-if="!userModal.id" class="required-mark">*</span></label>
             <input v-model="userModal.email" class="form-input" type="email" :readonly="Boolean(userModal.id)" />
           </div>
           <div class="form-group">
@@ -1108,7 +1108,7 @@ onMounted(async () => {
         </div>
         <div class="form-row">
           <div v-if="!userModal.id" class="form-group">
-            <label class="form-label">Mật khẩu</label>
+            <label class="form-label">Mật khẩu <span class="required-mark">*</span></label>
             <input v-model="userModal.password" class="form-input" type="password" />
           </div>
           <div class="form-group">
@@ -1137,7 +1137,7 @@ onMounted(async () => {
       <div class="modal-body">
         <div class="notice notice-indigo" style="margin-bottom: 14px">{{ passwordModal.fullName }}</div>
         <div class="form-group">
-          <label class="form-label">Mật khẩu mới</label>
+          <label class="form-label">Mật khẩu mới <span class="required-mark">*</span></label>
           <input v-model="passwordModal.newPassword" class="form-input" type="password" />
         </div>
       </div>
@@ -1164,7 +1164,7 @@ onMounted(async () => {
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Email</label>
+          <label class="form-label">Email <span class="required-mark">*</span></label>
           <input v-model="recipientModal.email" class="form-input" type="email" />
         </div>
         <div class="form-group">

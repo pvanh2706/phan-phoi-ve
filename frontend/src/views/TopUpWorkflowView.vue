@@ -6,6 +6,7 @@ import { ApiClientError } from '../services/apiClient'
 import {
   listBankTransactionDetails,
   syncBankTransactions,
+  uploadBankStatement,
   type BankTransactionDetailDto,
 } from '../services/summariesApi'
 import { formatDate, formatNumber } from '../services/formatters'
@@ -27,6 +28,8 @@ const page = ref(1)
 const filters = ref({ keyword: '', dateFrom: '', dateTo: '' })
 
 const syncing = ref(false)
+const uploading = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / 100)))
 
@@ -104,6 +107,37 @@ async function syncFromEmail() {
   }
 }
 
+function triggerUploadPicker() {
+  fileInputRef.value?.click()
+}
+
+async function onStatementFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  uploading.value = true
+  try {
+    const result = await uploadBankStatement(file)
+    let msg = result.imported === 0
+      ? 'Không có giao dịch nào được nhập từ file.'
+      : `Đã nhập ${result.imported} dòng KVC (gộp từ ${result.transactionsParsed} giao dịch) từ file tải lên`
+    if (result.skippedUnmatched > 0) {
+      const accounts = result.unmatchedAccounts.slice(0, 5).join(', ')
+      msg += `. Bỏ qua ${result.skippedUnmatched} giao dịch không khớp KVC`
+      if (accounts) msg += ` (TK: ${accounts}${result.unmatchedAccounts.length > 5 ? '…' : ''})`
+    }
+    toast.success(msg + '.', { duration: 6000 })
+    page.value = 1
+    await load()
+  } catch (err) {
+    toast.error(err instanceof ApiClientError ? err.message : 'Không xử lý được file sao kê.')
+  } finally {
+    uploading.value = false
+    input.value = ''
+  }
+}
+
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 function onSearchInput() {
   if (searchTimer) clearTimeout(searchTimer)
@@ -152,9 +186,32 @@ onMounted(() => {
       <input v-model="filters.dateFrom" class="tb-date" type="date" @change="applyFilter" />
       <span class="tb-label">Đến ngày</span>
       <input v-model="filters.dateTo" class="tb-date" type="date" @change="applyFilter" />
-      <button class="btn-primary tb-sync" type="button" :disabled="syncing" @click="syncFromEmail">
-        {{ syncing ? 'Đang lấy...' : '⤓ Get API' }}
-      </button>
+      <div class="tb-actions-right">
+        <button class="btn-primary" type="button" :disabled="syncing" @click="syncFromEmail">
+          {{ syncing ? 'Đang lấy...' : '⤓ Get API' }}
+        </button>
+        <div class="tb-upload-group">
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept="application/pdf"
+            style="display: none"
+            @change="onStatementFileSelected"
+          />
+          <button
+            class="btn-secondary"
+            type="button"
+            title="Dùng khi ngân hàng bị lỗi, không gửi được sao kê qua email: tải file PDF sao kê lên đây để nhập tay thay cho Get API."
+            :disabled="uploading"
+            @click="triggerUploadPicker"
+          >
+            {{ uploading ? 'Đang xử lý...' : '📤 Upload tay sao kê' }}
+          </button>
+          <p class="tb-hint">
+            * Chỉ dùng khi ngân hàng gặp sự cố và không gửi được sao kê qua email cho "Get API".
+          </p>
+        </div>
+      </div>
     </div>
 
     <div class="table-wrap report-table-wrap">

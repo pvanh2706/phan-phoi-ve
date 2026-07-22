@@ -171,7 +171,7 @@ onMounted(load)
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">Ngày cần lấy dữ liệu</label>
+            <label class="form-label">Ngày cần lấy dữ liệu <span class="required-mark">*</span></label>
             <input v-model="syncModal.businessDate" class="form-input" type="date" :max="todayIso()" />
           </div>
           <div class="notice notice-indigo">

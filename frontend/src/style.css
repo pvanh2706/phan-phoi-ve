@@ -26,6 +26,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Cho trình duyệt biết theme hiện tại là tối, để các control gốc (popup chọn giờ/ngày,
+     nút tăng giảm, thanh cuộn...) tự đổi màu theo, không còn lệch tông trắng giữa nền tối. */
+  color-scheme: dark;
 }
 
 [data-theme='light'] {
@@ -42,6 +45,7 @@
   --green: #16a34a;
   --red: #dc2626;
   --amber: #b45309;
+  color-scheme: light;
 }
 
 html,
@@ -796,6 +800,33 @@ a {
   margin-left: auto;
 }
 
+.tb-actions-right {
+  margin-left: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tb-upload-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.tb-upload-group .btn-secondary,
+.tb-upload-group .tb-hint {
+  width: 190px;
+}
+
+.tb-upload-group .btn-secondary {
+  white-space: nowrap;
+}
+
+.tb-upload-group .tb-hint {
+  margin: 0;
+}
+
 .tb-input {
   min-width: 200px;
   padding: 7px 12px;
@@ -813,6 +844,14 @@ a {
   color: #6b7280;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.tb-hint {
+  margin: 8px 2px 0;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.4;
+  font-style: italic;
 }
 
 .tb-select option,
@@ -1641,12 +1680,44 @@ tr.row-handled td {
   color: #374151;
 }
 
+.required-mark {
+  margin-left: 2px;
+  color: #ef4444;
+  font-weight: 700;
+}
+
 .form-input,
 .form-select,
 .form-textarea {
   width: 100%;
   padding: 8px 12px;
   font-size: 13px;
+}
+
+.pwd-wrap {
+  position: relative;
+}
+
+.pwd-wrap .form-input {
+  padding-right: 40px;
+}
+
+.pwd-eye {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 5px;
+  border-radius: 6px;
+}
+
+.pwd-eye:hover {
+  background: var(--surface-soft);
 }
 
 .form-textarea {

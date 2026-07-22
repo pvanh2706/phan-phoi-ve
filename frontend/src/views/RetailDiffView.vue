@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import ReportTableCard from '../components/ui/ReportTableCard.vue'
+import { useToast } from '../composables/useToast'
 import { reportPages, type ReportPageKey, type ReportTabConfig, type TableCell, type TableColumn } from '../data/reports'
 import { formatMoney } from '../services/formatters'
+
+const toast = useToast()
+const building = ref(false)
 
 const props = withDefaults(
   defineProps<{
@@ -41,13 +45,26 @@ const diffColumns = computed<TableColumn[]>(() => [
 const taRows = computed(() => reportPages[props.taPageKey].tabs[0].rows)
 const bankRows = computed(() => reportPages[props.bankPageKey].tabs[0].rows)
 
+// Lấy vị trí cột theo "key" thay vì cố định theo index, vì các nguồn TA
+// (Khách lẻ: 5 cột có SĐT / Đại lý API: 4 cột không có SĐT) có số cột khác nhau.
+const taColumns = computed(() => reportPages[props.taPageKey].tabs[0].columns)
+const taBookingIdx = computed(() => taColumns.value.findIndex((c) => c.key === 'booking'))
+const taCustomerIdx = computed(() =>
+  taColumns.value.findIndex((c) => c.key === 'customer' || c.key === 'agency'),
+)
+const taAmountIdx = computed(() => taColumns.value.findIndex((c) => c.key === 'amount'))
+
+const bankColumns = computed(() => reportPages[props.bankPageKey].tabs[0].columns)
+const bankDescriptionIdx = computed(() => bankColumns.value.findIndex((c) => c.key === 'description'))
+const bankCreditIdx = computed(() => bankColumns.value.findIndex((c) => c.key === 'credit'))
+
 const bankByBooking = computed(() => {
   const map = new Map<string, number>()
   for (const row of bankRows.value) {
-    const description = cellText(row.cells[8])
+    const description = cellText(row.cells[bankDescriptionIdx.value])
     const match = description.match(/BK(\d+)/)
     if (!match) continue
-    map.set(match[1], parseAmount(cellText(row.cells[5])))
+    map.set(match[1], parseAmount(cellText(row.cells[bankCreditIdx.value])))
   }
   return map
 })
@@ -57,9 +74,9 @@ const page = computed(() => {
   let mismatched = 0
 
   const rows = taRows.value.map((row) => {
-    const code = cellText(row.cells[0])
-    const customer = cellText(row.cells[1])
-    const taAmount = parseAmount(cellText(row.cells[4]))
+    const code = cellText(row.cells[taBookingIdx.value])
+    const customer = cellText(row.cells[taCustomerIdx.value])
+    const taAmount = parseAmount(cellText(row.cells[taAmountIdx.value]))
     const bankAmount = bankByBooking.value.get(code) ?? null
     const diff = bankAmount === null ? null : taAmount - bankAmount
 
@@ -83,9 +100,9 @@ const page = computed(() => {
       search: `${code} ${customer}`,
       date: row.date,
       cells: [
-        row.cells[0],
+        row.cells[taBookingIdx.value],
         customer,
-        row.cells[4],
+        row.cells[taAmountIdx.value],
         bankAmount === null ? { kind: 'muted', text: '—' } : formatMoney(bankAmount),
         diffCell,
         statusCell,
@@ -108,9 +125,31 @@ const page = computed(() => {
     tab,
   }
 })
+
+async function runBuildReconciliation() {
+  if (building.value) return
+  building.value = true
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    toast.success(`Đã build đối soát (demo, chưa nối API thật) — ${page.value.tab.rows.length} dòng.`, { duration: 6000 })
+  } finally {
+    building.value = false
+  }
+}
 </script>
 
 <template>
   <PageHeader :title="page.title" :subtitle="page.subtitle" />
-  <ReportTableCard :tab="page.tab" />
+  <ReportTableCard :tab="page.tab">
+    <template #actions>
+      <div class="tb-actions-right">
+        <button class="add-btn" type="button" :disabled="building" @click="runBuildReconciliation">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+          </svg>
+          {{ building ? 'Đang build...' : 'Build đối soát' }}
+        </button>
+      </div>
+    </template>
+  </ReportTableCard>
 </template>

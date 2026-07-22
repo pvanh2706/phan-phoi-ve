@@ -611,7 +611,7 @@ onMounted(async () => {
           <input v-model="resolveModal.adjustmentAmount" class="form-input" inputmode="numeric" />
         </div>
         <div class="form-group">
-          <label class="form-label">Ghi chú xử lý</label>
+          <label class="form-label">Ghi chú xử lý <span class="required-mark">*</span></label>
           <textarea v-model="resolveModal.adjustmentNote" class="form-textarea"></textarea>
         </div>
       </div>

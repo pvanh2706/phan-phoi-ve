@@ -193,11 +193,11 @@ async function removeAgency(agency: AgencyRecord) {
       <div class="modal-body">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Mã đại lý *</label>
+            <label class="form-label">Mã đại lý <span class="required-mark">*</span></label>
             <input v-model="form.code" class="form-input" placeholder="VD: 7391" />
           </div>
           <div class="form-group">
-            <label class="form-label">Tên đại lý *</label>
+            <label class="form-label">Tên đại lý <span class="required-mark">*</span></label>
             <input v-model="form.name" class="form-input" placeholder="VD: Oneinventory_API_Klook" />
           </div>
         </div>

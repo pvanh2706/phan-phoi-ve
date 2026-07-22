@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PpvRecon.Api.Services.BankStatement;
+using PpvRecon.Application.Auditing;
 using PpvRecon.Application.Common;
 using PpvRecon.Application.Jobs;
+using PpvRecon.Application.Reconciliation;
 using PpvRecon.Application.Summaries;
 using PpvRecon.Domain.Enums;
 using PpvRecon.Infrastructure.Persistence;
@@ -16,8 +18,12 @@ namespace PpvRecon.Api.Controllers;
 [Route("api/bank-transaction-details")]
 public sealed class BankTransactionDetailsController(
     PpvReconDbContext dbContext,
-    IJobRunner jobRunner) : PpvControllerBase
+    IJobRunner jobRunner,
+    IBankStatementSyncService bankStatementSyncService,
+    IReconciliationBuilder reconciliationBuilder,
+    IAuditService auditService) : PpvControllerBase
 {
+    private const long MaxUploadBytes = 20 * 1024 * 1024;
     private static readonly JsonSerializerOptions JsonLineItemsOptions = new() { PropertyNameCaseInsensitive = true };
 
     [HttpGet]
@@ -120,6 +126,69 @@ public sealed class BankTransactionDetailsController(
         var message = result.Imported == 0
             ? "Không có giao dịch nào được nhập."
             : $"Đã nhập {result.Imported} dòng KVC (gộp từ {result.TransactionsParsed} giao dịch) từ {result.MailsProcessed} email.";
+        if (result.SkippedUnmatched > 0)
+            message += $" Bỏ qua {result.SkippedUnmatched} giao dịch không khớp KVC.";
+
+        return Ok(ApiResponse<BankStatementSyncResult>.Ok(result, message));
+    }
+
+    /// <summary>
+    /// Nhập tay sao kê từ 1 file PDF tải lên, dùng khi ngân hàng lỗi/không gửi sao kê về email.
+    /// Xử lý qua đúng luồng map Park + gộp theo ngày + ghi đè như "Get API".
+    /// </summary>
+    [HttpPost("upload")]
+    [RequestSizeLimit(MaxUploadBytes)]
+    public async Task<ActionResult<ApiResponse<BankStatementSyncResult>>> Upload(
+        IFormFile? file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse<BankStatementSyncResult>.Fail("Vui lòng chọn file PDF sao kê ngân hàng."));
+        }
+
+        if (!file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(ApiResponse<BankStatementSyncResult>.Fail("Chỉ chấp nhận file PDF sao kê."));
+        }
+
+        await using var stream = new MemoryStream();
+        await file.CopyToAsync(stream, cancellationToken);
+
+        BankStatementSyncResult result;
+        try
+        {
+            result = await bankStatementSyncService.ImportFromPdfAsync(stream.ToArray(), CurrentUserId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ApiResponse<BankStatementSyncResult>.Fail($"Không xử lý được file sao kê: {ex.Message}"));
+        }
+
+        await auditService.LogAsync(new AuditLogEntry
+        {
+            UserId = CurrentUserId,
+            Module = "BankStatement",
+            EntityName = "BankTransactionDetail",
+            Action = AuditAction.ManualEntry,
+            After = new
+            {
+                fileName = file.FileName,
+                result.TransactionsParsed,
+                result.Imported,
+                result.SkippedUnmatched,
+                result.OverwrittenBusinessDates,
+            },
+        }, cancellationToken);
+
+        foreach (var date in result.OverwrittenBusinessDates)
+        {
+            await reconciliationBuilder.BuildAsync(date, CurrentUserId, cancellationToken, JobTriggerType.Manual);
+        }
+
+        var message = result.Imported == 0
+            ? "Không có giao dịch nào được nhập từ file."
+            : $"Đã nhập {result.Imported} dòng KVC (gộp từ {result.TransactionsParsed} giao dịch) từ file tải lên.";
         if (result.SkippedUnmatched > 0)
             message += $" Bỏ qua {result.SkippedUnmatched} giao dịch không khớp KVC.";
 

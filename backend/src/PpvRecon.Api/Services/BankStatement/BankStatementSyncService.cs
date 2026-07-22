@@ -29,6 +29,9 @@ public sealed class BankStatementSyncResult
 public interface IBankStatementSyncService
 {
     Task<BankStatementSyncResult> SyncAsync(DateOnly scanDate, int? currentUserId, CancellationToken cancellationToken);
+
+    /// <summary>Nhập sao kê từ 1 file PDF tải lên tay (khi email ngân hàng lỗi/không gửi về).</summary>
+    Task<BankStatementSyncResult> ImportFromPdfAsync(byte[] pdfBytes, int? currentUserId, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -77,6 +80,40 @@ public sealed class BankStatementSyncService(
         }
 
         result.TransactionsParsed = parsed.Count;
+        return await ImportParsedAsync(parsed, result, currentUserId, cancellationToken);
+    }
+
+    /// <summary>Nhập sao kê từ 1 file PDF tải lên tay (khi email ngân hàng lỗi/không gửi về).</summary>
+    public async Task<BankStatementSyncResult> ImportFromPdfAsync(
+        byte[] pdfBytes, int? currentUserId, CancellationToken cancellationToken)
+    {
+        var result = new BankStatementSyncResult();
+        var pdfPassword = (await connectionSettings.GetBankStatementAsync(cancellationToken)).PdfPassword;
+
+        string pdfText;
+        try
+        {
+            pdfText = PdfExtractor.ExtractText(pdfBytes, pdfPassword);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Không đọc được file PDF (sai định dạng hoặc sai mật khẩu sao kê).", ex);
+        }
+
+        var parsed = BidvStatementParser.Parse(pdfText);
+        result.MailsProcessed = 1;
+        result.TransactionsParsed = parsed.Count;
+        return await ImportParsedAsync(parsed, result, currentUserId, cancellationToken);
+    }
+
+    /// <summary>Map Park qua TKThe → gộp theo (KVC, ngày) → ghi đè theo ngày. Dùng chung cho luồng email và upload tay.</summary>
+    private async Task<BankStatementSyncResult> ImportParsedAsync(
+        List<ParsedTransaction> parsed,
+        BankStatementSyncResult result,
+        int? currentUserId,
+        CancellationToken cancellationToken)
+    {
         if (parsed.Count == 0) return result;
 
         // 2) Map Park qua TKThe == Park.BankAccount.

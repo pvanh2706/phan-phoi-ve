@@ -14,6 +14,7 @@ import RetailDiffView from '../views/RetailDiffView.vue'
 import SystemSettingsView from '../views/SystemSettingsView.vue'
 import TicketCostDetailView from '../views/TicketCostDetailView.vue'
 import TopUpWorkflowView from '../views/TopUpWorkflowView.vue'
+import VinChildParksView from '../views/VinChildParksView.vue'
 import { authState, initializeAuth } from '../services/authStore'
 
 const router = createRouter({
@@ -126,8 +127,7 @@ const router = createRouter({
     },
     {
       path: '/doi-soat-vin/danh-muc-kvc-con',
-      component: AgencyReportView,
-      props: { pageKey: 'vinChildParks' },
+      component: VinChildParksView,
       meta: { title: 'Đối soát Vin / Danh mục KVC con của Vin' },
     },
     {
@@ -143,6 +143,12 @@ const router = createRouter({
       meta: { title: 'Đối soát Vin / Số dư KVC Vin theo ngày' },
     },
     {
+      path: '/doi-soat-vin/nap-tien-theo-ngay',
+      component: AgencyReportView,
+      props: { pageKey: 'vinTopUps' },
+      meta: { title: 'Đối soát Vin / Danh sách nạp tiền cho Vin theo ngày' },
+    },
+    {
       path: '/doi-soat-vin/doi-soat',
       component: AgencyReportView,
       props: { pageKey: 'vinReconciliation' },
@@ -152,13 +158,13 @@ const router = createRouter({
       path: '/dai-ly-ota/booking-ta',
       component: AgencyReportView,
       props: { pageKey: 'otaTaBookings' },
-      meta: { title: 'Các đại lý OTA / Booking OTA trên TA' },
+      meta: { title: 'Các đại lý API / Booking API trên TA' },
     },
     {
       path: '/dai-ly-ota/tien-ve-ngan-hang',
       component: AgencyReportView,
       props: { pageKey: 'otaBankInflows' },
-      meta: { title: 'Các đại lý OTA / Tiền về ngân hàng' },
+      meta: { title: 'Các đại lý API / Tiền về ngân hàng' },
     },
     {
       path: '/dai-ly-ota/doi-soat',
@@ -166,10 +172,10 @@ const router = createRouter({
       props: {
         taPageKey: 'otaTaBookings',
         bankPageKey: 'otaBankInflows',
-        entityLabel: 'Tên đại lý OTA',
-        title: 'Đối soát booking OTA với tiền về ngân hàng',
+        entityLabel: 'Tên đại lý API',
+        title: 'Đối soát booking API với tiền về ngân hàng',
       },
-      meta: { title: 'Các đại lý OTA / Đối soát' },
+      meta: { title: 'Các đại lý API / Đối soát' },
     },
     {
       path: '/system',

@@ -8,6 +8,7 @@ const route = useRoute()
 const router = useRouter()
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
 
@@ -46,13 +47,23 @@ async function submit() {
 
       <form class="login-form" @submit.prevent="submit">
         <label class="form-group">
-          <span class="form-label">Email</span>
+          <span class="form-label">Email <span class="required-mark">*</span></span>
           <input v-model="email" class="form-input" type="email" autocomplete="username" />
         </label>
 
         <label class="form-group">
-          <span class="form-label">Mật khẩu</span>
-          <input v-model="password" class="form-input" type="password" autocomplete="current-password" />
+          <span class="form-label">Mật khẩu <span class="required-mark">*</span></span>
+          <div class="pwd-wrap">
+            <input
+              v-model="password"
+              class="form-input"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+            />
+            <button class="pwd-eye" type="button" tabindex="-1" @click="showPassword = !showPassword">
+              {{ showPassword ? '🙈' : '👁️' }}
+            </button>
+          </div>
         </label>
 
         <p v-if="errorMessage" class="login-error">{{ errorMessage }}</p>

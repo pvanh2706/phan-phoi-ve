@@ -252,6 +252,15 @@ export function syncBankTransactions() {
   })
 }
 
+export function uploadBankStatement(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiRequest<BankStatementSyncResult>('/bank-transaction-details/upload', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
 export function listBankTransactionSummaries(filters: BankSummaryFilters = {}) {
   const query = buildQuery({
     page: filters.page ?? 1,

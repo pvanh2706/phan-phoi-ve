@@ -548,11 +548,11 @@ onMounted(async () => {
       <div class="modal-body">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Mã KVC</label>
+            <label class="form-label">Mã KVC <span class="required-mark">*</span></label>
             <input v-model="parkForm.code" class="form-input" :readonly="Boolean(editingParkId)" />
           </div>
           <div class="form-group">
-            <label class="form-label">Tên khu vui chơi</label>
+            <label class="form-label">Tên khu vui chơi <span class="required-mark">*</span></label>
             <input v-model="parkForm.name" class="form-input" />
           </div>
         </div>
@@ -635,7 +635,7 @@ onMounted(async () => {
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">KVC cha</label>
+          <label class="form-label">KVC cha <span class="required-mark">*</span></label>
           <select v-model="ticketForm.parkId" class="form-select">
             <option value="">Chọn KVC</option>
             <option v-for="park in parkOptions" :key="park.id" :value="park.id">
@@ -644,11 +644,11 @@ onMounted(async () => {
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Mã KVC con</label>
+          <label class="form-label">Mã KVC con <span class="required-mark">*</span></label>
           <input v-model="ticketForm.code" class="form-input" />
         </div>
         <div class="form-group">
-          <label class="form-label">Tên KVC con</label>
+          <label class="form-label">Tên KVC con <span class="required-mark">*</span></label>
           <input v-model="ticketForm.name" class="form-input" />
         </div>
         <div class="form-group">

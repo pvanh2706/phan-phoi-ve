@@ -63,9 +63,9 @@ export type ReportPageKey =
   | 'agencyBidvTransactions'
   | 'retailTaBookings'
   | 'retailBankInflows'
-  | 'vinChildParks'
   | 'vinTicketCosts'
   | 'vinDailyBalances'
+  | 'vinTopUps'
   | 'vinReconciliation'
   | 'otaTaBookings'
   | 'otaBankInflows'
@@ -175,26 +175,6 @@ const statusOptions = [
   { value: 'active', label: 'Hoạt động' },
   { value: 'warning', label: 'Cảnh báo' },
   { value: 'paused', label: 'Tạm dừng' },
-]
-
-const vinChildParkColumns: TableColumn[] = [
-  { key: 'code', label: 'Mã KVC' },
-  { key: 'bankAccount', label: 'TK Ngân hàng' },
-  { key: 'name', label: 'Tên KVC' },
-  { key: 'debtType', label: 'Loại Công nợ' },
-]
-
-const vinChildParkRows: TableRow[] = [
-  { id: 'vcp-1', search: '11810 Timescity', cells: [muted('11810'), muted('M368010106273448'), strong('Timescity'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-2', search: '11813 VinWonders Vũ Yên', cells: [muted('11813'), muted('19010000888334'), strong('VinWonders Vũ Yên'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-3', search: '10288 Phú Quốc', cells: [muted('10288'), muted('0091000593278'), strong('Phú Quốc'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-4', search: '10064 Nam Hội An', cells: [muted('10064'), muted('M368020106273448'), strong('Nam Hội An'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-5', search: '11732 CÔNG VIÊN GRAND PARK', cells: [muted('11732'), muted('117002989969'), strong('CÔNG VIÊN GRAND PARK'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-6', search: '11591 Hà Nội', cells: [muted('11591'), muted('19010000888261'), strong('Hà Nội'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-7', search: '11573 VINWONDERS TIMES CITY', cells: [muted('11573'), muted('19027902768013'), strong('VINWONDERS TIMES CITY (V…)'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-8', search: '10072 Nha Trang', cells: [muted('10072'), muted('1231333102'), strong('Nha Trang'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-9', search: '11714 VinWonders Cửa Hội', cells: [muted('11714'), muted('19139932758899'), strong('VinWonders Cửa Hội'), badge('Nạp trước', 'blue')] },
-  { id: 'vcp-10', search: '10064 Nam Hội An', cells: [muted('10064'), muted('1029876329'), strong('Nam Hội An'), badge('Nạp trước', 'blue')] },
 ]
 
 const vinFacilities: { name: string; account: string; dueDays: string }[] = [
@@ -559,19 +539,6 @@ export const reportPages: Record<ReportPageKey, ReportPageConfig> = {
       },
     ],
   },
-  vinChildParks: {
-    title: 'Danh mục KVC con của Vin',
-    subtitle: 'Các mã KVC con thuộc nhóm Vinpearl/VinWonders, dùng tài khoản ngân hàng và loại công nợ nạp trước',
-    tabs: [
-      {
-        id: 'vin-child-parks',
-        label: 'Danh mục KVC con',
-        columns: vinChildParkColumns,
-        searchPlaceholder: '🔍  Tìm mã KVC, tên KVC...',
-        rows: vinChildParkRows,
-      },
-    ],
-  },
   vinTicketCosts: {
     title: 'Chi tiết giá vốn vé bán',
     subtitle: 'Đối chiếu giá vốn từng loại vé theo KVC con Vin và đại lý mua',
@@ -607,6 +574,24 @@ export const reportPages: Record<ReportPageKey, ReportPageConfig> = {
       },
     ],
   },
+  vinTopUps: {
+    title: 'Danh sách nạp tiền cho Vin theo ngày',
+    subtitle: 'Lịch sử các giao dịch nạp tiền vào tài khoản KVC con của Vin, lấy từ email báo có',
+    tabs: [
+      {
+        id: 'vin-top-up',
+        label: 'Giao dịch nạp tiền',
+        columns: bankStatementColumns,
+        searchPlaceholder: '🔍  Tìm số chứng từ, nội dung...',
+        dateFilter: true,
+        rows: [
+          { id: 'vtu-1', search: 'insaoke@bidv.com 61205 Timescity TKThe M368010106273448', date: '2026-04-28', cells: ['insaoke@bidv.com', '28/04/2026', '28/04/2026', '990CTL', red('50,000,000 đ'), '0 đ', muted('-99,315,500 đ'), '061205', 'TKThe M368010106273448 Timescity nap tien'] },
+          { id: 'vtu-2', search: 'insaoke@bidv.com 61340 VinWonders Vu Yen TKThe 19010000888334', date: '2026-04-29', cells: ['insaoke@bidv.com', '29/04/2026', '29/04/2026', '990CTL', red('30,000,000 đ'), '0 đ', muted('-88,931,000 đ'), '061340', 'TKThe 19010000888334 VinWonders Vu Yen nap tien'] },
+          { id: 'vtu-3', search: 'insaoke@bidv.com 61478 Phu Quoc TKThe 0091000593278', date: '2026-04-30', cells: ['insaoke@bidv.com', '30/04/2026', '30/04/2026', '990CTL', red('20,000,000 đ'), '0 đ', muted('-28,742,600 đ'), '061478', 'TKThe 0091000593278 Phu Quoc nap tien'] },
+        ],
+      },
+    ],
+  },
   vinReconciliation: {
     title: 'Đối soát KVC Vin',
     subtitle: 'So sánh số dư/doanh thu hệ thống tự tính với số liệu đối tác Vin cung cấp',
@@ -629,14 +614,14 @@ export const reportPages: Record<ReportPageKey, ReportPageConfig> = {
     ],
   },
   otaTaBookings: {
-    title: 'Booking OTA trên TA',
-    subtitle: 'Danh sách booking của các đại lý OTA đồng bộ từ hệ thống TA',
+    title: 'Booking API trên TA',
+    subtitle: 'Danh sách booking của các đại lý API đồng bộ từ hệ thống TA',
     tabs: [
       {
         id: 'ta',
         label: 'Booking TA',
         columns: agencyTaColumns,
-        searchPlaceholder: '🔍  Tìm mã booking, tên đại lý OTA...',
+        searchPlaceholder: '🔍  Tìm mã booking, tên đại lý API...',
         dateFilter: true,
         rows: [
           { id: 'ot-1', search: '52301884201 Traveloka', date: '2026-06-25', cells: [strong('52301884201'), 'Traveloka', '25/06/2026 08:40:12', green('1,650,000 đ')] },
@@ -645,13 +630,21 @@ export const reportPages: Record<ReportPageKey, ReportPageConfig> = {
           { id: 'ot-4', search: '52301885811 Booking.com', date: '2026-06-24', cells: [strong('52301885811'), 'Booking.com', '24/06/2026 15:08:19', green('3,120,000 đ')] },
           { id: 'ot-5', search: '52301886402 KKday', date: '2026-06-23', cells: [strong('52301886402'), 'KKday', '23/06/2026 09:33:05', green('760,000 đ')] },
           { id: 'ot-6', search: '52301886955 Traveloka', date: '2026-06-23', cells: [strong('52301886955'), 'Traveloka', '23/06/2026 20:11:44', green('1,410,000 đ')] },
+          { id: 'ot-7', search: '52301887502 Expedia', date: '2026-06-22', cells: [strong('52301887502'), 'Expedia', '22/06/2026 11:20:33', green('2,890,000 đ')] },
+          { id: 'ot-8', search: '52301888014 Trip.com', date: '2026-06-22', cells: [strong('52301888014'), 'Trip.com', '22/06/2026 14:45:10', green('1,980,000 đ')] },
+          { id: 'ot-9', search: '52301888633 Klook', date: '2026-06-21', cells: [strong('52301888633'), 'Klook', '21/06/2026 09:12:55', green('3,450,000 đ')] },
+          { id: 'ot-10', search: '52301889120 Agoda', date: '2026-06-21', cells: [strong('52301889120'), 'Agoda', '21/06/2026 16:33:21', green('1,120,000 đ')] },
+          { id: 'ot-11', search: '52301889745 Booking.com', date: '2026-06-20', cells: [strong('52301889745'), 'Booking.com', '20/06/2026 10:05:44', green('4,260,000 đ')] },
+          { id: 'ot-12', search: '52301890288 Traveloka', date: '2026-06-20', cells: [strong('52301890288'), 'Traveloka', '20/06/2026 18:22:09', green('890,000 đ')] },
+          { id: 'ot-13', search: '52301890903 KKday', date: '2026-06-19', cells: [strong('52301890903'), 'KKday', '19/06/2026 07:50:16', green('1,560,000 đ')] },
+          { id: 'ot-14', search: '52301891477 Expedia', date: '2026-06-19', cells: [strong('52301891477'), 'Expedia', '19/06/2026 21:15:38', green('2,230,000 đ')] },
         ],
       },
     ],
   },
   otaBankInflows: {
     title: 'Tiền về ngân hàng',
-    subtitle: 'Sao kê ngân hàng ghi nhận tiền các đại lý OTA chuyển vào, lấy từ email báo có',
+    subtitle: 'Sao kê ngân hàng ghi nhận tiền các đại lý API chuyển vào, lấy từ email báo có',
     tabs: [
       {
         id: 'bank',
@@ -678,6 +671,22 @@ export const reportPages: Record<ReportPageKey, ReportPageConfig> = {
           },
           {
             id: 'ob-2',
+            search: 'insaoke@bidv.com 61921 Klook',
+            date: '2026-06-25',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '25/06/2026',
+              '25/06/2026',
+              'DD',
+              '0',
+              green('2,300,000 đ'),
+              '1,857,033,986 đ',
+              muted('61921'),
+              'TT ve ve BK52301884733, Klook chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-3',
             search: 'insaoke@bidv.com 61934 Agoda',
             date: '2026-06-24',
             cells: [
@@ -690,6 +699,134 @@ export const reportPages: Record<ReportPageKey, ReportPageConfig> = {
               '1,855,713,986 đ',
               muted('61934'),
               'TT ve ve BK52301885290, Agoda chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-4',
+            search: 'insaoke@bidv.com 61940 Booking.com',
+            date: '2026-06-24',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '24/06/2026',
+              '24/06/2026',
+              'DD',
+              '0',
+              green('3,120,000 đ'),
+              '1,858,833,986 đ',
+              muted('61940'),
+              'TT ve ve BK52301885811, Booking.com chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-5',
+            search: 'insaoke@bidv.com 61955 Traveloka',
+            date: '2026-06-23',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '23/06/2026',
+              '23/06/2026',
+              'DD',
+              '0',
+              green('1,410,000 đ'),
+              '1,860,243,986 đ',
+              muted('61955'),
+              'TT ve ve BK52301886955, Traveloka chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-6',
+            search: 'insaoke@bidv.com 61970 Expedia',
+            date: '2026-06-22',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '22/06/2026',
+              '22/06/2026',
+              'DD',
+              '0',
+              green('2,890,000 đ'),
+              '1,863,133,986 đ',
+              muted('61970'),
+              'TT ve ve BK52301887502, Expedia chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-7',
+            search: 'insaoke@bidv.com 61982 Trip.com',
+            date: '2026-06-22',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '22/06/2026',
+              '22/06/2026',
+              'DD',
+              '0',
+              green('1,980,000 đ'),
+              '1,865,113,986 đ',
+              muted('61982'),
+              'TT ve ve BK52301888014, Trip.com chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-8',
+            search: 'insaoke@bidv.com 61998 Agoda',
+            date: '2026-06-21',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '21/06/2026',
+              '21/06/2026',
+              'DD',
+              '0',
+              green('1,120,000 đ'),
+              '1,866,233,986 đ',
+              muted('61998'),
+              'TT ve ve BK52301889120, Agoda chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-9',
+            search: 'insaoke@bidv.com 62010 Booking.com',
+            date: '2026-06-20',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '20/06/2026',
+              '20/06/2026',
+              'DD',
+              '0',
+              green('4,260,000 đ'),
+              '1,870,493,986 đ',
+              muted('62010'),
+              'TT ve ve BK52301889745, Booking.com chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-10',
+            search: 'insaoke@bidv.com 62025 Traveloka',
+            date: '2026-06-20',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '20/06/2026',
+              '20/06/2026',
+              'DD',
+              '0',
+              green('850,000 đ'),
+              '1,871,343,986 đ',
+              muted('62025'),
+              'TT ve ve BK52301890288, Traveloka chuyen khoan',
+            ],
+          },
+          {
+            id: 'ob-11',
+            search: 'insaoke@bidv.com 62041 KKday',
+            date: '2026-06-19',
+            cells: [
+              muted('insaoke@bidv.com'),
+              '19/06/2026',
+              '19/06/2026',
+              'DD',
+              '0',
+              green('1,560,000 đ'),
+              '1,872,903,986 đ',
+              muted('62041'),
+              'TT ve ve BK52301890903, KKday chuyen khoan',
             ],
           },
         ],
