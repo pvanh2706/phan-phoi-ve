@@ -1,19 +1,30 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
-import { initialAgencies, type AgencyRecord } from '../data/agencies'
+import { ApiClientError } from '../services/apiClient'
+import { authState } from '../services/authStore'
+import {
+  createAgency,
+  deleteAgency,
+  listAgencies,
+  updateAgency,
+  type AgencyDto,
+  type AgencySource,
+} from '../services/agenciesApi'
 
 const toast = useToast()
 const { confirm } = useConfirm()
 
-const agencies = ref<AgencyRecord[]>(initialAgencies.map((a) => ({ ...a })))
-let nextId = Math.max(0, ...agencies.value.map((a) => a.id)) + 1
-
+const agencies = ref<AgencyDto[]>([])
 const keyword = ref('')
 const page = ref(1)
 const pageSize = 20
+const totalItems = ref(0)
+const totalPages = ref(1)
+const loading = ref(false)
+const saving = ref(false)
 
 const showModal = ref(false)
 const editingId = ref<number | null>(null)
@@ -22,29 +33,39 @@ const form = reactive({
   name: '',
   parentCode: '',
   parentName: '',
-  source: 'OneInventory',
+  source: 'OneInventory' as AgencySource,
 })
 
-const filteredAgencies = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw) return agencies.value
-  return agencies.value.filter(
-    (a) => a.code.toLowerCase().includes(kw) || a.name.toLowerCase().includes(kw),
-  )
-})
+const isAdmin = computed(() => authState.user?.role === 'Admin')
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredAgencies.value.length / pageSize)))
-const visibleAgencies = computed(() => {
-  const start = (page.value - 1) * pageSize
-  return filteredAgencies.value.slice(start, start + pageSize)
-})
-
-function goPage(next: number) {
-  page.value = Math.min(Math.max(1, next), totalPages.value)
+function errorText(error: unknown, fallback: string) {
+  return error instanceof ApiClientError ? error.message : fallback
 }
 
+async function loadAgencies() {
+  loading.value = true
+  try {
+    const result = await listAgencies({ page: page.value, keyword: keyword.value })
+    agencies.value = result.items
+    totalItems.value = result.totalItems
+    totalPages.value = Math.max(1, result.totalPages)
+  } catch (error) {
+    toast.error(errorText(error, 'Không tải được danh sách đại lý.'))
+  } finally {
+    loading.value = false
+  }
+}
+
+async function goPage(next: number) {
+  page.value = Math.min(Math.max(1, next), totalPages.value)
+  await loadAgencies()
+}
+
+let searchTimer: ReturnType<typeof setTimeout> | undefined
 function onSearch() {
   page.value = 1
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(loadAgencies, 300)
 }
 
 function resetForm() {
@@ -61,56 +82,67 @@ function openCreate() {
   showModal.value = true
 }
 
-function openEdit(agency: AgencyRecord) {
+function openEdit(agency: AgencyDto) {
   editingId.value = agency.id
   form.code = agency.code
   form.name = agency.name
-  form.parentCode = agency.parentCode
-  form.parentName = agency.parentName
+  form.parentCode = agency.parentCode ?? ''
+  form.parentName = agency.parentName ?? ''
   form.source = agency.source
   showModal.value = true
 }
 
-function saveAgency() {
+async function saveAgency() {
+  if (saving.value) return
   if (!form.code.trim() || !form.name.trim()) {
     toast.warning('Vui lòng nhập đủ Mã đại lý và Tên đại lý.')
     return
   }
 
-  if (editingId.value) {
-    const agency = agencies.value.find((a) => a.id === editingId.value)
-    if (agency) {
-      agency.code = form.code.trim()
-      agency.name = form.name.trim()
-      agency.parentCode = form.parentCode.trim()
-      agency.parentName = form.parentName.trim()
-      agency.source = form.source.trim()
-    }
-    toast.success('Đã cập nhật đại lý.')
-  } else {
-    agencies.value.unshift({
-      id: nextId++,
+  saving.value = true
+  try {
+    const payload = {
       code: form.code.trim(),
       name: form.name.trim(),
-      parentCode: form.parentCode.trim(),
-      parentName: form.parentName.trim(),
-      source: form.source.trim(),
-    })
-    toast.success('Đã thêm đại lý.')
+      parentCode: form.parentCode.trim() || null,
+      parentName: form.parentName.trim() || null,
+      source: form.source,
+    }
+
+    if (editingId.value !== null) {
+      await updateAgency(editingId.value, payload)
+      toast.success('Đã cập nhật đại lý.')
+    } else {
+      await createAgency(payload)
+      toast.success('Đã thêm đại lý.')
+    }
+    showModal.value = false
+    await loadAgencies()
+  } catch (error) {
+    toast.error(errorText(error, 'Không lưu được đại lý.'))
+  } finally {
+    saving.value = false
   }
-  showModal.value = false
 }
 
-async function removeAgency(agency: AgencyRecord) {
+async function removeAgency(agency: AgencyDto) {
   const ok = await confirm({
     title: 'Xóa đại lý',
     message: `Bạn có chắc muốn xóa đại lý "${agency.name}" (${agency.code})?`,
     confirmText: 'Xóa',
   })
   if (!ok) return
-  agencies.value = agencies.value.filter((a) => a.id !== agency.id)
-  toast.success('Đã xóa đại lý.')
+  try {
+    await deleteAgency(agency.id)
+    if (agencies.value.length === 1 && page.value > 1) page.value--
+    await loadAgencies()
+    toast.success('Đã xóa đại lý.')
+  } catch (error) {
+    toast.error(errorText(error, 'Không xóa được đại lý.'))
+  }
 }
+
+onMounted(loadAgencies)
 </script>
 
 <template>
@@ -127,7 +159,7 @@ async function removeAgency(agency: AgencyRecord) {
         placeholder="🔍  Tìm mã hoặc tên đại lý..."
         @input="onSearch"
       />
-      <button class="add-btn" type="button" @click="openCreate">
+      <button v-if="isAdmin" class="add-btn" type="button" @click="openCreate">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" d="M12 5v14M5 12h14" />
         </svg>
@@ -149,14 +181,17 @@ async function removeAgency(agency: AgencyRecord) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(agency, i) in visibleAgencies" :key="agency.id">
+          <tr v-if="loading">
+            <td colspan="7" class="cell-muted" style="text-align: center">Đang tải...</td>
+          </tr>
+          <tr v-for="(agency, i) in agencies" v-else :key="agency.id">
             <td class="cell-muted">{{ (page - 1) * pageSize + i + 1 }}</td>
             <td class="cell-muted">{{ agency.code }}</td>
             <td class="cell-strong">{{ agency.name }}</td>
             <td class="cell-muted">{{ agency.parentCode }}</td>
-            <td>{{ agency.parentName }}</td>
+            <td>{{ agency.parentName || '-' }}</td>
             <td><span class="badge badge-blue">{{ agency.source }}</span></td>
-            <td>
+            <td v-if="isAdmin">
               <button class="edit-btn" type="button" title="Sửa" @click="openEdit(agency)">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -168,8 +203,9 @@ async function removeAgency(agency: AgencyRecord) {
                 </svg>
               </button>
             </td>
+            <td v-else></td>
           </tr>
-          <tr v-if="visibleAgencies.length === 0">
+          <tr v-if="!loading && agencies.length === 0">
             <td colspan="7" class="cell-muted" style="text-align: center">Không có đại lý phù hợp.</td>
           </tr>
         </tbody>
@@ -177,10 +213,10 @@ async function removeAgency(agency: AgencyRecord) {
     </div>
 
     <div class="pagination">
-      <span class="pg-info">Tổng {{ filteredAgencies.length }} đại lý</span>
-      <button class="pg-btn" type="button" :disabled="page <= 1" @click="goPage(page - 1)">‹</button>
+      <span class="pg-info">Tổng {{ totalItems }} đại lý</span>
+      <button class="pg-btn" type="button" :disabled="loading || page <= 1" @click="goPage(page - 1)">‹</button>
       <button class="pg-btn active" type="button">{{ page }}</button>
-      <button class="pg-btn" type="button" :disabled="page >= totalPages" @click="goPage(page + 1)">›</button>
+      <button class="pg-btn" type="button" :disabled="loading || page >= totalPages" @click="goPage(page + 1)">›</button>
     </div>
   </section>
 
@@ -222,7 +258,9 @@ async function removeAgency(agency: AgencyRecord) {
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" type="button" @click="showModal = false">Hủy</button>
-        <button class="btn-primary" type="button" @click="saveAgency">Lưu</button>
+        <button class="btn-primary" type="button" :disabled="saving" @click="saveAgency">
+          {{ saving ? 'Đang lưu...' : 'Lưu' }}
+        </button>
       </div>
     </div>
   </div>

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PpvRecon.Domain.Entities.Agencies;
 using PpvRecon.Domain.Entities.Auditing;
 using PpvRecon.Domain.Entities.Identity;
 using PpvRecon.Domain.Entities.Jobs;
@@ -22,6 +23,7 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<NotificationRecipient> NotificationRecipients => Set<NotificationRecipient>();
+    public DbSet<Agency> Agencies => Set<Agency>();
     public DbSet<Park> Parks => Set<Park>();
     public DbSet<ParkTicketType> ParkTicketTypes => Set<ParkTicketType>();
     public DbSet<ParkRefund> ParkRefunds => Set<ParkRefund>();
@@ -67,6 +69,7 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
     {
         ConfigureIdentity(modelBuilder);
         ConfigureSettings(modelBuilder);
+        ConfigureAgencies(modelBuilder);
         ConfigureParks(modelBuilder);
         ConfigureJobs(modelBuilder);
         ConfigureSummaries(modelBuilder);
@@ -78,6 +81,27 @@ public sealed class PpvReconDbContext(DbContextOptions<PpvReconDbContext> option
         SeedReconciliationDemo(modelBuilder);
         SeedBankTransactionDetails(modelBuilder);
         SeedWorkflowBoard(modelBuilder);
+    }
+
+    private static void ConfigureAgencies(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Agency>(entity =>
+        {
+            entity.ToTable("Agencies");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedOnAdd();
+            entity.Property(x => x.Code).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Name).HasMaxLength(300).IsRequired();
+            entity.Property(x => x.ParentCode).HasMaxLength(50);
+            entity.Property(x => x.ParentName).HasMaxLength(300);
+            entity.Property(x => x.Source).HasMaxLength(50).IsRequired();
+            entity.HasIndex(x => x.Code).IsUnique();
+            entity.HasIndex(x => x.Name);
+            entity.HasIndex(x => x.IsDeleted);
+            RestrictUser(entity, x => x.CreatedByUserId);
+            RestrictUser(entity, x => x.UpdatedByUserId);
+            RestrictUser(entity, x => x.DeletedByUserId);
+        });
     }
 
     private static void ConfigureIdentity(ModelBuilder modelBuilder)
