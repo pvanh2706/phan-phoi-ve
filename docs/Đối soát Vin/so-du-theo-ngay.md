@@ -68,6 +68,7 @@ Bảng **số dư công nợ tạm tính** của từng cơ sở Vinpearl/VinWon
 | Màn hình | Liên kết |
 |---------|---------|
 | Danh mục KVC con của Vin | Nguồn danh mục cơ sở/tài khoản công nợ |
+| Danh sách nạp tiền cho Vin theo ngày | Mục con mới, nằm ngay dưới màn này trong sidebar — xem `nap-tien-theo-ngay.md` |
 | Đối soát KVC Vin | Số dư tạm tính tại đây là 1 vế trong phép so sánh với số liệu Vin cung cấp |
 
 ---

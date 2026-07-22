@@ -2,7 +2,7 @@
 
 **Màn hình:** `RetailDiffView.vue` (props mặc định: `taPageKey='retailTaBookings'`, `bankPageKey='retailBankInflows'`, `entityLabel='Tên khách hàng'`)
 **Đường dẫn truy cập:** Sidebar → Khách lẻ → Đối soát (`/khach-le/doi-soat`)
-**Quyền truy cập:** Admin, Member (xem)
+**Quyền truy cập:** Admin, Member (xem, Build đối soát)
 **Nguồn dữ liệu:** ⚠️ **Demo/mock** — tính toán trực tiếp trên 2 bộ dữ liệu tĩnh `reportPages.retailTaBookings` và `reportPages.retailBankInflows`, không gọi API.
 
 ---
@@ -48,6 +48,12 @@
 - **Luồng chính:** Chọn Từ ngày / Đến ngày
 - **Kết quả:** Danh sách lọc theo ngày booking
 
+### UC-DSKL-04 – Build đối soát
+
+- **Điều kiện:** Người dùng muốn build/tính lại đối soát
+- **Luồng chính:** Nhấn nút **"Build đối soát"** (góc phải toolbar) → chờ ~800ms → toast báo đã build kèm số dòng
+- **Kết quả:** Demo/mock — minh hoạ hành vi UI, chưa gọi API thật
+
 ---
 
 ## Cấu trúc bảng
@@ -74,5 +80,6 @@
 
 ## Ghi chú thiết kế
 
-- Component `RetailDiffView` được **tái sử dụng** cho cả màn "Đối soát Khách lẻ" và "Đối soát OTA" (khác nhau qua props `taPageKey`/`bankPageKey`/`entityLabel`/`title`) — xem thêm `docs/Các đại lý OTA/doi-soat.md`
+- Component `RetailDiffView` được **tái sử dụng** cho cả màn "Đối soát Khách lẻ" và "Đối soát" của "Các đại lý API" (khác nhau qua props `taPageKey`/`bankPageKey`/`entityLabel`/`title`) — xem thêm `docs/Các đại lý API/doi-soat.md`
 - Việc đối soát phụ thuộc hoàn toàn vào chất lượng parse mã booking từ Diễn giải sao kê; cần xử lý chuẩn hoá dữ liệu đầu vào khi nối API/mail thật
+- `RetailDiffView.vue` đã được refactor để lấy vị trí cột theo **`key`** của `TableColumn` (`booking`/`customer`/`agency`/`amount`) thay vì vị trí cố định (`cells[4]`...) — tránh lỗi khi nguồn TA có số cột khác nhau (Khách lẻ có cột SĐT nên 5 cột, Các đại lý API không có nên 4 cột); xem chi tiết lỗi đã sửa ở `docs/Các đại lý API/doi-soat.md`

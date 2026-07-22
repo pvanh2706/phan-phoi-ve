@@ -2,8 +2,8 @@
 
 **Màn hình:** `AgencyReportView.vue` (pageKey: `retailBankInflows`)
 **Đường dẫn truy cập:** Sidebar → Khách lẻ → Tiền về ngân hàng (`/khach-le/tien-ve-ngan-hang`)
-**Quyền truy cập:** Admin, Member (xem)
-**Nguồn dữ liệu:** ⚠️ **Demo/mock** — dữ liệu tĩnh trong `data/reports.ts` (`reportPages.retailBankInflows`), mô phỏng sao kê lấy từ email báo có, chưa nối API/mail thật cho luồng khách lẻ.
+**Quyền truy cập:** Admin, Member (xem, Get API, Upload tay sao kê)
+**Nguồn dữ liệu:** ⚠️ **Demo/mock** — dữ liệu tĩnh trong `data/reports.ts` (`reportPages.retailBankInflows`), mô phỏng sao kê lấy từ email báo có, chưa nối API/mail thật cho luồng khách lẻ. Có nút **"⤓ Get API"** và **"📤 Upload tay sao kê"** giả lập (thuộc `pagesWithBankUpload` trong `AgencyReportView.vue`).
 
 ---
 
@@ -41,6 +41,21 @@ Sao kê ngân hàng ghi nhận các khoản **tiền khách lẻ chuyển khoả
 - **Điều kiện:** Người dùng cần giới hạn khoảng thời gian
 - **Luồng chính:** Chọn Từ ngày / Đến ngày
 - **Kết quả:** Danh sách lọc theo ngày ghi sổ
+
+### UC-TVNH-04 – Gọi API test (Get API)
+
+- **Điều kiện:** Người dùng muốn mô phỏng lấy sao kê mới
+- **Luồng chính:** Nhấn nút **"⤓ Get API"** (góc phải toolbar) → chờ ~800ms → toast báo số dòng "lấy được"
+- **Kết quả:** Chỉ minh hoạ UI, không gọi API thật
+
+### UC-TVNH-05 – Upload tay sao kê
+
+- **Điều kiện:** Ngân hàng gặp sự cố, không tự gửi được sao kê qua email
+- **Luồng chính:**
+  1. Nhấn nút **"📤 Upload tay sao kê"** (cạnh nút Get API)
+  2. Chọn file PDF từ máy tính
+  3. Hệ thống giả lập xử lý (~800ms) rồi báo toast đã tải lên (demo)
+- **Kết quả:** Minh hoạ UI; chú thích nhỏ bên dưới nút giải thích trường hợp sử dụng, chiều rộng dòng chữ chú thích khớp đúng chiều rộng nút Upload
 
 ---
 

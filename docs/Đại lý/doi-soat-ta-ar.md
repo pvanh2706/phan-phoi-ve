@@ -2,8 +2,8 @@
 
 **Màn hình:** `AgencyDiffView.vue` (direction: `ta-ar`)
 **Đường dẫn truy cập:** Sidebar → Đại lý → Đối soát TA - AR (`/dai-ly/doi-soat-ta-ar`)
-**Quyền truy cập:** Admin, Member (xem)
-**Nguồn dữ liệu:** ⚠️ **Demo/mock** — tính toán trực tiếp trên 2 bộ dữ liệu tĩnh `reportPages.agencyTaTransactions` và `reportPages.agencyArTransactions`, không gọi API.
+**Quyền truy cập:** Admin, Member (xem, tìm kiếm, lọc, đánh dấu xử lý, Build đối soát)
+**Nguồn dữ liệu:** ⚠️ **Demo/mock** — tính toán trực tiếp trên 2 bộ dữ liệu tĩnh `reportPages.agencyTaTransactions` và `reportPages.agencyArTransactions`, không gọi API. Bảng được dựng riêng (không dùng `ReportTableCard` dùng chung) để hỗ trợ ô tích xử lý + phân trang.
 
 ---
 
@@ -45,6 +45,22 @@ Chiều ngược lại của "Đối soát AR - TA": liệt kê những booking 
 - **Luồng chính:** Chọn Từ ngày / Đến ngày
 - **Kết quả:** Danh sách lọc theo ngày giao dịch TA
 
+### UC-DSTA-04 – Đánh dấu đã xử lý chênh lệch
+
+- **Điều kiện:** Có dòng booking lệch (badge "Không có trên AR") chưa được xử lý
+- **Luồng chính:**
+  1. Bấm vào ô tích ở cột **"Đã xử lý"** cuối dòng
+  2. Popup **"Xử lý chênh lệch đối soát"** mở ra, hiển thị mã booking + tên đại lý
+  3. Nhập **Cách thức xử lý \*** và **Lý do xử lý \*** (cả 2 bắt buộc, chặn lưu nếu thiếu)
+  4. Nhấn **Lưu xử lý**
+- **Kết quả:** Dòng chuyển sang trạng thái đã xử lý — ô tích checked và khoá lại, dòng tô nền riêng; dữ liệu xử lý chỉ lưu tạm trong state của trang
+
+### UC-DSTA-05 – Build đối soát
+
+- **Điều kiện:** Người dùng muốn build/tính lại đối soát
+- **Luồng chính:** Nhấn nút **"Build đối soát"** (góc phải toolbar) → chờ ~800ms → toast báo đã build kèm số dòng
+- **Kết quả:** Demo/mock — minh hoạ hành vi UI, chưa gọi API thật
+
 ---
 
 ## Cấu trúc bảng
@@ -56,6 +72,7 @@ Chiều ngược lại của "Đối soát AR - TA": liệt kê những booking 
 | Ngày giờ giao dịch | Thời điểm tạo trên TA |
 | Số tiền | Số tiền giao dịch trên TA |
 | Trạng thái | Badge amber "Không có trên AR" |
+| Đã xử lý | Ô tích — checked + khoá khi đã xử lý xong qua popup |
 
 ---
 
@@ -73,3 +90,4 @@ Chiều ngược lại của "Đối soát AR - TA": liệt kê những booking 
 
 - Cùng cơ chế và hạn chế như "Đối soát AR - TA": so khớp chỉ theo mã booking, chạy trên frontend với dữ liệu mock tĩnh
 - Về nghiệp vụ, "TA có mà AR không có" thường ít nghiêm trọng hơn chiều ngược lại (có thể do độ trễ đồng bộ), nhưng vẫn cần theo dõi nếu tồn tại lâu ngày không tự khớp
+- Ô tích xử lý + popup + nút Build đối soát dùng chung logic và style với "Đối soát AR - TA" (cùng component `AgencyDiffView.vue`, chỉ khác `direction` prop) — xem thêm chi tiết kỹ thuật ở `doi-soat-ar-ta.md`

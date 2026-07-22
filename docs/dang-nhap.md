@@ -54,8 +54,8 @@ Màn hình đăng nhập nội bộ duy nhất của hệ thống PPV (Đối so
 
 | Trường | Loại | Ghi chú |
 |--------|------|---------|
-| Email | text (type=email), autocomplete `username` | Bắt buộc |
-| Mật khẩu | password, autocomplete `current-password` | Bắt buộc |
+| Email * | text (type=email), autocomplete `username` | Bắt buộc — đánh dấu `*` đỏ |
+| Mật khẩu * | password/text (autocomplete `current-password`), autocomplete `current-password` | Bắt buộc — đánh dấu `*` đỏ; có icon 👁️/🙈 bên trong ô để hiện/ẩn mật khẩu (bấm để chuyển `type="password"` ↔ `type="text"`, `tabindex="-1"` để không chắn tab tới nút Đăng nhập) |
 
 ---
 
@@ -72,3 +72,4 @@ Màn hình đăng nhập nội bộ duy nhất của hệ thống PPV (Đối so
 ## Ghi chú thiết kế
 
 - Route `/login` là route **public** duy nhất; mọi route khác đều yêu cầu `authState.user` tồn tại, nếu không sẽ redirect kèm query `redirect` để quay lại đúng trang sau khi đăng nhập
+- Icon hiện/ẩn mật khẩu dùng chung class CSS `.pwd-wrap`/`.pwd-eye` (đã bổ sung định vị trong `style.css`) với icon tương tự ở Cấu hình hệ thống → Cấu hình kết nối (mật khẩu mail/PDF/OneInventory), đảm bảo đồng nhất trải nghiệm hiện/ẩn mật khẩu trong toàn hệ thống

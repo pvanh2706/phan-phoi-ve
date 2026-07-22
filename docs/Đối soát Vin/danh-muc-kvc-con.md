@@ -1,15 +1,17 @@
 # Use Case: Danh mục KVC con của Vin
 
-**Màn hình:** `AgencyReportView.vue` (pageKey: `vinChildParks`)
+**Màn hình:** `VinChildParksView.vue` (trang riêng, **không** còn dùng chung `AgencyReportView.vue` như trước)
 **Đường dẫn truy cập:** Sidebar → Đối soát Vin → Danh mục KVC con của Vin (`/doi-soat-vin/danh-muc-kvc-con`)
-**Quyền truy cập:** Admin, Member (xem)
-**Nguồn dữ liệu:** ⚠️ **Demo/mock** — dữ liệu tĩnh trong `data/reports.ts` (`reportPages.vinChildParks`, 10 dòng mẫu), không gọi API.
+**Quyền truy cập:** Admin, Member (xem, tìm kiếm, thêm, sửa, xoá)
+**Nguồn dữ liệu:** ⚠️ **Demo/mock — state cục bộ trong component (không có backend riêng cho KVC con Vin).** Danh sách khởi tạo với 5 KVC con mẫu; mọi thêm/sửa/xoá chỉ lưu tạm trong bộ nhớ trình duyệt và **mất khi tải lại trang**.
 
 ---
 
 ## Mô tả
 
-Danh mục các **mã KVC con** thuộc hệ sinh thái **Vinpearl/VinWonders**, mỗi KVC con gắn với 1 tài khoản ngân hàng riêng và dùng chung loại công nợ **"Nạp trước"**. Đây là danh mục nền tảng để các màn khác trong nhóm "Đối soát Vin" (giá vốn, số dư, đối soát) tham chiếu tới.
+Danh mục các **mã KVC con** thuộc hệ sinh thái **Vinpearl/VinWonders**, mỗi KVC con gắn với 1 tài khoản ngân hàng riêng và loại công nợ (Nạp trước / Công nợ). Đây là danh mục nền tảng để các màn khác trong nhóm "Đối soát Vin" (giá vốn, số dư, nạp tiền, đối soát) tham chiếu tới.
+
+Khác với trước đây (bảng tĩnh chỉ đọc), màn hình này giờ có đầy đủ **Thêm/Sửa/Xoá** với popup, theo đúng mẫu giao diện đã dùng ở "Mã khu vui chơi" (`ParkCodesView.vue`).
 
 ---
 
@@ -17,8 +19,8 @@ Danh mục các **mã KVC con** thuộc hệ sinh thái **Vinpearl/VinWonders**,
 
 | Actor | Quyền |
 |-------|-------|
-| Admin | Xem, tìm kiếm |
-| Member | Xem, tìm kiếm |
+| Admin | Xem, tìm kiếm, thêm, sửa, xoá |
+| Member | Xem, tìm kiếm, thêm, sửa, xoá |
 
 ---
 
@@ -27,14 +29,39 @@ Danh mục các **mã KVC con** thuộc hệ sinh thái **Vinpearl/VinWonders**,
 ### UC-DMKVC-01 – Xem danh mục KVC con Vin
 
 - **Điều kiện:** Người dùng mở màn hình
-- **Luồng chính:** Bảng hiển thị toàn bộ KVC con (không phân trang theo ngày, không có bộ lọc ngày vì đây là danh mục tĩnh)
-- **Kết quả:** Danh sách mã KVC, tài khoản ngân hàng, tên KVC, loại công nợ
+- **Luồng chính:** Bảng hiển thị toàn bộ KVC con hiện có (không phân trang, không lọc ngày vì đây là danh mục)
+- **Kết quả:** Danh sách mã KVC, tài khoản ngân hàng, tên KVC, loại công nợ (badge)
 
 ### UC-DMKVC-02 – Tìm kiếm theo mã hoặc tên KVC
 
 - **Điều kiện:** Người dùng đang ở màn hình
-- **Luồng chính:** Nhập từ khoá vào ô "🔍 Tìm mã KVC, tên KVC..." → lọc real-time
+- **Luồng chính:** Nhập từ khoá vào ô "🔍 Tìm mã KVC, tên KVC..." → lọc real-time trên mã, tên, và số tài khoản ngân hàng
 - **Kết quả:** Danh sách thu hẹp theo từ khoá
+
+### UC-DMKVC-03 – Thêm KVC con mới
+
+- **Điều kiện:** Người dùng cần bổ sung KVC con mới vào danh mục
+- **Luồng chính:**
+  1. Nhấn **"+ Thêm KVC con"**
+  2. Popup **"Thêm KVC con của Vin"** mở ra (rỗng)
+  3. Nhập **Mã KVC \*** và **Tên KVC \*** (bắt buộc — chặn lưu và báo lỗi nếu thiếu), **TK Ngân hàng** (tuỳ chọn), chọn **Loại Công nợ**: Nạp trước / Công nợ
+  4. Nhấn **Lưu thay đổi**
+- **Kết quả:** KVC con mới xuất hiện cuối danh sách, toast báo "Đã thêm KVC con của Vin (demo, chưa lưu backend)"
+
+### UC-DMKVC-04 – Sửa KVC con
+
+- **Điều kiện:** Đã có KVC con trong danh sách
+- **Luồng chính:** Nhấn biểu tượng ✏️ trên dòng → popup "Sửa KVC con của Vin" điền sẵn dữ liệu → chỉnh sửa → **Lưu thay đổi**
+- **Kết quả:** Thông tin KVC con được cập nhật trong danh sách hiện tại
+
+### UC-DMKVC-05 – Xoá KVC con (có popup cảnh báo)
+
+- **Điều kiện:** Người dùng muốn loại bỏ KVC con khỏi danh mục
+- **Luồng chính:**
+  1. Nhấn biểu tượng 🗑️ trên dòng
+  2. **Popup cảnh báo xác nhận** mở ra (dùng component `ConfirmDialog` dùng chung, tông màu đỏ "danger"): *"Bạn có chắc muốn xóa '{tên KVC}' (Mã {mã KVC}) khỏi danh mục? Thao tác này không thể hoàn tác."*
+  3. Nhấn **Xóa** để xác nhận, hoặc **Hủy** để huỷ bỏ
+- **Kết quả:** Nếu xác nhận, KVC con bị xoá khỏi danh sách hiển thị ngay; toast báo "Đã xóa KVC con của Vin (demo, chưa lưu backend)"
 
 ---
 
@@ -43,13 +70,25 @@ Danh mục các **mã KVC con** thuộc hệ sinh thái **Vinpearl/VinWonders**,
 | Cột | Mô tả |
 |-----|-------|
 | Mã KVC | Mã định danh nội bộ (VD: `11810`) |
-| TK Ngân hàng | Số tài khoản ngân hàng gắn với KVC con |
+| TK Ngân hàng | Số tài khoản ngân hàng gắn với KVC con (hiện "-" nếu để trống) |
 | Tên KVC | Tên cơ sở (VD: Timescity, Phú Quốc, Nha Trang…) |
-| Loại Công nợ | Hiện tại toàn bộ là badge xanh dương "Nạp trước" |
+| Loại Công nợ | Badge: xanh dương "Nạp trước" / chàm "Công nợ" |
+| (hành động) | ✏️ Sửa, 🗑️ Xoá |
 
-## Danh mục mẫu (10 KVC con)
+## Dữ liệu mẫu khởi tạo (5 KVC con)
 
-Timescity, VinWonders Vũ Yên, Phú Quốc, Nam Hội An, CÔNG VIÊN GRAND PARK, Hà Nội, VINWONDERS TIMES CITY, Nha Trang, VinWonders Cửa Hội, Nam Hội An (TK thứ 2)
+Timescity, VinWonders Vũ Yên, Phú Quốc, Nam Hội An, CÔNG VIÊN GRAND PARK (đều mặc định loại "Nạp trước")
+
+---
+
+## Cấu trúc popup Thêm/Sửa
+
+| Trường | Loại | Ghi chú |
+|--------|------|---------|
+| Mã KVC * | text | Bắt buộc |
+| Tên KVC * | text | Bắt buộc |
+| TK Ngân hàng | text | Tuỳ chọn |
+| Loại Công nợ | select | Nạp trước / Công nợ, mặc định "Nạp trước" khi thêm mới |
 
 ---
 
@@ -58,11 +97,14 @@ Timescity, VinWonders Vũ Yên, Phú Quốc, Nam Hội An, CÔNG VIÊN GRAND PAR
 | Màn hình | Liên kết |
 |---------|---------|
 | Chi tiết giá vốn vé bán (Vin) | Dùng tên KVC con làm khoá tra cứu giá vốn |
-| Số dư KVC Vin theo ngày | Danh sách 11 "cơ sở" ở màn số dư (`vinFacilities`) tương ứng với các KVC con trong danh mục này, kèm thêm cột "Số ngày đáo hạn" |
+| Số dư KVC Vin theo ngày | Danh sách 11 "cơ sở" ở màn số dư (`vinFacilities`) tương ứng với các KVC con trong danh mục này |
+| Danh sách nạp tiền cho Vin theo ngày | Dùng tên/tài khoản KVC con để đối chiếu giao dịch nạp tiền |
 | Đối soát KVC Vin | Tên KVC dùng để so khớp số liệu hệ thống với số liệu Vin cung cấp |
 
 ---
 
 ## Ghi chú thiết kế
 
-- Danh mục này hiện là **danh sách tĩnh chỉ đọc** (không có nút thêm/sửa/xoá) — khi lên backend thật nên bổ sung CRUD tương tự "Danh sách các đại lý" nếu cần thêm/bớt KVC con thường xuyên
+- Trước đây màn này dùng chung `AgencyReportView.vue` + dữ liệu tĩnh `reportPages.vinChildParks` (chỉ đọc); đã tách thành component riêng `VinChildParksView.vue` để hỗ trợ CRUD, đồng thời **xoá bỏ** entry `vinChildParks`/`vinChildParkColumns`/`vinChildParkRows` khỏi `data/reports.ts` (không còn dùng)
+- Popup xác nhận xoá dùng component dùng chung `ConfirmDialog.vue` + composable `useConfirm()` — cùng cơ chế đã dùng ở "Mã khu vui chơi" (`ParkCodesView.vue`) cho Xoá/Ngừng sử dụng KVC, KVC con, đại lý
+- Đây là dữ liệu **mock hoàn toàn phía frontend** — khi lên backend thật cần entity riêng (tạm gọi `VinChildPark`) + API CRUD (`GET/POST/PUT/DELETE /api/vin-child-parks`), tương tự `ParkTicketType` của Khu vui chơi thường nhưng thêm trường `BankAccount`/`DebtType`

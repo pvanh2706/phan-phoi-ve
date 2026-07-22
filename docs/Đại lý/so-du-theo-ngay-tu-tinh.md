@@ -1,7 +1,7 @@
 # Use Case: Số dư theo ngày của các đại lý (tự tính)
 
 **Màn hình:** `AgencyMonthlyBalanceView.vue`
-**Đường dẫn truy cập:** Sidebar → Đại lý → Số dư theo ngày của các đại lý (tự tính) (`/dai-ly/doi-soat`)
+**Đường dẫn truy cập:** ⚠️ **Đã gỡ khỏi menu Đại lý** theo yêu cầu nghiệp vụ — route `/dai-ly/doi-soat` vẫn tồn tại và render bình thường nếu gõ thẳng URL, nhưng không còn liên kết nào trong sidebar trỏ tới màn này
 **Quyền truy cập:** Admin, Member (xem)
 **Nguồn dữ liệu:** ⚠️ **Demo hoàn toàn — dữ liệu sinh ngẫu nhiên có seed (deterministic) ngay trên trình duyệt**, không gọi API, không có backend. Số liệu sinh ra dựa trên hash của tên đại lý + ngày nên **luôn giống nhau mỗi lần tải lại cùng 1 tháng**, nhưng không phản ánh dữ liệu thật.
 
@@ -83,6 +83,7 @@ Mục đích minh hoạ cách hệ thống sẽ tính số dư công nợ/nạp 
 
 ## Ghi chú thiết kế
 
+- **Đã bị gỡ khỏi sidebar Đại lý** ("Bỏ mục số dư của các đại lý theo ngày đi" — yêu cầu nghiệp vụ); màn thay thế gần nhất về ý tưởng "tổng hợp theo tháng" là trang mới **"Tổng tiền các đại lý đã dùng theo tháng"** (`/dai-ly/tong-tien-thang`, xem `tong-tien-thang.md`) — nhưng đó là cộng tổng booking AR thật theo tháng, khác hẳn cơ chế random-seed của màn này
 - **Đây là dữ liệu giả lập thuần tuý để demo UI/UX** — số liệu sinh bằng hàm hash giả-ngẫu-nhiên (FNV-1a) theo `tên đại lý + ngày`, không lấy từ nguồn thật nào
 - Khi triển khai thật, công thức số dư luỹ kế cần thay bằng dữ liệu thật: số dư đầu kỳ + tổng nạp tiền (từ sao kê BIDV) − tổng đã dùng (từ giao dịch AR/TA)
 - Tên route hiện tại là `/dai-ly/doi-soat` nhưng nội dung là "số dư tự tính", không phải đối soát theo nghĩa so khớp 2 nguồn — có thể cân nhắc đổi tên route cho nhất quán khi refactor

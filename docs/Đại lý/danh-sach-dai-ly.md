@@ -42,7 +42,7 @@ Danh mục các đại lý thuộc nhóm **mua cấp trên mã 5129 (Đại Lý 
 - **Luồng chính:**
   1. Nhấn **Thêm đại lý**
   2. Modal mở với **Mã đại lý mua cấp trên** và **Tên đại lý mua cấp trên** điền sẵn mặc định (`5129` / `Đại Lý ezCloud Mua_PL`)
-  3. Nhập **Mã đại lý** và **Tên đại lý** (bắt buộc), chọn **Nguồn dữ liệu**: OneInventory / AR / AR & OneInventory
+  3. Nhập **Mã đại lý \*** và **Tên đại lý \*** (bắt buộc, đánh dấu `*` đỏ), chọn **Nguồn dữ liệu**: OneInventory / AR / AR & OneInventory
   4. Nhấn **Lưu**
 - **Kết quả:** Đại lý mới xuất hiện đầu danh sách (chỉ tồn tại trong phiên làm việc hiện tại)
 
@@ -65,8 +65,8 @@ Danh mục các đại lý thuộc nhóm **mua cấp trên mã 5129 (Đại Lý 
 | Cột | Mô tả |
 |-----|-------|
 | # | Số thứ tự |
-| Mã đại lý | Mã định danh (VD: `7391`) |
-| Tên đại lý | Tên đầy đủ, in đậm |
+| Mã đại lý * | Mã định danh (VD: `7391`) — bắt buộc |
+| Tên đại lý * | Tên đầy đủ, in đậm — bắt buộc |
 | Mã đại lý mua cấp trên | Mặc định `5129` |
 | Tên đại lý mua cấp trên | Mặc định `Đại Lý ezCloud Mua_PL` |
 | Nguồn dữ liệu | Badge xanh dương — OneInventory / AR / AR & OneInventory |
